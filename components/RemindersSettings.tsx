@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { ocrImage, parseNotice } from "@/lib/ocr";
 import {
   useStore, getSettings, saveSettings, getMeds, saveMed, deleteMed, toggleModule,
   getAddictions, saveAddiction, deleteAddiction, Addiction,
@@ -10,10 +11,12 @@ import { requestNotifPermission } from "@/lib/reminders";
 import { setPin, disableSecurity, biometricsAvailable, registerFace } from "@/lib/security";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { MedicalVault } from "@/components/MedicalVault";
+import { MedAutocomplete } from "@/components/MedAutocomplete";
+import { MedInfoModal } from "@/components/MedInfoModal";
 import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
-  UserRound, Lock, ScanFace, CloudSun, Delete, HeartPulse, ChevronRight,
+  UserRound, Lock, ScanFace, CloudSun, Delete, HeartPulse, ChevronRight, ScanText, Loader2, Info,
 } from "lucide-react";
 
 function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[]) => void }) {
@@ -307,7 +310,17 @@ function MedCard({ med, onSave, onDelete, onScan }: { med: Medication; onSave: (
   const [open, setOpen] = useState(med.name === "Nouveau médicament");
   const [name, setName] = useState(med.name);
   const [dose, setDose] = useState(med.dose ?? "");
+  const [info, setInfo] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const noticeRef = useRef<HTMLInputElement>(null);
   const commit = (extra?: Partial<Medication>) => onSave({ ...med, name: name.trim() || "Médicament", dose: dose.trim() || undefined, ...extra });
+  const onNotice = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return; setScanning(true);
+    try { const t = await ocrImage(f); const p = parseNotice(t);
+      const clean = Object.fromEntries(Object.entries(p).filter(([, v]) => v)) as Record<string, string[]>;
+      if (Object.keys(clean).length) onSave({ ...med, name: name.trim() || "Médicament", dose: dose.trim() || undefined, highlights: { ...(med.highlights || {}), ...clean } });
+    } catch { /* */ } finally { setScanning(false); e.target.value = ""; }
+  };
 
   return (
     <div className="card p-4">
@@ -322,10 +335,8 @@ function MedCard({ med, onSave, onDelete, onScan }: { med: Medication; onSave: (
 
       {open && (
         <div className="mt-4 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            <input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} placeholder="Nom" className="bg-brand-50 rounded-xl px-3 py-2.5 font-semibold text-ink outline-none" />
-            <input value={dose} onChange={(e) => setDose(e.target.value)} onBlur={() => commit()} placeholder="Dose (ex: 50 mg)" className="bg-brand-50 rounded-xl px-3 py-2.5 font-semibold text-ink outline-none" />
-          </div>
+          <MedAutocomplete value={name} onChange={setName} onBlur={() => commit()} onPick={(nm, h) => { setName(nm); commit({ name: nm, ...(h ? { highlights: h } : {}) }); }} />
+          <input value={dose} onChange={(e) => setDose(e.target.value)} onBlur={() => commit()} placeholder="Dose (ex: 50 mg)" className="w-full bg-brand-50 rounded-xl px-3 py-2.5 font-semibold text-ink outline-none" />
 
           <div>
             <p className="text-[11px] font-bold tracking-widest uppercase text-ink-mute mb-2">Prises</p>
@@ -340,12 +351,20 @@ function MedCard({ med, onSave, onDelete, onScan }: { med: Medication; onSave: (
             </div>
           </div>
 
+          <input ref={noticeRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onNotice} />
+          <div className="flex gap-2">
+            <button onClick={() => noticeRef.current?.click()} disabled={scanning} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-brand-50 text-brand-700 font-bold text-sm active:scale-[.98] disabled:opacity-60">
+              {scanning ? <><Loader2 className="h-4 w-4 animate-spin" /> Lecture…</> : <><ScanText className="h-4 w-4" /> Scanner la notice</>}
+            </button>
+            <button onClick={() => setInfo(true)} className="grid place-items-center h-11 w-11 rounded-xl bg-brand-50 text-brand-700 active:scale-95" aria-label="Infos"><Info className="h-5 w-5" /></button>
+          </div>
           <div className="flex gap-2 pt-1">
             <button onClick={onScan} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-ink text-white font-bold text-sm active:scale-[.98]"><ScanLine className="h-4 w-4" /> {med.barcode ? "Re-scanner le code" : "Enregistrer le code-barres"}</button>
             <button onClick={onDelete} className="grid place-items-center h-11 w-11 rounded-xl bg-white text-red-400 shadow-card active:scale-95"><Trash2 className="h-5 w-5" /></button>
           </div>
         </div>
       )}
+      {info && <MedInfoModal name={med.name} highlights={med.highlights} onClose={() => setInfo(false)} />}
     </div>
   );
 }

@@ -9,12 +9,13 @@ import { todayMedStatus, fmtDuration } from "@/lib/reminders";
 import { MoodChart } from "@/components/MoodChart";
 import { RemindersSettings } from "@/components/RemindersSettings";
 import { ReportSheet } from "@/components/ReportSheet";
+import { MedInfoModal } from "@/components/MedInfoModal";
 import { WaterCard, AddictionsSection, NextApptCard } from "@/components/DashboardCards";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { SortableList, SortItem } from "@/components/SortableList";
 import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
-  Check, Clock, AlertTriangle, FileText, CheckCircle2, Heart,
+  Check, Clock, AlertTriangle, FileText, CheckCircle2, Heart, Info,
 } from "lucide-react";
 
 function Ring({ value }: { value: number | null }) {
@@ -171,10 +172,12 @@ function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; la
 function MedStatusCard({ onManage }: { onManage: () => void }) {
   useStore();
   const [, setTick] = useState(0);
+  const [info, setInfo] = useState<{ name: string; h?: any } | null>(null);
   useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 1000); return () => clearInterval(id); }, []);
 
   const s = todayMedStatus(new Date());
   const date = todayISO();
+  const meds = getMeds();
   if (s.total === 0) {
     return (
       <button onClick={onManage} className="card w-full p-4 mt-3 flex items-center gap-3.5 text-left">
@@ -217,19 +220,22 @@ function MedStatusCard({ onManage }: { onManage: () => void }) {
       {/* dose list */}
       <div className="divide-y divide-black/5">
         {s.doses.map((d) => (
-          <button key={d.medId + d.time} onClick={() => setMedTaken(date, d.medId, d.time, !d.taken)}
-            className="w-full flex items-center gap-3 py-2.5 text-left">
-            <span className="font-display font-semibold text-ink tabular-nums w-12">{d.time}</span>
-            <span className="flex-1 min-w-0">
-              <span className="font-bold text-ink text-[15px] block truncate">{d.name}</span>
-              {d.dose && <span className="text-[12px] text-ink-mute">{d.dose}</span>}
-            </span>
-            <span className={`grid place-items-center h-7 w-7 rounded-lg border-2 transition ${d.taken ? "bg-brand-500 border-brand-500 text-white" : "border-black/15 text-transparent"}`}>
+          <div key={d.medId + d.time} className="flex items-center gap-2 py-2.5">
+            <button onClick={() => setMedTaken(date, d.medId, d.time, !d.taken)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+              <span className="font-display font-semibold text-ink tabular-nums w-12">{d.time}</span>
+              <span className="flex-1 min-w-0">
+                <span className="font-bold text-ink text-[15px] block truncate">{d.name}</span>
+                {d.dose && <span className="text-[12px] text-ink-mute">{d.dose}</span>}
+              </span>
+            </button>
+            <button onClick={() => setInfo({ name: d.name, h: meds.find((m) => m.id === d.medId)?.highlights })} className="grid place-items-center h-8 w-8 rounded-lg text-brand-600 active:scale-90" aria-label="Infos médicament"><Info className="h-[18px] w-[18px]" /></button>
+            <button onClick={() => setMedTaken(date, d.medId, d.time, !d.taken)} className={`grid place-items-center h-7 w-7 rounded-lg border-2 transition shrink-0 ${d.taken ? "bg-brand-500 border-brand-500 text-white" : "border-black/15 text-transparent"}`}>
               <Check className="h-4 w-4" strokeWidth={3} />
-            </span>
-          </button>
+            </button>
+          </div>
         ))}
       </div>
+      {info && <MedInfoModal name={info.name} highlights={info.h} onClose={() => setInfo(null)} />}
     </section>
   );
 }

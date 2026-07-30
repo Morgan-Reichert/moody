@@ -27,12 +27,16 @@ export interface Slot {
   days: number[];                   // [] or 7 items = every day
 }
 
+export interface MedHighlights {
+  molecule?: string; classe?: string; risques?: string[]; effets?: string[]; conseils?: string[];
+}
 export interface Medication {
   id: string;
   name: string;
   dose?: string;
   slots: Slot[];
   barcode?: string;
+  highlights?: MedHighlights;   // notice highlights (from catalog or scanned)
 }
 
 export type ModuleKey = "sport" | "water" | "addiction";

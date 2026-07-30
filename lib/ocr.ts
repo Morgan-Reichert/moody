@@ -71,6 +71,23 @@ function findExpiry(text: string, dates: { at: number; iso: string }[]): string 
   return undefined;
 }
 
+/** Extract key notice sections (effets indésirables, contre-indications…) from OCR text. */
+export function parseNotice(text: string): { effets?: string[]; risques?: string[]; conseils?: string[] } {
+  const grab = (label: RegExp): string[] | undefined => {
+    const idx = text.search(label);
+    if (idx < 0) return undefined;
+    const chunk = text.slice(idx, idx + 800);
+    const lines = chunk.split(/[\n•·▪◦;]|(?:\.\s)/).map((s) => s.replace(/\s+/g, " ").trim())
+      .filter((s) => s.length > 14 && s.length < 170).slice(1, 5);
+    return lines.length ? lines : undefined;
+  };
+  return {
+    effets: grab(/effets?\s+ind[eé]sirables?/i),
+    risques: grab(/(contre-?indications?|mises?\s+en\s+garde|pr[eé]cautions?\s+d'?emploi|ne\s+(pas|jamais))/i),
+    conseils: grab(/(mode\s+d'?emploi|posologie|comment\s+prendre|conseils?)/i),
+  };
+}
+
 export function parseDocument(text: string): OcrResult {
   const dates = findDates(text);
   const type = classify(text);
