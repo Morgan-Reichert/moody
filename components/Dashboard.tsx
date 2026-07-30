@@ -13,7 +13,7 @@ import { WaterCard, AddictionsSection } from "@/components/DashboardCards";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
-  Check, Clock, AlertTriangle, FileText, CheckCircle2,
+  Check, Clock, AlertTriangle, FileText, CheckCircle2, Heart,
 } from "lucide-react";
 
 function Ring({ value }: { value: number | null }) {
@@ -129,6 +129,11 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
           </div>
           <MoodChart data={series} />
         </section>
+
+        {/* Signature */}
+        <p className="text-center text-[11.5px] text-ink-mute/80 mt-6 flex items-center justify-center gap-1.5">
+          Édité par Stariax · fait avec <Heart className="h-3 w-3 fill-brand-400 text-brand-400" />
+        </p>
         </div>
       </div>
 
