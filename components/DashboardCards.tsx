@@ -22,7 +22,7 @@ export function WaterCard() {
     { cl: 75, label: "Bouteille", size: "h-7 w-7" },
   ];
   return (
-    <section className="card p-4 mt-3">
+    <section className="card p-4">
       <div className="flex items-center justify-between mb-3">
         <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Droplets className="h-[18px] w-[18px] text-sky-500" /> Hydratation</h2>
         <button onClick={resetWaterToday} className="grid place-items-center h-8 w-8 rounded-lg text-ink-mute active:scale-90" aria-label="Réinitialiser"><RotateCcw className="h-4 w-4" /></button>
@@ -55,14 +55,14 @@ export function AddictionsSection({ onManage }: { onManage: () => void }) {
   const items = getAddictions();
   if (items.length === 0) {
     return (
-      <button onClick={onManage} className="card w-full p-4 mt-3 flex items-center gap-3.5 text-left">
+      <button onClick={onManage} className="card w-full p-4 flex items-center gap-3.5 text-left">
         <span className="grid place-items-center h-11 w-11 rounded-2xl bg-lilac text-brand-700 shrink-0"><ShieldCheck className="h-[22px] w-[22px]" /></span>
         <div className="flex-1"><p className="font-bold text-ink text-[15px]">Contrôle des addictions</p><p className="text-[12.5px] text-ink-mute">Ajoute ce que tu veux arrêter · suivre tes streaks</p></div>
         <Plus className="h-5 w-5 text-ink-mute" />
       </button>
     );
   }
-  return <div className="mt-3 space-y-3">{items.map((a) => <AddictionCard key={a.id} id={a.id} />)}</div>;
+  return <div className="space-y-3">{items.map((a) => <AddictionCard key={a.id} id={a.id} />)}</div>;
 }
 
 function AddictionCard({ id }: { id: string }) {

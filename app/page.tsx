@@ -29,12 +29,15 @@ export default function Home() {
     setMounted(true);
     const el = wrapRef.current;
     if (el) {
-      const measure = () => setW(el.clientWidth);
+      const measure = () => setW(el.clientWidth || window.innerWidth);
       measure();
+      requestAnimationFrame(measure);
       const ro = new ResizeObserver(measure);
       ro.observe(el);
+      window.addEventListener("resize", measure);
+      window.addEventListener("orientationchange", measure);
       if (new URLSearchParams(window.location.search).get("tab") === "humeur") setTab(1);
-      return () => ro.disconnect();
+      return () => { ro.disconnect(); window.removeEventListener("resize", measure); window.removeEventListener("orientationchange", measure); };
     }
   }, []);
 

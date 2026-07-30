@@ -57,6 +57,8 @@ export interface ReminderSettings {
   pinSalt?: string;
   faceId?: boolean;
   faceCredId?: string;              // base64url WebAuthn credential id
+  // dashboard card order
+  dashOrder?: string[];
 }
 
 export const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
@@ -242,6 +244,8 @@ export function getSettings(): ReminderSettings { return { ...DEFAULT_SETTINGS, 
 export function saveSettings(patch: Partial<ReminderSettings>): ReminderSettings {
   const next = { ...getSettings(), ...patch }; write(K_SET, next); return next;
 }
+export function getDashOrder(): string[] { return getSettings().dashOrder ?? []; }
+export function saveDashOrder(order: string[]): void { saveSettings({ dashOrder: order }); }
 export function toggleModule(key: ModuleKey): ReminderSettings {
   const s = getSettings();
   const modules = s.modules.includes(key) ? s.modules.filter((m) => m !== key) : [...s.modules, key];

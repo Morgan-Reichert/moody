@@ -11,6 +11,7 @@ import { RemindersSettings } from "@/components/RemindersSettings";
 import { ReportSheet } from "@/components/ReportSheet";
 import { WaterCard, AddictionsSection } from "@/components/DashboardCards";
 import { WeatherWidget } from "@/components/WeatherWidget";
+import { SortableList, SortItem } from "@/components/SortableList";
 import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
   Check, Clock, AlertTriangle, FileText, CheckCircle2, Heart,
@@ -47,6 +48,66 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   const hour = now.getHours();
   const hello = hour < 6 ? "Douce nuit" : hour < 12 ? "Bonjour" : hour < 18 ? "Bel après-midi" : "Bonsoir";
 
+  const cards: SortItem[] = [
+    {
+      key: "mood",
+      node: (
+        <section className="rounded-4xl p-5 bg-mint flex items-center gap-4 shadow-soft">
+          <Ring value={todayAvg} />
+          <div className="min-w-0">
+            <p className="text-[11px] font-bold tracking-widest uppercase text-brand-700/70">Ton humeur du jour</p>
+            {todayAvg != null ? (
+              <>
+                <p className="font-display text-xl font-semibold text-ink mt-0.5">{moodLabel(todayAvg)}</p>
+                <p className="text-[13px] text-ink-soft mt-0.5">{today.length} saisie{today.length > 1 ? "s" : ""} aujourd'hui</p>
+              </>
+            ) : (
+              <>
+                <p className="font-display text-xl font-semibold text-ink mt-0.5">Pas encore noté</p>
+                <button onClick={onLogMood} className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-brand-700">Noter maintenant <ChevronRight className="h-4 w-4" /></button>
+              </>
+            )}
+          </div>
+        </section>
+      ),
+    },
+    {
+      key: "stats",
+      node: (
+        <section className="grid grid-cols-3 gap-3">
+          <Stat icon={<TrendingUp className="h-[18px] w-[18px]" />} value={avg7 != null ? avg7.toFixed(1) : "—"} label="Moy. 7 j" />
+          <Stat icon={<Flame className="h-[18px] w-[18px]" />} value={String(strk)} label={strk > 1 ? "jours de série" : "jour de série"} />
+          <Stat icon={<Sparkles className="h-[18px] w-[18px]" />} value={String(today.length)} label="aujourd'hui" />
+        </section>
+      ),
+    },
+  ];
+  if (mounted && meds.length > 0) cards.push({ key: "meds", node: <MedStatusCard onManage={() => setShowSettings(true)} /> });
+  if (mounted && settings?.modules.includes("water")) cards.push({ key: "water", node: <WaterCard /> });
+  if (mounted && settings?.modules.includes("addiction")) cards.push({ key: "addiction", node: <AddictionsSection onManage={() => setShowSettings(true)} /> });
+  if (settings && settings.moodSlots.length > 0) cards.push({
+    key: "reminder",
+    node: (
+      <button onClick={onLogMood} className="card w-full p-3.5 flex items-center gap-3.5 text-left">
+        <span className="grid place-items-center h-11 w-11 rounded-2xl bg-brand-500 text-white shrink-0"><Smile className="h-[22px] w-[22px]" /></span>
+        <div className="flex-1"><p className="font-bold text-ink text-[15px]">Rappels humeur</p><p className="text-[12.5px] text-ink-mute">{settings.moodSlots.map((s) => s.time).join(" · ")}</p></div>
+        <ChevronRight className="h-5 w-5 text-ink-mute" />
+      </button>
+    ),
+  });
+  cards.push({
+    key: "chart",
+    node: (
+      <section className="card p-4">
+        <div className="flex items-center justify-between px-1 mb-1">
+          <h2 className="font-display text-[16px] font-semibold text-ink">Ton humeur — 14 jours</h2>
+          <button onClick={() => setShowReport(true)} className="text-[12.5px] font-bold text-brand-700">Rapport</button>
+        </div>
+        <MoodChart data={series} />
+      </section>
+    ),
+  });
+
   return (
     <div className="min-h-full pb-6">
       {/* Sticky top bar — opaque at the very top, fading translucent downward */}
@@ -75,65 +136,16 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
           {mounted && settings?.weather && <WeatherWidget />}
         </div>
 
-        {/* Mood of the day */}
-        <section className="rounded-4xl p-5 bg-mint flex items-center gap-4 shadow-soft">
-          <Ring value={todayAvg} />
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold tracking-widest uppercase text-brand-700/70">Ton humeur du jour</p>
-            {todayAvg != null ? (
-              <>
-                <p className="font-display text-xl font-semibold text-ink mt-0.5">{moodLabel(todayAvg)}</p>
-                <p className="text-[13px] text-ink-soft mt-0.5">{today.length} saisie{today.length > 1 ? "s" : ""} aujourd'hui</p>
-              </>
-            ) : (
-              <>
-                <p className="font-display text-xl font-semibold text-ink mt-0.5">Pas encore noté</p>
-                <button onClick={onLogMood} className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-brand-700">
-                  Noter maintenant <ChevronRight className="h-4 w-4" />
-                </button>
-              </>
-            )}
-          </div>
-        </section>
-
-        {/* Stats */}
-        <section className="grid grid-cols-3 gap-3 mt-3">
-          <Stat icon={<TrendingUp className="h-[18px] w-[18px]" />} value={avg7 != null ? avg7.toFixed(1) : "—"} label="Moy. 7 j" />
-          <Stat icon={<Flame className="h-[18px] w-[18px]" />} value={String(strk)} label={strk > 1 ? "jours de série" : "jour de série"} />
-          <Stat icon={<Sparkles className="h-[18px] w-[18px]" />} value={String(today.length)} label="aujourd'hui" />
-        </section>
-
-        {/* Medications today */}
-        {mounted && meds.length > 0 && <MedStatusCard onManage={() => setShowSettings(true)} />}
-
-        {/* Hydration */}
-        {mounted && settings?.modules.includes("water") && <WaterCard />}
-
-        {/* Addictions */}
-        {mounted && settings?.modules.includes("addiction") && <AddictionsSection onManage={() => setShowSettings(true)} />}
-
-        {/* Mood reminder chip */}
-        {settings && settings.moodSlots.length > 0 && (
-          <button onClick={onLogMood} className="card w-full p-3.5 mt-3 flex items-center gap-3.5 text-left">
-            <span className="grid place-items-center h-11 w-11 rounded-2xl bg-brand-500 text-white shrink-0"><Smile className="h-[22px] w-[22px]" /></span>
-            <div className="flex-1"><p className="font-bold text-ink text-[15px]">Rappels humeur</p><p className="text-[12.5px] text-ink-mute">{settings.moodSlots.map((s) => s.time).join(" · ")}</p></div>
-            <ChevronRight className="h-5 w-5 text-ink-mute" />
-          </button>
-        )}
-
-        {/* Chart */}
-        <section className="card p-4 mt-3">
-          <div className="flex items-center justify-between px-1 mb-1">
-            <h2 className="font-display text-[16px] font-semibold text-ink">Ton humeur — 14 jours</h2>
-            <button onClick={() => setShowReport(true)} className="text-[12.5px] font-bold text-brand-700">Rapport</button>
-          </div>
-          <MoodChart data={series} />
-        </section>
+        {/* Reorderable cards — long-press to rearrange */}
+        <SortableList items={cards} />
 
         {/* Signature */}
-        <p className="text-center text-[11.5px] text-ink-mute/80 mt-6 flex items-center justify-center gap-1.5">
-          Édité par Stariax · fait avec <Heart className="h-3 w-3 fill-brand-400 text-brand-400" />
-        </p>
+        <div className="mt-6 flex items-center justify-center gap-1.5 text-[11.5px] text-ink-mute/80">
+          <span>Édité par</span>
+          <img src="./brand/stariax-wordmark.png" alt="Stariax" className="h-3.5 w-auto opacity-70" />
+          <span>· fait avec</span>
+          <Heart className="h-3 w-3 fill-brand-400 text-brand-400" />
+        </div>
         </div>
       </div>
 
