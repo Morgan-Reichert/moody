@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import {
   useStore, getTodayEntries, average, streak, dailySeries, moodLabel,
-  getSettings, getMeds, todayISO, setMedTaken,
+  getSettings, getMeds, todayISO, setMedTaken, upcomingAppointments,
 } from "@/lib/storage";
 import { todayMedStatus, fmtDuration } from "@/lib/reminders";
 import { MoodChart } from "@/components/MoodChart";
 import { RemindersSettings } from "@/components/RemindersSettings";
 import { ReportSheet } from "@/components/ReportSheet";
-import { WaterCard, AddictionsSection } from "@/components/DashboardCards";
+import { WaterCard, AddictionsSection, NextApptCard } from "@/components/DashboardCards";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { SortableList, SortItem } from "@/components/SortableList";
 import {
@@ -82,6 +82,8 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
       ),
     },
   ];
+  const nextAppt = mounted ? upcomingAppointments()[0] : undefined;
+  if (nextAppt) cards.push({ key: "appt", node: <NextApptCard appt={nextAppt} /> });
   if (mounted && meds.length > 0) cards.push({ key: "meds", node: <MedStatusCard onManage={() => setShowSettings(true)} /> });
   if (mounted && settings?.modules.includes("water")) cards.push({ key: "water", node: <WaterCard /> });
   if (mounted && settings?.modules.includes("addiction")) cards.push({ key: "addiction", node: <AddictionsSection onManage={() => setShowSettings(true)} /> });

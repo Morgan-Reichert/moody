@@ -4,11 +4,43 @@ import { useState } from "react";
 import {
   useStore, getWaterToday, addWater, resetWaterToday, WATER_GOAL_CL,
   getAddictions, addictionStat, logConsumption, undoLastConsumption,
-  nextMilestone, encouragement,
+  nextMilestone, encouragement, getDoctors, Appointment,
 } from "@/lib/storage";
 import {
-  GlassWater, Droplets, RotateCcw, Trophy, ShieldCheck, Undo2, Plus,
+  GlassWater, Droplets, RotateCcw, Trophy, ShieldCheck, Undo2, Plus, CalendarClock, MapPin,
 } from "lucide-react";
+
+function relativeWhen(iso: string): string {
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms < 0) return "maintenant";
+  const h = Math.floor(ms / 3600e3), d = Math.floor(h / 24);
+  if (d >= 1) return `dans ${d} jour${d > 1 ? "s" : ""}`;
+  if (h >= 1) return `dans ${h} h`;
+  return `dans ${Math.max(1, Math.round(ms / 60000))} min`;
+}
+
+export function NextApptCard({ appt }: { appt: Appointment }) {
+  useStore();
+  const doc = appt.doctorId ? getDoctors().find((d) => d.id === appt.doctorId) : undefined;
+  const dt = new Date(appt.datetime);
+  const when = dt.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }) + " · " + dt.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return (
+    <section className="rounded-4xl p-5 bg-lilac shadow-soft">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><CalendarClock className="h-[18px] w-[18px] text-brand-600" /> Prochain rendez-vous</h2>
+        <span className="text-[12px] font-bold text-brand-700 bg-white/70 rounded-full px-2.5 py-1">{relativeWhen(appt.datetime)}</span>
+      </div>
+      <p className="font-display text-lg font-semibold text-ink">{appt.title}</p>
+      {doc && <p className="text-[13.5px] text-ink-soft">{doc.name}{doc.specialty ? ` · ${doc.specialty}` : ""}</p>}
+      <p className="text-[13px] text-ink-soft capitalize mt-1">{when}</p>
+      {appt.address && (
+        <a href={`https://maps.google.com/?q=${encodeURIComponent(appt.address)}`} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1.5 text-[13px] font-semibold text-brand-700">
+          <MapPin className="h-4 w-4" /> {appt.address}
+        </a>
+      )}
+    </section>
+  );
+}
 
 function litres(cl: number) { return (cl / 100).toFixed(2).replace(".", ",") + " L"; }
 

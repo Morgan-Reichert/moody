@@ -6,9 +6,9 @@ import {
   ENERGY_LABELS, APPETITE_LABELS,
 } from "@/lib/storage";
 import { aiNarrative } from "@/lib/ai";
-import { saveReport, listReports, getReportBlob, deleteReport, downloadBlob, ReportMeta } from "@/lib/reports-db";
+import { saveReport, listReports, getReportBlob, deleteReport, downloadBlob, shareBlob, ReportMeta } from "@/lib/reports-db";
 import { Portal } from "@/components/Portal";
-import { X, Sparkles, Loader2, Download, UserRound, HeartPulse, History, Trash2, FileText } from "lucide-react";
+import { X, Sparkles, Loader2, Download, UserRound, HeartPulse, History, Trash2, FileText, Share2 } from "lucide-react";
 
 type Period = 7 | 30 | 90;
 type Kind = "perso" | "therapeute";
@@ -95,6 +95,7 @@ export function ReportSheet({ onClose }: { onClose: () => void }) {
   };
 
   const dl = async (m: ReportMeta) => { const b = await getReportBlob(m.id); if (b) downloadBlob(b, m.name); };
+  const share = async (m: ReportMeta) => { const b = await getReportBlob(m.id); if (b) await shareBlob(b, m.name); };
   const del = async (m: ReportMeta) => { await deleteReport(m.id); await refresh(); };
 
   return (
@@ -126,8 +127,9 @@ export function ReportSheet({ onClose }: { onClose: () => void }) {
                     <p className="font-bold text-ink text-[14.5px]">{m.kind === "therapeute" ? "Thérapeute" : "Perso"} · {m.period} j</p>
                     <p className="text-[12px] text-ink-mute">{frDate(m.createdAt)}</p>
                   </div>
-                  <button onClick={() => dl(m)} className="grid place-items-center h-10 w-10 rounded-xl bg-brand-500 text-white active:scale-95"><Download className="h-[18px] w-[18px]" /></button>
-                  <button onClick={() => del(m)} className="grid place-items-center h-10 w-10 rounded-xl bg-white text-red-400 shadow-card active:scale-95"><Trash2 className="h-[18px] w-[18px]" /></button>
+                  <button onClick={() => share(m)} className="grid place-items-center h-10 w-10 rounded-xl bg-brand-500 text-white active:scale-95" aria-label="Partager / Imprimer"><Share2 className="h-[18px] w-[18px]" /></button>
+                  <button onClick={() => dl(m)} className="grid place-items-center h-10 w-10 rounded-xl bg-white text-ink-soft shadow-card active:scale-95" aria-label="Télécharger"><Download className="h-[18px] w-[18px]" /></button>
+                  <button onClick={() => del(m)} className="grid place-items-center h-10 w-10 rounded-xl bg-white text-red-400 shadow-card active:scale-95" aria-label="Supprimer"><Trash2 className="h-[18px] w-[18px]" /></button>
                 </div>
               ))}
             </div>

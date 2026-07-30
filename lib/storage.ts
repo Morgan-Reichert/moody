@@ -262,6 +262,61 @@ export function markReminder(slot: string): void {
   write(K_LOG, log);
 }
 
+// ── Medical space : fiche, médecins, rendez-vous ─────────────────────────────
+const K_MEDICAL = "moody_medical";
+const K_DOCTORS = "moody_doctors";
+const K_APPTS = "moody_appointments";
+
+export interface MedicalProfile {
+  fullName?: string;
+  birthDate?: string;
+  sex?: string;
+  height?: string;         // cm
+  weight?: string;         // kg
+  bloodType?: string;      // A+, O-…
+  conditions?: string;     // maladies / pathologies
+  allergies?: string;
+  treatments?: string;     // traitements en cours
+  history?: string;        // antécédents / passé médical
+  surgeries?: string;
+  emergencyName?: string;
+  emergencyPhone?: string;
+  notes?: string;
+}
+export function getMedicalProfile(): MedicalProfile { return read<MedicalProfile>(K_MEDICAL, {}); }
+export function saveMedicalProfile(patch: Partial<MedicalProfile>): MedicalProfile {
+  const next = { ...getMedicalProfile(), ...patch }; write(K_MEDICAL, next); return next;
+}
+
+export interface Doctor {
+  id: string; name: string; specialty: string;
+  phone?: string; email?: string; address?: string; notes?: string;
+}
+export function getDoctors(): Doctor[] { return read<Doctor[]>(K_DOCTORS, []); }
+export function saveDoctor(d: Omit<Doctor, "id"> & { id?: string }): Doctor {
+  const all = getDoctors(); const complete = { ...d, id: d.id ?? uid() };
+  const i = all.findIndex((x) => x.id === complete.id); if (i >= 0) all[i] = complete; else all.push(complete);
+  write(K_DOCTORS, all); return complete;
+}
+export function deleteDoctor(id: string): void { write(K_DOCTORS, getDoctors().filter((d) => d.id !== id)); }
+
+export interface Appointment {
+  id: string; title: string; datetime: string; // ISO
+  doctorId?: string; address?: string; notes?: string;
+}
+export function getAppointments(): Appointment[] {
+  return read<Appointment[]>(K_APPTS, []).sort((a, b) => a.datetime.localeCompare(b.datetime));
+}
+export function saveAppointment(a: Omit<Appointment, "id"> & { id?: string }): Appointment {
+  const all = getAppointments(); const complete = { ...a, id: a.id ?? uid() };
+  const i = all.findIndex((x) => x.id === complete.id); if (i >= 0) all[i] = complete; else all.push(complete);
+  write(K_APPTS, all); return complete;
+}
+export function deleteAppointment(id: string): void { write(K_APPTS, getAppointments().filter((a) => a.id !== id)); }
+export function upcomingAppointments(now = new Date()): Appointment[] {
+  return getAppointments().filter((a) => new Date(a.datetime).getTime() >= now.getTime() - 3600e3);
+}
+
 // ── labels ───────────────────────────────────────────────────────────────────
 export const MOOD_LABELS: Record<number, string> = {
   1: "Très bas", 2: "Bas", 3: "Difficile", 4: "Morose", 5: "Mitigé",

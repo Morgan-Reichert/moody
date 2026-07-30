@@ -5,7 +5,7 @@ import { getSettings, getMeds, markReminder } from "@/lib/storage";
 import { dueReminders, DueReminder, Alarm, notify, vibrate } from "@/lib/reminders";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { Portal } from "@/components/Portal";
-import { Smile, Pill, ScanLine, Check, Clock } from "lucide-react";
+import { Smile, Pill, ScanLine, Check, Clock, CalendarClock } from "lucide-react";
 
 export function ReminderEngine({ onOpenMood }: { onOpenMood: () => void }) {
   const [active, setActive] = useState<DueReminder | null>(null);
@@ -95,7 +95,7 @@ export function ReminderEngine({ onOpenMood }: { onOpenMood: () => void }) {
     <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center p-6 bg-ink/70 backdrop-blur-md">
       <div className="w-full max-w-sm rounded-4xl bg-cream p-7 text-center shadow-pill animate-pop">
         <div className="mx-auto grid place-items-center h-20 w-20 rounded-full bg-brand-500 text-white animate-pulseRing shadow-glow">
-          {isMed ? <Pill className="h-9 w-9" /> : <Smile className="h-9 w-9" />}
+          {isMed ? <Pill className="h-9 w-9" /> : active.kind === "appt" ? <CalendarClock className="h-9 w-9" /> : <Smile className="h-9 w-9" />}
         </div>
         <h2 className="font-display text-2xl font-semibold text-ink mt-5">{active.title}</h2>
         <p className="text-ink-soft mt-1.5">{active.body}</p>
@@ -116,11 +116,13 @@ export function ReminderEngine({ onOpenMood }: { onOpenMood: () => void }) {
             <>
               <button onClick={validate}
                 className="w-full rounded-3xl py-4 bg-brand-500 text-white font-display text-[17px] font-semibold flex items-center justify-center gap-2 shadow-glow active:scale-[.99]">
-                <Check className="h-5 w-5" strokeWidth={2.6} /> {isMed ? "J'ai pris" : "Noter mon humeur"}
+                <Check className="h-5 w-5" strokeWidth={2.6} /> {isMed ? "J'ai pris" : active.kind === "appt" ? "Compris" : "Noter mon humeur"}
               </button>
-              <button onClick={snooze} className="w-full rounded-3xl py-3.5 bg-white shadow-card text-ink-soft font-semibold inline-flex items-center justify-center gap-1.5 active:scale-[.99]">
-                <Clock className="h-4 w-4" /> Plus tard ({settings.snoozeMinutes} min)
-              </button>
+              {active.kind !== "appt" && (
+                <button onClick={snooze} className="w-full rounded-3xl py-3.5 bg-white shadow-card text-ink-soft font-semibold inline-flex items-center justify-center gap-1.5 active:scale-[.99]">
+                  <Clock className="h-4 w-4" /> Plus tard ({settings.snoozeMinutes} min)
+                </button>
+              )}
             </>
           )}
         </div>

@@ -1,6 +1,13 @@
-import { ReminderSettings, Medication, Slot, dosesForDate, isMedTaken, Dose } from "./storage";
+import { ReminderSettings, Medication, Slot, dosesForDate, isMedTaken, Dose, getAppointments, getDoctors } from "./storage";
 
-export type ReminderKind = "mood" | "med";
+export type ReminderKind = "mood" | "med" | "appt";
+
+const APPT_OFFSETS: { min: number; label: string }[] = [
+  { min: 1440, label: "dans 24 h" },
+  { min: 720, label: "dans 12 h" },
+  { min: 60, label: "dans 1 h" },
+  { min: 15, label: "dans 15 minutes" },
+];
 
 export interface DueReminder {
   slot: string;
@@ -34,6 +41,27 @@ export function dueReminders(settings: ReminderSettings, meds: Medication[], now
           title: `Médicament — ${m.name}`,
           body: m.dose ? `Il est temps de prendre ${m.name} (${m.dose}).` : `Il est temps de prendre ${m.name}.`,
         });
+
+  // Appointment reminders (24h / 12h / 1h / 15min) with a 30-min catch-up window.
+  const doctors = getDoctors();
+  for (const a of getAppointments()) {
+    const apptMs = new Date(a.datetime).getTime();
+    if (apptMs < now.getTime()) continue;
+    const doc = a.doctorId ? doctors.find((d) => d.id === a.doctorId) : undefined;
+    const who = doc ? `${doc.name}${doc.specialty ? ` (${doc.specialty})` : ""}` : a.title;
+    for (const off of APPT_OFFSETS) {
+      const target = apptMs - off.min * 60000;
+      const dt = now.getTime() - target;
+      if (dt >= 0 && dt <= 30 * 60000) {
+        out.push({
+          slot: `${a.id}|appt|${off.min}`, kind: "appt",
+          time: new Date(a.datetime).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+          title: `Rendez-vous ${off.label}`,
+          body: `${a.title}${doc ? ` — ${who}` : ""}${a.address ? ` · ${a.address}` : ""}`,
+        });
+      }
+    }
+  }
   return out;
 }
 

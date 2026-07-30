@@ -53,3 +53,22 @@ export function downloadBlob(blob: Blob, filename: string): void {
   a.href = url; a.download = filename; document.body.appendChild(a); a.click();
   a.remove(); setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
+
+/** Native share sheet with the PDF file (includes Print/AirPrint on iOS). Falls back to opening the PDF. */
+export async function shareBlob(blob: Blob, filename: string): Promise<void> {
+  try {
+    const file = new File([blob], filename, { type: "application/pdf" });
+    const nav = navigator as Navigator & { canShare?: (d: any) => boolean };
+    if (nav.canShare && nav.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], title: "Rapport Moody" } as ShareData);
+      return;
+    }
+  } catch { /* cancelled or unsupported */ }
+  openReportBlob(blob);
+}
+
+export function openReportBlob(blob: Blob): void {
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}

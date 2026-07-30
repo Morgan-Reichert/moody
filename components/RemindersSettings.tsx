@@ -9,10 +9,11 @@ import {
 import { requestNotifPermission } from "@/lib/reminders";
 import { setPin, disableSecurity, biometricsAvailable, registerFace } from "@/lib/security";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
+import { MedicalVault } from "@/components/MedicalVault";
 import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
-  UserRound, Lock, ScanFace, CloudSun, Delete,
+  UserRound, Lock, ScanFace, CloudSun, Delete, HeartPulse, ChevronRight,
 } from "lucide-react";
 
 function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[]) => void }) {
@@ -53,6 +54,7 @@ function SlotRow({ slot, onChange, onDelete }: { slot: Slot; onChange: (s: Slot)
 export function RemindersSettings({ onClose }: { onClose: () => void }) {
   useStore();
   const [scanFor, setScanFor] = useState<string | null>(null);
+  const [showVault, setShowVault] = useState(false);
   const settings: ReminderSettings = getSettings();
   const meds = getMeds();
   const patch = (p: Partial<ReminderSettings>) => saveSettings(p);
@@ -89,6 +91,16 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
               <div className="card mt-2">
                 <Toggle icon={<CloudSun className="h-5 w-5" />} title="Météo en direct" sub="Affiche la météo de ta position sur l'accueil" on={!!settings.weather} onToggle={() => patch({ weather: !settings.weather })} />
               </div>
+            </section>
+
+            {/* Medical space */}
+            <section>
+              <SectionTitle icon={<HeartPulse className="h-4 w-4" />} title="Espace santé" hint="Fiche médicale, médecins, documents, rendez-vous" />
+              <button onClick={() => setShowVault(true)} className="card w-full p-4 flex items-center gap-3.5 text-left active:scale-[.99]">
+                <span className="grid place-items-center h-11 w-11 rounded-2xl bg-lilac text-brand-700 shrink-0"><HeartPulse className="h-[22px] w-[22px]" /></span>
+                <div className="flex-1"><p className="font-bold text-ink text-[15px]">Ouvrir mon espace santé</p><p className="text-[12.5px] text-ink-mute">Fiche · médecins · ordonnances · RDV</p></div>
+                <ChevronRight className="h-5 w-5 text-ink-mute" />
+              </button>
             </section>
 
             {/* Mood times */}
@@ -185,6 +197,7 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
             onClose={() => setScanFor(null)} />
         )}
       </div>
+      {showVault && <MedicalVault onClose={() => setShowVault(false)} />}
     </Portal>
   );
 }
