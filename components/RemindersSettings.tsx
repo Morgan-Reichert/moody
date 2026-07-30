@@ -3,13 +3,14 @@
 import { useState } from "react";
 import {
   useStore, getSettings, saveSettings, getMeds, saveMed, deleteMed, toggleModule,
+  getAddictions, saveAddiction, deleteAddiction, Addiction,
   Medication, ReminderSettings, Slot, ALL_DAYS, DAY_LABELS, MODULES,
 } from "@/lib/storage";
 import { requestNotifPermission } from "@/lib/reminders";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { Portal } from "@/components/Portal";
 import {
-  X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal,
+  X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
 } from "lucide-react";
 
 function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[]) => void }) {
@@ -117,6 +118,20 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
               <p className="text-[12px] text-ink-mute mt-2 px-1">D'autres suivis (alimentation détaillée, objectifs…) arrivent — dis-moi tes besoins.</p>
             </section>
 
+            {/* Addictions management */}
+            {settings.modules.includes("addiction") && (
+              <section>
+                <SectionTitle icon={<ShieldCheck className="h-4 w-4" />} title="Mes addictions" hint="Ce que tu veux arrêter — un streak par entrée" />
+                <div className="space-y-2">
+                  {getAddictions().map((a) => <AddictionRow key={a.id} addiction={a} />)}
+                  <button onClick={() => saveAddiction({ name: "" })}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-2xl py-3 bg-white shadow-card text-brand-700 font-bold text-sm active:scale-[.98]">
+                    <Plus className="h-4 w-4" /> Ajouter une addiction
+                  </button>
+                </div>
+              </section>
+            )}
+
             {/* Alarm */}
             <section>
               <SectionTitle icon={<Bell className="h-4 w-4" />} title="Alarme" hint="Comportement quand l'app est ouverte" />
@@ -170,6 +185,21 @@ function Toggle({ icon, title, sub, on, onToggle }: { icon: React.ReactNode; tit
         <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${on ? "left-6" : "left-1"}`} />
       </span>
     </button>
+  );
+}
+
+function AddictionRow({ addiction }: { addiction: Addiction }) {
+  const [name, setName] = useState(addiction.name);
+  return (
+    <div className="card p-3 flex items-center gap-3">
+      <span className="grid place-items-center h-10 w-10 rounded-2xl bg-lilac text-brand-700 shrink-0"><ShieldCheck className="h-5 w-5" /></span>
+      <input
+        value={name} onChange={(e) => setName(e.target.value)} autoFocus={addiction.name === ""}
+        onBlur={() => saveAddiction({ ...addiction, name: name.trim() || "Addiction" })}
+        placeholder="Ex : Cigarette, Alcool…"
+        className="flex-1 bg-transparent font-semibold text-ink outline-none min-w-0" />
+      <button onClick={() => deleteAddiction(addiction.id)} className="grid place-items-center h-9 w-9 rounded-xl bg-white text-red-400 shadow-card active:scale-95"><Trash2 className="h-[18px] w-[18px]" /></button>
+    </div>
   );
 }
 

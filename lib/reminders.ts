@@ -60,7 +60,7 @@ export function todayMedStatus(now = new Date()): MedStatus {
   const dueMs = (min: number) => { const t = new Date(now); t.setHours(0, 0, 0, 0); return t.getTime() + min * 60000; };
 
   const upcoming = doses.filter((d) => !d.taken && d.min >= nowMin).sort((a, b) => a.min - b.min);
-  const late = doses.filter((d) => !d.taken && d.min < nowMin).sort((a, b) => b.min - a.min);
+  const late = doses.filter((d) => !d.taken && d.min < nowMin).sort((a, b) => a.min - b.min);
 
   return {
     doses,

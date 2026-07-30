@@ -9,6 +9,7 @@ import { todayMedStatus, fmtDuration } from "@/lib/reminders";
 import { MoodChart } from "@/components/MoodChart";
 import { RemindersSettings } from "@/components/RemindersSettings";
 import { ReportSheet } from "@/components/ReportSheet";
+import { WaterCard, AddictionsSection } from "@/components/DashboardCards";
 import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
   Check, Clock, AlertTriangle, FileText, CheckCircle2,
@@ -46,11 +47,11 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   const hello = hour < 6 ? "Douce nuit" : hour < 12 ? "Bonjour" : hour < 18 ? "Bel après-midi" : "Bonsoir";
 
   return (
-    <div className="min-h-full px-5 pt-safe pb-6">
-      <div className="max-w-md mx-auto stagger">
-        {/* Header — big logo */}
-        <header className="flex items-center justify-between pt-4 pb-1 gap-3">
-          <img src="./brand/moody-wordmark-tight.png" alt="Moody" className="h-14 w-auto max-w-[60%]" />
+    <div className="min-h-full pb-6">
+      {/* Sticky top bar */}
+      <header className="sticky top-0 z-30 bg-cream/85 backdrop-blur-md pt-safe px-5 pb-2.5 border-b border-black/[0.04]">
+        <div className="max-w-md mx-auto flex items-center justify-between gap-3">
+          <img src="./brand/moody-wordmark-tight.png" alt="Moody" className="h-14 w-auto max-w-[58%]" />
           <div className="flex items-center gap-2">
             <button onClick={() => setShowReport(true)} className="grid place-items-center h-11 w-11 rounded-2xl bg-white shadow-card text-ink-soft active:scale-95 transition" aria-label="Rapport">
               <FileText className="h-5 w-5" strokeWidth={2.2} />
@@ -59,9 +60,12 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
               <Settings2 className="h-5 w-5" strokeWidth={2.2} />
             </button>
           </div>
-        </header>
+        </div>
+      </header>
 
-        <div className="mt-3 mb-4">
+      <div className="px-5">
+        <div className="max-w-md mx-auto stagger">
+        <div className="mt-4 mb-4">
           <p className="text-sm text-ink-mute capitalize">{dateLabel}</p>
           <h1 className="font-display text-[27px] font-semibold text-ink leading-tight">{hello}.</h1>
         </div>
@@ -97,6 +101,12 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
         {/* Medications today */}
         {mounted && meds.length > 0 && <MedStatusCard onManage={() => setShowSettings(true)} />}
 
+        {/* Hydration */}
+        {mounted && settings?.modules.includes("water") && <WaterCard />}
+
+        {/* Addictions */}
+        {mounted && settings?.modules.includes("addiction") && <AddictionsSection onManage={() => setShowSettings(true)} />}
+
         {/* Mood reminder chip */}
         {settings && settings.moodSlots.length > 0 && (
           <button onClick={onLogMood} className="card w-full p-3.5 mt-3 flex items-center gap-3.5 text-left">
@@ -114,6 +124,7 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
           </div>
           <MoodChart data={series} />
         </section>
+        </div>
       </div>
 
       {showSettings && <RemindersSettings onClose={() => setShowSettings(false)} />}

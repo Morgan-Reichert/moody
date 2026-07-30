@@ -10,8 +10,7 @@ import { DragSlider } from "@/components/DragSlider";
 import { RemindersSettings } from "@/components/RemindersSettings";
 import { Portal } from "@/components/Portal";
 import {
-  Angry, Frown, Meh, Smile, Laugh, Zap, Apple, Ban, Moon, Save, Check,
-  Dumbbell, Droplets, Plus, Minus,
+  Angry, Frown, Meh, Smile, Laugh, Zap, Apple, Ban, Moon, Save, Check, Dumbbell,
 } from "lucide-react";
 
 function faceFor(v: number | null) {
@@ -34,14 +33,13 @@ export function MoodScreen() {
   const [appetite, setAppetite] = useState<number | null>(null);
   const [sleep, setSleep] = useState<number | null>(null);
   const [sport, setSport] = useState<number | null>(null);
-  const [water, setWater] = useState<number | null>(null);
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   const Face = faceFor(mood);
 
-  const reset = () => { setMood(null); setEnergy(null); setAppetite(null); setSleep(null); setSport(null); setWater(null); setNote(""); };
+  const reset = () => { setMood(null); setEnergy(null); setAppetite(null); setSleep(null); setSport(null); setNote(""); };
 
   const save = () => {
     if (mood == null) return;
@@ -52,7 +50,6 @@ export function MoodScreen() {
       appetite: appetite ?? undefined,
       sleep: sleep ?? undefined,
       sport: sport ?? undefined,
-      water: water ?? undefined,
       note: note.trim() || undefined,
     });
     vibrate(60); setSaved(true); reset();
@@ -163,21 +160,6 @@ export function MoodScreen() {
                   {m === 0 ? "Aucun" : `${m}m`}
                 </button>
               ))}
-            </div>
-          </section>
-        )}
-
-        {modules.includes("water") && (
-          <section className="card p-4 mt-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-brand-700"><Droplets className="h-4 w-4" />
-                <span className="text-[11px] font-bold tracking-widest uppercase text-ink-soft">Hydratation</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setWater(Math.max(0, (water ?? 0) - 1))} className="grid place-items-center h-9 w-9 rounded-xl bg-brand-50 text-ink-soft active:scale-90"><Minus className="h-4 w-4" /></button>
-                <span className="font-display text-lg font-semibold text-ink w-16 text-center tabular-nums">{water ?? 0} <span className="text-xs text-ink-mute">verres</span></span>
-                <button onClick={() => setWater((water ?? 0) + 1)} className="grid place-items-center h-9 w-9 rounded-xl bg-brand-500 text-white active:scale-90"><Plus className="h-4 w-4" /></button>
-              </div>
             </div>
           </section>
         )}

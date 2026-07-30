@@ -30,7 +30,15 @@ export interface Medication {
   barcode?: string;
 }
 
-export type ModuleKey = "sport" | "water";
+export type ModuleKey = "sport" | "water" | "addiction";
+
+export interface Addiction {
+  id: string;
+  name: string;         // "Cigarette", "Alcool", …
+  createdAt: string;    // ISO date
+  goal?: number;        // optional daily limit (reduce mode); undefined = abstinence
+  unit?: string;        // "cigarette", "verre" …
+}
 
 export interface ReminderSettings {
   moodSlots: Slot[];
@@ -59,6 +67,9 @@ const K_MEDS = "moody_meds";
 const K_SET = "moody_settings";
 const K_INTAKE = "moody_intake";   // "date|medId|time" -> takenAt(ms)
 const K_LOG = "moody_reminder_log";
+const K_WATER = "moody_water";      // date -> cl
+const K_ADDICT = "moody_addictions";
+const K_ADDICT_LOG = "moody_addiction_log"; // [{id, at(iso)}]
 
 // ── reactive layer (in-tab + cross-tab) ──────────────────────────────────────
 type Listener = () => void;
@@ -246,6 +257,86 @@ export function moodLabel(v: number): string { return MOOD_LABELS[Math.round(v)]
 export const ENERGY_LABELS = ["Vidé", "Bas", "Moyen", "Bon", "Plein d'énergie"];
 export const APPETITE_LABELS = ["Pas du tout", "Peu", "Moyen", "Fort"];
 export const MODULES: { key: ModuleKey; name: string; desc: string }[] = [
-  { key: "sport", name: "Sport & activité", desc: "Minutes d'activité + objectif motivant" },
-  { key: "water", name: "Hydratation", desc: "Verres d'eau dans la journée" },
+  { key: "water", name: "Hydratation", desc: "Carte au dashboard : litres bus + ajout rapide" },
+  { key: "sport", name: "Sport & activité", desc: "Minutes d'activité à la saisie d'humeur" },
+  { key: "addiction", name: "Contrôle des addictions", desc: "Streaks, encouragements et journal de consommation" },
 ];
+
+// ── Hydration (dashboard card) ───────────────────────────────────────────────
+export const WATER_GOAL_CL = 150; // 1,5 L
+export function getWaterToday(): number { return read<Record<string, number>>(K_WATER, {})[todayISO()] ?? 0; }
+export function addWater(cl: number): void {
+  const map = read<Record<string, number>>(K_WATER, {});
+  const t = todayISO();
+  map[t] = Math.max(0, (map[t] ?? 0) + cl);
+  // prune > 120 days
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 120);
+  const cut = cutoff.toISOString().slice(0, 10);
+  for (const k of Object.keys(map)) if (k < cut) delete map[k];
+  write(K_WATER, map);
+}
+export function resetWaterToday(): void {
+  const map = read<Record<string, number>>(K_WATER, {}); delete map[todayISO()]; write(K_WATER, map);
+}
+
+// ── Addictions ───────────────────────────────────────────────────────────────
+interface AddictLog { id: string; at: string; }
+export function getAddictions(): Addiction[] { return read<Addiction[]>(K_ADDICT, []); }
+export function saveAddiction(a: Omit<Addiction, "id" | "createdAt"> & { id?: string; createdAt?: string }): Addiction {
+  const all = getAddictions();
+  const complete: Addiction = { ...a, id: a.id ?? uid(), createdAt: a.createdAt ?? new Date().toISOString() };
+  const i = all.findIndex((x) => x.id === complete.id);
+  if (i >= 0) all[i] = complete; else all.push(complete);
+  write(K_ADDICT, all);
+  return complete;
+}
+export function deleteAddiction(id: string): void {
+  write(K_ADDICT, getAddictions().filter((a) => a.id !== id));
+  write(K_ADDICT_LOG, getAddictLog().filter((l) => l.id !== id));
+}
+function getAddictLog(): AddictLog[] { return read<AddictLog[]>(K_ADDICT_LOG, []); }
+export function logConsumption(id: string): void {
+  const log = getAddictLog(); log.push({ id, at: new Date().toISOString() }); write(K_ADDICT_LOG, log);
+}
+export function undoLastConsumption(id: string): void {
+  const log = getAddictLog();
+  for (let i = log.length - 1; i >= 0; i--) if (log[i].id === id) { log.splice(i, 1); break; }
+  write(K_ADDICT_LOG, log);
+}
+function daysBetween(a: Date, b: Date): number {
+  const A = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+  const B = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+  return Math.round((B.getTime() - A.getTime()) / 864e5);
+}
+export interface AddictionStat {
+  streakDays: number;      // full clean days since last consumption (or since start)
+  lastAt: string | null;
+  todayCount: number;
+  totalCount: number;
+  bestStreak: number;
+  cleanSince: string;      // ISO date the current streak started
+}
+export function addictionStat(a: Addiction, now = new Date()): AddictionStat {
+  const logs = getAddictLog().filter((l) => l.id === a.id).sort((x, y) => x.at.localeCompare(y.at));
+  const today = now.toISOString().slice(0, 10);
+  const todayCount = logs.filter((l) => l.at.slice(0, 10) === today).length;
+  const lastAt = logs.length ? logs[logs.length - 1].at : null;
+  const startD = new Date(a.createdAt);
+  const cleanSinceDate = lastAt ? new Date(lastAt) : startD;
+  const streakDays = Math.max(0, daysBetween(cleanSinceDate, now));
+  // best streak across history
+  const boundaries = [startD, ...logs.map((l) => new Date(l.at)), now];
+  let best = 0;
+  for (let i = 1; i < boundaries.length; i++) best = Math.max(best, daysBetween(boundaries[i - 1], boundaries[i]));
+  return { streakDays, lastAt, todayCount, totalCount: logs.length, bestStreak: best, cleanSince: cleanSinceDate.toISOString().slice(0, 10) };
+}
+export const ADDICT_MILESTONES = [1, 3, 7, 14, 30, 60, 90, 180, 365];
+export function nextMilestone(days: number): number { return ADDICT_MILESTONES.find((m) => m > days) ?? (Math.floor(days / 365) + 1) * 365; }
+export function encouragement(days: number, name: string): string {
+  if (days <= 0) return `Nouveau départ. Chaque heure sans ${name.toLowerCase()} compte — tu peux le faire.`;
+  if (days === 1) return `1 jour ! Le plus dur est derrière toi. Continue.`;
+  if (days < 7) return `${days} jours sans ${name.toLowerCase()}. Ta volonté paie déjà, tiens bon.`;
+  if (days < 30) return `${days} jours ! Ton corps te remercie. Fier·e de toi.`;
+  if (days < 90) return `${days} jours — c'est une vraie habitude qui s'installe. Bravo !`;
+  return `${days} jours. Tu es un exemple de constance. Immense respect.`;
+}
