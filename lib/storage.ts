@@ -14,6 +14,11 @@ export interface MoodEntry {
   water?: number;                   // glasses (module)
   note?: string;
   medsTaken?: Record<string, boolean>;
+  // health / symptoms
+  symptoms?: string[];
+  symptomIntensity?: number;        // 1..3 (léger / modéré / fort)
+  symptomNote?: string;
+  symptomAdvice?: string;
 }
 
 /** A scheduled time, optionally limited to certain weekdays (0=Sun … 6=Sat). */

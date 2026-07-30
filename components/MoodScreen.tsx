@@ -6,11 +6,13 @@ import {
   ENERGY_LABELS, APPETITE_LABELS,
 } from "@/lib/storage";
 import { vibrate } from "@/lib/reminders";
+import { COMMON_SYMPTOMS, getAdvice } from "@/lib/advice";
 import { DragSlider } from "@/components/DragSlider";
 import { RemindersSettings } from "@/components/RemindersSettings";
 import { Portal } from "@/components/Portal";
 import {
   Angry, Frown, Meh, Smile, Laugh, Zap, Apple, Ban, Moon, Save, Check, Dumbbell,
+  Stethoscope, Sparkles, Loader2, Lightbulb,
 } from "lucide-react";
 
 function faceFor(v: number | null) {
@@ -36,10 +38,22 @@ export function MoodScreen() {
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  // health / symptoms
+  const [sick, setSick] = useState<boolean | null>(null);
+  const [symptoms, setSymptoms] = useState<string[]>([]);
+  const [sIntensity, setSIntensity] = useState<number | null>(null);
+  const [sNote, setSNote] = useState("");
+  const [advice, setAdvice] = useState("");
+  const [adviceLoading, setAdviceLoading] = useState(false);
+  const toggleSymptom = (s: string) => setSymptoms((a) => (a.includes(s) ? a.filter((x) => x !== s) : [...a, s]));
+  const askAdvice = async () => { setAdviceLoading(true); const a = await getAdvice(symptoms, sIntensity ?? undefined, sNote); setAdvice(a); setAdviceLoading(false); };
 
   const Face = faceFor(mood);
 
-  const reset = () => { setMood(null); setEnergy(null); setAppetite(null); setSleep(null); setSport(null); setNote(""); };
+  const reset = () => {
+    setMood(null); setEnergy(null); setAppetite(null); setSleep(null); setSport(null); setNote("");
+    setSick(null); setSymptoms([]); setSIntensity(null); setSNote(""); setAdvice("");
+  };
 
   const save = () => {
     if (mood == null) return;
@@ -51,6 +65,10 @@ export function MoodScreen() {
       sleep: sleep ?? undefined,
       sport: sport ?? undefined,
       note: note.trim() || undefined,
+      symptoms: sick && symptoms.length ? symptoms : undefined,
+      symptomIntensity: sick ? sIntensity ?? undefined : undefined,
+      symptomNote: sick && sNote.trim() ? sNote.trim() : undefined,
+      symptomAdvice: sick && advice ? advice : undefined,
     });
     vibrate(60); setSaved(true); reset();
     setTimeout(() => setSaved(false), 2200);
@@ -163,6 +181,45 @@ export function MoodScreen() {
             </div>
           </section>
         )}
+
+        {/* Health / symptoms */}
+        <section className="card p-4 mt-3">
+          <div className="flex items-center gap-2 mb-3 text-brand-700"><Stethoscope className="h-4 w-4" />
+            <span className="text-[11px] font-bold tracking-widest uppercase text-ink-soft">Santé du jour</span></div>
+          <p className="text-[14px] font-semibold text-ink mb-2.5">Te sens-tu malade ou as-tu un symptôme ?</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => { setSick(false); setSymptoms([]); setAdvice(""); }} className={`rounded-xl py-2.5 font-bold text-sm transition active:scale-95 ${sick === false ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-soft"}`}>Je vais bien</button>
+            <button onClick={() => setSick(true)} className={`rounded-xl py-2.5 font-bold text-sm transition active:scale-95 ${sick === true ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-soft"}`}>J'ai un symptôme</button>
+          </div>
+
+          {sick && (
+            <div className="mt-4 space-y-3">
+              <div className="flex flex-wrap gap-1.5">
+                {COMMON_SYMPTOMS.map((sym) => {
+                  const on = symptoms.includes(sym);
+                  return <button key={sym} onClick={() => toggleSymptom(sym)} className={`rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition active:scale-95 ${on ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-soft"}`}>{sym}</button>;
+                })}
+              </div>
+              <div>
+                <p className="text-[11px] font-bold tracking-widest uppercase text-ink-mute mb-1.5">Intensité</p>
+                <div className="flex gap-1.5">
+                  {["Léger", "Modéré", "Fort"].map((l, i) => <button key={l} onClick={() => setSIntensity(i + 1)} className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition active:scale-95 ${sIntensity === i + 1 ? "bg-ink text-white" : "bg-brand-50 text-ink-soft"}`}>{l}</button>)}
+                </div>
+              </div>
+              <textarea value={sNote} onChange={(e) => setSNote(e.target.value)} placeholder="Précise si tu veux (depuis quand, localisation…)" rows={2} className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none placeholder:text-ink-mute" />
+              <button onClick={askAdvice} disabled={adviceLoading || symptoms.length === 0} className="w-full rounded-2xl py-3 bg-white shadow-card text-brand-700 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[.98]">
+                {adviceLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Analyse…</> : <><Sparkles className="h-4 w-4" /> Obtenir un conseil</>}
+              </button>
+              {advice && (
+                <div className="rounded-2xl bg-mint p-4">
+                  <div className="flex items-center gap-2 text-brand-700 mb-1"><Lightbulb className="h-4 w-4" /><span className="text-[11px] font-bold tracking-widest uppercase">Conseil</span></div>
+                  <p className="text-[13.5px] text-ink-soft leading-snug">{advice}</p>
+                  <p className="text-[11px] text-ink-mute mt-2">Conseils de bien-être — ne remplace pas un avis médical. Enregistré dans tes rapports.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
 
         {/* Note */}
         <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Une note sur ta journée (optionnel)…" rows={3}

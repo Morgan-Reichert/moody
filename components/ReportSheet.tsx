@@ -59,6 +59,9 @@ export function ReportSheet({ onClose }: { onClose: () => void }) {
       adherence: scheduled ? Math.round((taken / scheduled) * 100) : null,
       perMed: Object.values(perMed),
       notes: entries.filter((e) => e.note).slice(-8).map((e) => ({ date: e.date, note: e.note! })),
+      symptomLog: entries.filter((e) => e.symptoms && e.symptoms.length).map((e) => ({
+        date: e.date, symptoms: e.symptoms!, intensity: e.symptomIntensity, note: e.symptomNote,
+      })),
     };
   };
 
@@ -75,6 +78,7 @@ export function ReportSheet({ onClose }: { onClose: () => void }) {
         s.appetiteAvg != null ? `Appétit : ${APPETITE_LABELS[Math.round(s.appetiteAvg) - 1] ?? s.appetiteAvg} (${s.appetiteAvg}/4).` : "",
         s.sleepAvg != null ? `Sommeil : ${s.sleepAvg} h/nuit.` : "",
         s.adherence != null ? `Observance : ${s.adherence}% (${s.perMed.map((m) => `${m.name} ${Math.round((m.taken / m.sched) * 100)}%`).join(", ")}).` : "Aucun traitement suivi.",
+        s.symptomLog.length ? `Symptômes signalés : ${s.symptomLog.map((x: any) => `${x.date} (${x.symptoms.join(", ")}${x.intensity ? `, intensité ${["", "légère", "modérée", "forte"][x.intensity]}` : ""})`).join(" | ")}` : "",
         s.notes.length ? `Notes : ${s.notes.map((n) => `${n.date} — ${n.note}`).join(" | ")}` : "",
       ].filter(Boolean).join("\n");
 
@@ -301,6 +305,14 @@ async function makePdf(s: any, ai: string, kind: Kind, period: number, name?: st
   setF([248, 250, 248]); doc.roundedRect(M, boxTop, W, boxH, 2, 2, "F");
   setF(GREEN); doc.roundedRect(M, boxTop, 1.6, boxH, 0.8, 0.8, "F");
   y += 2; para(ai || "—", 10, [55, 65, 58]); y = boxTop + boxH + 8;
+
+  // ── symptoms ──
+  if (s.symptomLog.length) {
+    if (y > PH - 40) { doc.addPage(); y = 20; }
+    heading("Symptômes signalés");
+    s.symptomLog.forEach((x: any) => para(`${x.date} — ${x.symptoms.join(", ")}${x.intensity ? ` (${["", "léger", "modéré", "fort"][x.intensity]})` : ""}${x.note ? ` · ${x.note}` : ""}`, 9.5, [80, 90, 84]));
+    y += 3;
+  }
 
   // ── notes ──
   if (s.notes.length) {
