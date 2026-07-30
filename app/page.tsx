@@ -8,6 +8,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ReminderEngine } from "@/components/ReminderEngine";
 import { LockScreen } from "@/components/LockScreen";
 import { Onboarding } from "@/components/Onboarding";
+import { MedicalVault } from "@/components/MedicalVault";
 import { isLocked } from "@/lib/security";
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [locked, setLocked] = useState(false);
   const [onboarded, setOnboarded] = useState(true);
+  const [showVault, setShowVault] = useState(false);
 
   const start = useRef<{ x: number; y: number } | null>(null);
   const axis = useRef<"h" | "v" | null>(null);
@@ -97,8 +99,9 @@ export default function Home() {
         </div>
       </div>
 
-      <BottomNav tab={tab} onTab={goTo} />
+      <BottomNav tab={tab} onTab={goTo} onHealth={() => setShowVault(true)} />
       <ReminderEngine onOpenMood={() => goTo(1)} />
+      {showVault && <MedicalVault onClose={() => setShowVault(false)} />}
     </div>
   );
 }

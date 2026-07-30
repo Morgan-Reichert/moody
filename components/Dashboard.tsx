@@ -13,9 +13,11 @@ import { MedInfoModal } from "@/components/MedInfoModal";
 import { WaterCard, AddictionsSection, NextApptCard } from "@/components/DashboardCards";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { SortableList, SortItem } from "@/components/SortableList";
+import { BreathingModal } from "@/components/BreathingModal";
+import { HelpModal } from "@/components/HelpModal";
 import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
-  Check, Clock, AlertTriangle, FileText, CheckCircle2, Heart, Info,
+  Check, Clock, AlertTriangle, FileText, CheckCircle2, Heart, Info, Wind, HeartHandshake,
 } from "lucide-react";
 
 function Ring({ value }: { value: number | null }) {
@@ -34,6 +36,8 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   useStore();
   const [showSettings, setShowSettings] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  const [showBreathe, setShowBreathe] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
 
   const today = mounted ? getTodayEntries() : [];
   const avg7 = mounted ? average(7) : null;
@@ -110,6 +114,26 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
       </section>
     ),
   });
+  cards.push({
+    key: "wellbeing",
+    node: (
+      <section className="rounded-4xl p-5 bg-lilac shadow-soft">
+        <h2 className="font-display text-[16px] font-semibold text-ink mb-3">Prends soin de toi</h2>
+        <div className="grid grid-cols-2 gap-2.5">
+          <button onClick={() => setShowBreathe(true)} className="rounded-2xl bg-white shadow-card p-4 flex flex-col items-start gap-1.5 active:scale-[.98]">
+            <Wind className="h-6 w-6 text-brand-600" />
+            <span className="font-bold text-ink text-[14px]">Respirer</span>
+            <span className="text-[11.5px] text-ink-mute">1 min de calme</span>
+          </button>
+          <button onClick={() => setShowHelp(true)} className="rounded-2xl bg-white shadow-card p-4 flex flex-col items-start gap-1.5 active:scale-[.98]">
+            <HeartHandshake className="h-6 w-6 text-brand-600" />
+            <span className="font-bold text-ink text-[14px]">Besoin d'aide</span>
+            <span className="text-[11.5px] text-ink-mute">Lignes d'écoute</span>
+          </button>
+        </div>
+      </section>
+    ),
+  });
 
   return (
     <div className="min-h-full pb-6">
@@ -154,6 +178,8 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
 
       {showSettings && <RemindersSettings onClose={() => setShowSettings(false)} />}
       {showReport && <ReportSheet onClose={() => setShowReport(false)} />}
+      {showBreathe && <BreathingModal onClose={() => setShowBreathe(false)} />}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </div>
   );
 }

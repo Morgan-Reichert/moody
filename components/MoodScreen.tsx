@@ -10,10 +10,11 @@ import { COMMON_SYMPTOMS, getAdvice } from "@/lib/advice";
 import { aiUsesLeft, AI_WEEKLY_MAX } from "@/lib/ai";
 import { DragSlider } from "@/components/DragSlider";
 import { RemindersSettings } from "@/components/RemindersSettings";
+import { HelpModal } from "@/components/HelpModal";
 import { Portal } from "@/components/Portal";
 import {
   Angry, Frown, Meh, Smile, Laugh, Zap, Apple, Ban, Moon, Save, Check, Dumbbell,
-  Stethoscope, Sparkles, Loader2, Lightbulb,
+  Stethoscope, Sparkles, Loader2, Lightbulb, HeartHandshake, ChevronRight,
 } from "lucide-react";
 
 function faceFor(v: number | null) {
@@ -39,6 +40,7 @@ export function MoodScreen() {
   const [note, setNote] = useState("");
   const [saved, setSaved] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   // health / symptoms
   const [sick, setSick] = useState<boolean | null>(null);
   const [symptoms, setSymptoms] = useState<string[]>([]);
@@ -109,6 +111,14 @@ export function MoodScreen() {
             })}
           </div>
         </section>
+
+        {mood != null && mood <= 3 && (
+          <button onClick={() => setShowHelp(true)} className="w-full mt-3 rounded-3xl p-4 bg-lilac flex items-center gap-3 text-left active:scale-[.99]">
+            <span className="grid place-items-center h-11 w-11 rounded-2xl bg-white text-brand-600 shrink-0"><HeartHandshake className="h-[22px] w-[22px]" /></span>
+            <div className="flex-1"><p className="font-bold text-ink text-[14.5px]">Moment difficile ?</p><p className="text-[12.5px] text-ink-soft">Des lignes d'écoute sont là pour toi, gratuitement.</p></div>
+            <ChevronRight className="h-5 w-5 text-ink-mute" />
+          </button>
+        )}
 
         {/* Énergie — drag slider */}
         <section className="card p-4 pb-3 mt-3">
@@ -245,6 +255,7 @@ export function MoodScreen() {
         </Portal>
       )}
       {showSettings && <RemindersSettings onClose={() => setShowSettings(false)} />}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </div>
   );
 }

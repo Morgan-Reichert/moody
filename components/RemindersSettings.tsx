@@ -9,6 +9,8 @@ import {
 } from "@/lib/storage";
 import { requestNotifPermission } from "@/lib/reminders";
 import { setPin, disableSecurity, biometricsAvailable, registerFace } from "@/lib/security";
+import { exportData, importData } from "@/lib/backup";
+import { HelpModal } from "@/components/HelpModal";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { MedicalVault } from "@/components/MedicalVault";
 import { MedAutocomplete } from "@/components/MedAutocomplete";
@@ -17,6 +19,7 @@ import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
   UserRound, Lock, ScanFace, CloudSun, Delete, HeartPulse, ChevronRight, ScanText, Loader2, Info,
+  Download, Upload, HeartHandshake, Database,
 } from "lucide-react";
 
 function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[]) => void }) {
@@ -58,6 +61,16 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
   useStore();
   const [scanFor, setScanFor] = useState<string | null>(null);
   const [showVault, setShowVault] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [importMsg, setImportMsg] = useState("");
+  const importRef = useRef<HTMLInputElement>(null);
+  const onImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    if (!confirm("Restaurer cette sauvegarde ? Tes données actuelles seront remplacées.")) { e.target.value = ""; return; }
+    const r = await importData(f); e.target.value = "";
+    if (r.ok) { setImportMsg(`${r.count} éléments restaurés. Rechargement…`); setTimeout(() => window.location.reload(), 900); }
+    else setImportMsg(r.error || "Échec.");
+  };
   const settings: ReminderSettings = getSettings();
   const meds = getMeds();
   const patch = (p: Partial<ReminderSettings>) => saveSettings(p);
@@ -191,6 +204,32 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
               <SectionTitle icon={<Lock className="h-4 w-4" />} title="Sécurité" hint="Protège l'accès à l'app" />
               <SecurityBlock settings={settings} patch={patch} />
             </section>
+
+            {/* Data & backup */}
+            <section>
+              <SectionTitle icon={<Database className="h-4 w-4" />} title="Données & sauvegarde" hint="Exporte / restaure tes données (100% local)" />
+              <input ref={importRef} type="file" accept="application/json,.json" className="hidden" onChange={onImport} />
+              <div className="grid grid-cols-2 gap-2">
+                <button onClick={exportData} className="card p-4 flex flex-col items-start gap-1.5 active:scale-[.98]">
+                  <Download className="h-6 w-6 text-brand-600" /><span className="font-bold text-ink text-[14px]">Sauvegarder</span><span className="text-[11.5px] text-ink-mute">Télécharger un fichier</span>
+                </button>
+                <button onClick={() => importRef.current?.click()} className="card p-4 flex flex-col items-start gap-1.5 active:scale-[.98]">
+                  <Upload className="h-6 w-6 text-brand-600" /><span className="font-bold text-ink text-[14px]">Restaurer</span><span className="text-[11.5px] text-ink-mute">Depuis un fichier</span>
+                </button>
+              </div>
+              {importMsg && <p className="text-sm text-brand-700 font-semibold mt-2 px-1">{importMsg}</p>}
+              <p className="text-[12px] text-ink-mute mt-2 px-1">Les documents scannés et rapports PDF ne sont pas inclus.</p>
+            </section>
+
+            {/* Help */}
+            <section>
+              <SectionTitle icon={<HeartHandshake className="h-4 w-4" />} title="Aide & écoute" hint="Tu n'es pas seul·e" />
+              <button onClick={() => setShowHelp(true)} className="card w-full p-4 flex items-center gap-3.5 text-left active:scale-[.99]">
+                <span className="grid place-items-center h-11 w-11 rounded-2xl bg-brand-500 text-white shrink-0"><HeartHandshake className="h-[22px] w-[22px]" /></span>
+                <div className="flex-1"><p className="font-bold text-ink text-[15px]">Ressources d'aide</p><p className="text-[12.5px] text-ink-mute">Lignes d'écoute (3114, SOS Amitié…)</p></div>
+                <ChevronRight className="h-5 w-5 text-ink-mute" />
+              </button>
+            </section>
           </div>
         </div>
 
@@ -201,6 +240,7 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
         )}
       </div>
       {showVault && <MedicalVault onClose={() => setShowVault(false)} />}
+      {showHelp && <HelpModal onClose={() => setShowHelp(false)} />}
     </Portal>
   );
 }

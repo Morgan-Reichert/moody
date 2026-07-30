@@ -1,5 +1,5 @@
-// Moody Service Worker — v1
-const CACHE = "moody-v1";
+// Moody Service Worker — v2
+const CACHE = "moody-v2";
 const SHELL = ["./", "./manifest.json", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 
 self.addEventListener("install", (e) => {

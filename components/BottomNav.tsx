@@ -1,8 +1,8 @@
 "use client";
 
-import { Home, SmilePlus, Plus } from "lucide-react";
+import { Home, SmilePlus, Plus, HeartPulse } from "lucide-react";
 
-export function BottomNav({ tab, onTab }: { tab: number; onTab: (i: number) => void }) {
+export function BottomNav({ tab, onTab, onHealth }: { tab: number; onTab: (i: number) => void; onHealth: () => void }) {
   return (
     <div className="pb-safe px-5 pt-1.5 shrink-0">
       <nav className="mx-auto w-fit flex items-center gap-1.5 rounded-full bg-ink/95 backdrop-blur px-1.5 py-1.5 shadow-pill">
@@ -19,6 +19,11 @@ export function BottomNav({ tab, onTab }: { tab: number; onTab: (i: number) => v
         <button onClick={() => onTab(1)} aria-label="Humeur"
           className={`grid place-items-center h-11 w-11 rounded-full transition-colors ${tab === 1 ? "bg-white/15 text-white" : "text-white/55"}`}>
           <SmilePlus className="h-[22px] w-[22px]" strokeWidth={2.3} />
+        </button>
+
+        <button onClick={onHealth} aria-label="Espace santé"
+          className="grid place-items-center h-11 w-11 rounded-full text-white/55 transition-colors">
+          <HeartPulse className="h-[22px] w-[22px]" strokeWidth={2.3} />
         </button>
       </nav>
     </div>
