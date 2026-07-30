@@ -1,42 +1,66 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-  darkMode: "class",
   content: [
-    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
-        primary: {
-          50: "#eff6ff",
-          100: "#dbeafe",
-          200: "#bfdbfe",
-          300: "#93c5fd",
-          400: "#60a5fa",
-          500: "#3b82f6",
-          600: "#2563eb",
-          700: "#1d4ed8",
-          800: "#1e40af",
-          900: "#1e3a8a",
+        // Moody brand green (from the logo)
+        brand: {
+          50: "#eafaef",
+          100: "#d0f4dc",
+          200: "#a3e8bd",
+          300: "#6fd897",
+          400: "#3ec574",
+          500: "#1aad55",
+          600: "#128a43",
+          700: "#106e37",
+          800: "#12572e",
+          900: "#0f4727",
         },
-        calm: {
-          50: "#f0fdf4",
-          100: "#dcfce7",
-          200: "#bbf7d0",
-          300: "#86efac",
-          400: "#4ade80",
-          500: "#22c55e",
-          600: "#16a34a",
-          700: "#15803d",
-          800: "#166534",
-          900: "#14532d",
+        ink: {
+          DEFAULT: "#16211b",
+          soft: "#53625a",
+          mute: "#8a978f",
         },
+        cream: "#eef2ec",       // app background base
+        surface: "#ffffff",
+        // soft pastel category tints
+        mint: "#d9f0e0",
+        peach: "#fbe2d3",
+        lilac: "#e7e3f5",
+        butter: "#f6ecc9",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "ui-rounded", "system-ui", "sans-serif"],
+        sans: ["var(--font-body)", "ui-rounded", "system-ui", "sans-serif"],
+      },
+      borderRadius: {
+        "2xl": "1.25rem",
+        "3xl": "1.75rem",
+        "4xl": "2.25rem",
+      },
+      boxShadow: {
+        soft: "0 10px 34px -14px rgba(20,50,35,.18)",
+        card: "0 6px 22px -10px rgba(20,50,35,.16)",
+        pill: "0 12px 30px -8px rgba(16,40,28,.45)",
+        glow: "0 14px 30px -10px rgba(26,173,85,.55)",
+      },
+      keyframes: {
+        rise: { "0%": { opacity: "0", transform: "translateY(14px)" }, "100%": { opacity: "1", transform: "none" } },
+        pop: { "0%": { transform: "scale(.9)", opacity: "0" }, "100%": { transform: "scale(1)", opacity: "1" } },
+        pulseRing: { "0%,100%": { transform: "scale(1)", opacity: "1" }, "50%": { transform: "scale(1.06)", opacity: ".85" } },
+        sheetUp: { from: { transform: "translateY(100%)" }, to: { transform: "translateY(0)" } },
+      },
+      animation: {
+        rise: "rise .55s cubic-bezier(.22,.61,.36,1) both",
+        pop: "pop .3s cubic-bezier(.34,1.56,.64,1) both",
+        pulseRing: "pulseRing 1.1s ease-in-out infinite",
+        sheetUp: "sheetUp .38s cubic-bezier(.32,.72,0,1)",
       },
     },
   },

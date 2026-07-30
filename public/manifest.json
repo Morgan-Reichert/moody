@@ -1,42 +1,27 @@
 {
-  "name": "MindScope — Santé Mentale",
-  "short_name": "MindScope",
-  "description": "Évaluations de santé mentale, suivi de l'humeur et journal de bien-être. 100% privé, anonyme.",
+  "name": "Moody — Suivi de l'humeur",
+  "short_name": "Moody",
+  "description": "Ton humeur et tes traitements au quotidien, avec des rappels. Simple, doux, 100% privé.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#0f172a",
-  "theme_color": "#2563eb",
+  "background_color": "#eaf3ec",
+  "theme_color": "#eaf3ec",
   "lang": "fr",
-  "categories": ["health", "medical", "lifestyle"],
+  "categories": ["health", "lifestyle", "medical"],
   "icons": [
-    {
-      "src": "./icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any"
-    },
-    {
-      "src": "./icon-maskable.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
-    }
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "./apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
   ],
-  "screenshots": [],
   "shortcuts": [
     {
-      "name": "Suivi de l'humeur",
+      "name": "Noter mon humeur",
       "short_name": "Humeur",
-      "description": "Ajouter une entrée d'humeur aujourd'hui",
-      "url": "./history/"
-    },
-    {
-      "name": "Faire un test",
-      "short_name": "Tests",
-      "description": "Passer une évaluation",
-      "url": "./tests/"
+      "description": "Ajouter une entrée d'humeur",
+      "url": "./?tab=humeur"
     }
   ]
 }

@@ -2,107 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-@layer base {
-  :root {
-    --background: 248 250 252;
-    --foreground: 15 23 42;
-  }
-  .dark {
-    --background: 15 23 42;
-    --foreground: 248 250 252;
-  }
+:root {
+  --bg: #eef2ec;
+  --bg-2: #e6efe6;
+  --ink: #16211b;
 }
 
-@layer utilities {
-  .animate-fade-in {
-    animation: fadeIn 0.25s ease-out;
-  }
-  .animate-slide-up {
-    animation: slideUp 0.4s ease-out;
-  }
-  .animate-sheet-up {
-    animation: sheetUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-  }
+/* ---- app frame : behaves like a native app, not a scrolling web page ---- */
+html, body {
+  height: 100%;
+  margin: 0;
+  overscroll-behavior: none;            /* no rubber-band, top or bottom */
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body), ui-rounded, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;           /* kill double-tap zoom, keep taps snappy */
+  -webkit-tap-highlight-color: transparent;
+  color-scheme: light;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+* { -webkit-tap-highlight-color: transparent; }
+
+/* keep inputs from triggering iOS zoom (needs >=16px) */
+@media screen and (max-width: 640px) {
+  input, textarea, select { font-size: 16px; }
 }
 
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
+/* hide scrollbars everywhere — this is an app surface */
+::-webkit-scrollbar { width: 0; height: 0; display: none; }
+* { scrollbar-width: none; -ms-overflow-style: none; }
 
-@keyframes sheetUp {
-  from { transform: translateY(100%); }
-  to   { transform: translateY(0); }
-}
+/* safe-area helpers for standalone PWA (notch / home indicator) */
+.pt-safe { padding-top: max(env(safe-area-inset-top), 12px); }
+.pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 12px); }
 
-html {
+/* ---- horizontal swipe deck (Dashboard <-> Humeur) ---- */
+.deck {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
 }
-
-body {
-  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  background-color: rgb(var(--background));
-  color: rgb(var(--foreground));
-  /* iOS momentum scrolling */
-  -webkit-overflow-scrolling: touch;
-  /* Prevent text size adjust on rotation */
-  -webkit-text-size-adjust: 100%;
+.screen {
+  flex: 0 0 100%;
+  height: 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
 }
 
-/* iOS tap highlight removal */
-* {
-  -webkit-tap-highlight-color: transparent;
-}
-
-/* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
-@media screen and (max-width: 640px) {
-  input, textarea, select, button {
-    font-size: 16px !important;
-    line-height: 1.5 !important;
+@layer components {
+  .card {
+    @apply bg-surface rounded-3xl shadow-card;
   }
-  /* Disable text size adjustment on rotate */
-  textarea {
-    -webkit-text-size-adjust: 100% !important;
-    -ms-text-size-adjust: 100% !important;
-    text-size-adjust: 100% !important;
-    /* Prevent accidental zoom on triple-click */
-    -webkit-user-select: text !important;
+  .chip {
+    @apply bg-white/70 backdrop-blur rounded-2xl border border-white/60;
   }
-  input::selection,
-  textarea::selection {
-    background-color: rgba(59, 130, 246, 0.3);
-  }
+  .stagger > * { animation: rise .55s cubic-bezier(.22,.61,.36,1) both; }
+  .stagger > *:nth-child(1){ animation-delay:.02s } .stagger > *:nth-child(2){ animation-delay:.07s }
+  .stagger > *:nth-child(3){ animation-delay:.12s } .stagger > *:nth-child(4){ animation-delay:.17s }
+  .stagger > *:nth-child(5){ animation-delay:.22s } .stagger > *:nth-child(6){ animation-delay:.27s }
+  .stagger > *:nth-child(7){ animation-delay:.32s } .stagger > *:nth-child(8){ animation-delay:.37s }
 }
 
-/* Disable iOS pinch-zoom but keep double-tap */
-body {
-  touch-action: manipulation;
-  -webkit-text-size-adjust: 100%;
-}
+@keyframes rise { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
+@keyframes ring-spin { to { transform: rotate(360deg) } }
 
-/* Custom scrollbar (desktop) */
-::-webkit-scrollbar {
-  width: 5px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-.dark ::-webkit-scrollbar-thumb {
-  background: #475569;
-}
-
-/* Chat bottom sheet animation */
-[data-chat-sheet] {
-  animation: sheetUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+@media (prefers-reduced-motion: reduce) {
+  *, .stagger > * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
