@@ -61,6 +61,7 @@ export interface ReminderSettings {
   name?: string;
   mantra?: string;
   weather?: boolean;                // show live weather on dashboard
+  country?: string;                 // 2-letter code for help resources
   // security
   pinEnabled?: boolean;
   pinHash?: string;                 // sha-256(salt + pin)
