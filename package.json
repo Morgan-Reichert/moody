@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.111.0",
     "jspdf": "^2.5.2",
     "lucide-react": "^0.395.0",
     "lz-string": "^1.5.0",

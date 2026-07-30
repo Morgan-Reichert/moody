@@ -5,7 +5,7 @@ import {
   getEntries, dosesForDate, isMedTaken, getSettings, dailySeries,
   ENERGY_LABELS, APPETITE_LABELS,
 } from "@/lib/storage";
-import { aiNarrative } from "@/lib/ai";
+import { aiNarrative, aiUsesLeft, AI_WEEKLY_MAX, AIQuotaError } from "@/lib/ai";
 import { saveReport, listReports, getReportBlob, deleteReport, downloadBlob, shareBlob, ReportMeta } from "@/lib/reports-db";
 import { Portal } from "@/components/Portal";
 import { X, Sparkles, Loader2, Download, UserRound, HeartPulse, History, Trash2, FileText, Share2 } from "lucide-react";
@@ -87,7 +87,9 @@ export function ReportSheet({ onClose }: { onClose: () => void }) {
         : "Tu es un accompagnant bienveillant. Rédige en français un bilan personnel chaleureux au tutoiement, sans jargon ni diagnostic. 150-220 mots.";
       let ai = "";
       try { ai = await aiNarrative(`Données de suivi${name ? ` de ${name}` : ""} :\n${facts}\n\nRédige l'analyse.`, system); }
-      catch { ai = "(Analyse IA indisponible — le rapport chiffré ci-dessous reste complet.)"; }
+      catch (e) { ai = e instanceof AIQuotaError
+        ? "(Quota IA de la semaine atteint — analyse non générée. Le rapport chiffré ci-dessous reste complet.)"
+        : "(Analyse IA indisponible — le rapport chiffré ci-dessous reste complet.)"; }
 
       const blob = await makePdf(s, ai, kind, period, name);
       const filename = `moody-rapport-${kind}-${s.end}.pdf`;
@@ -174,6 +176,7 @@ export function ReportSheet({ onClose }: { onClose: () => void }) {
               <button onClick={generate} disabled={step === "working"} className="w-full rounded-3xl py-4 font-display text-[17px] font-semibold text-white flex items-center justify-center gap-2 bg-brand-500 shadow-glow disabled:opacity-60 active:scale-[.99]">
                 {step === "working" ? <><Loader2 className="h-5 w-5 animate-spin" /> Génération…</> : <><Sparkles className="h-5 w-5" /> Générer le rapport PDF</>}
               </button>
+              <p className="text-[12px] text-ink-mute text-center">Analyse IA : {aiUsesLeft()}/{AI_WEEKLY_MAX} restantes cette semaine</p>
             </div>
           )}
         </div>

@@ -7,6 +7,7 @@ import {
 } from "@/lib/storage";
 import { vibrate } from "@/lib/reminders";
 import { COMMON_SYMPTOMS, getAdvice } from "@/lib/advice";
+import { aiUsesLeft, AI_WEEKLY_MAX } from "@/lib/ai";
 import { DragSlider } from "@/components/DragSlider";
 import { RemindersSettings } from "@/components/RemindersSettings";
 import { Portal } from "@/components/Portal";
@@ -210,6 +211,7 @@ export function MoodScreen() {
               <button onClick={askAdvice} disabled={adviceLoading || symptoms.length === 0} className="w-full rounded-2xl py-3 bg-white shadow-card text-brand-700 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[.98]">
                 {adviceLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Analyse…</> : <><Sparkles className="h-4 w-4" /> Obtenir un conseil</>}
               </button>
+              <p className="text-[11px] text-ink-mute text-center">Conseil affiné par IA : {aiUsesLeft()}/{AI_WEEKLY_MAX} cette semaine (sinon conseil local)</p>
               {advice && (
                 <div className="rounded-2xl bg-mint p-4">
                   <div className="flex items-center gap-2 text-brand-700 mb-1"><Lightbulb className="h-4 w-4" /><span className="text-[11px] font-bold tracking-widest uppercase">Conseil</span></div>
