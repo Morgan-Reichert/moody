@@ -129,8 +129,8 @@ export function ReminderEngine({ onOpenMood }: { onOpenMood: () => void }) {
       {scanning && (
         <BarcodeScanner
           title="Scanne ton médicament"
-          expected={active.med?.barcode}
-          allowSkip={!active.med?.barcode}
+          expected={active.barcode}
+          allowSkip={!active.barcode}
           onResult={() => { setScanning(false); validate(); }}
           onClose={() => setScanning(false)}
         />

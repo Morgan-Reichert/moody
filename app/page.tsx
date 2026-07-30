@@ -75,11 +75,11 @@ export default function Home() {
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
-          <div className="flex-none w-full h-full overflow-y-auto overflow-x-hidden">
+          <div className="flex-none w-full h-full overflow-y-auto overflow-x-hidden overscroll-none">
             <Dashboard mounted={mounted} onLogMood={() => goTo(1)} />
           </div>
-          <div className="flex-none w-full h-full overflow-y-auto overflow-x-hidden">
-            <MoodScreen active={tab === 1} />
+          <div className="flex-none w-full h-full overflow-y-auto overflow-x-hidden overscroll-none">
+            <MoodScreen />
           </div>
         </div>
       </div>
