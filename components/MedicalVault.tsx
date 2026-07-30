@@ -9,10 +9,11 @@ import {
 import { saveDoc, listDocs, getDocBlob, deleteDoc, openBlob, DocMeta, DocType } from "@/lib/vault-db";
 import { SpecialtyPicker } from "@/components/SpecialtyPicker";
 import { DocScanner } from "@/components/DocScanner";
+import { ShareDoctorModal } from "@/components/ShareDoctorModal";
 import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, User, Stethoscope, FileText, CalendarClock, ChevronDown,
-  Phone, Mail, MapPin, FolderOpen, Upload, HeartPulse, Bell, ScanText, AlertTriangle,
+  Phone, Mail, MapPin, FolderOpen, Upload, HeartPulse, Bell, ScanText, AlertTriangle, QrCode,
 } from "lucide-react";
 
 function expiryInfo(iso?: string): { label: string; urgent: boolean } | null {
@@ -33,6 +34,7 @@ const DOC_TYPES: { key: DocType; label: string }[] = [
 export function MedicalVault({ onClose }: { onClose: () => void }) {
   useStore();
   const [tab, setTab] = useState<Tab>("fiche");
+  const [showShare, setShowShare] = useState(false);
   const doctors = getDoctors();
   const appts = getAppointments();
 
@@ -45,7 +47,10 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
             <div className="mx-auto h-1.5 w-10 rounded-full bg-black/10 mb-3" />
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-xl font-semibold text-ink flex items-center gap-2"><HeartPulse className="h-5 w-5 text-brand-600" /> Espace santé</h2>
-              <button onClick={onClose} className="grid place-items-center h-10 w-10 rounded-2xl bg-white shadow-card text-ink-soft active:scale-95"><X className="h-5 w-5" /></button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setShowShare(true)} className="grid place-items-center h-10 w-10 rounded-2xl bg-brand-500 text-white shadow-glow active:scale-95" aria-label="Partager à un médecin"><QrCode className="h-5 w-5" /></button>
+                <button onClick={onClose} className="grid place-items-center h-10 w-10 rounded-2xl bg-white shadow-card text-ink-soft active:scale-95"><X className="h-5 w-5" /></button>
+              </div>
             </div>
             <div className="flex gap-1.5 bg-white rounded-2xl p-1 shadow-card">
               {([["fiche", "Fiche", User], ["medecins", "Médecins", Stethoscope], ["documents", "Docs", FileText], ["rdv", "RDV", CalendarClock]] as const).map(([k, label, Icon]) => (
@@ -64,6 +69,7 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
+      {showShare && <ShareDoctorModal onClose={() => setShowShare(false)} />}
     </Portal>
   );
 }
