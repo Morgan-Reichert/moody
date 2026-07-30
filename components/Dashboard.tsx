@@ -172,7 +172,7 @@ function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; la
 function MedStatusCard({ onManage }: { onManage: () => void }) {
   useStore();
   const [, setTick] = useState(0);
-  const [info, setInfo] = useState<{ name: string; h?: any } | null>(null);
+  const [info, setInfo] = useState<{ name: string; h?: any; medId?: string } | null>(null);
   useEffect(() => { const id = setInterval(() => setTick((t) => t + 1), 1000); return () => clearInterval(id); }, []);
 
   const s = todayMedStatus(new Date());
@@ -228,14 +228,14 @@ function MedStatusCard({ onManage }: { onManage: () => void }) {
                 {d.dose && <span className="text-[12px] text-ink-mute">{d.dose}</span>}
               </span>
             </button>
-            <button onClick={() => setInfo({ name: d.name, h: meds.find((m) => m.id === d.medId)?.highlights })} className="grid place-items-center h-8 w-8 rounded-lg text-brand-600 active:scale-90" aria-label="Infos médicament"><Info className="h-[18px] w-[18px]" /></button>
+            <button onClick={() => setInfo({ name: d.name, h: meds.find((m) => m.id === d.medId)?.highlights, medId: d.medId })} className="grid place-items-center h-8 w-8 rounded-lg text-brand-600 active:scale-90" aria-label="Infos médicament"><Info className="h-[18px] w-[18px]" /></button>
             <button onClick={() => setMedTaken(date, d.medId, d.time, !d.taken)} className={`grid place-items-center h-7 w-7 rounded-lg border-2 transition shrink-0 ${d.taken ? "bg-brand-500 border-brand-500 text-white" : "border-black/15 text-transparent"}`}>
               <Check className="h-4 w-4" strokeWidth={3} />
             </button>
           </div>
         ))}
       </div>
-      {info && <MedInfoModal name={info.name} highlights={info.h} onClose={() => setInfo(null)} />}
+      {info && <MedInfoModal name={info.name} highlights={info.h} medId={info.medId} onClose={() => setInfo(null)} />}
     </section>
   );
 }

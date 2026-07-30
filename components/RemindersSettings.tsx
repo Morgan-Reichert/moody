@@ -364,7 +364,7 @@ function MedCard({ med, onSave, onDelete, onScan }: { med: Medication; onSave: (
           </div>
         </div>
       )}
-      {info && <MedInfoModal name={med.name} highlights={med.highlights} onClose={() => setInfo(false)} />}
+      {info && <MedInfoModal name={med.name} highlights={med.highlights} medId={med.id} onClose={() => setInfo(false)} />}
     </div>
   );
 }

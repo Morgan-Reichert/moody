@@ -37,6 +37,7 @@ export interface Medication {
   slots: Slot[];
   barcode?: string;
   highlights?: MedHighlights;   // notice highlights (from catalog or scanned)
+  sideEffects?: { date: string; text: string }[];  // effets indésirables signalés
 }
 
 export type ModuleKey = "sport" | "water" | "addiction";
@@ -277,23 +278,54 @@ const K_MEDICAL = "moody_medical";
 const K_DOCTORS = "moody_doctors";
 const K_APPTS = "moody_appointments";
 
+export interface TreatmentEntry {
+  name: string; dose?: string; perDay?: string; timing?: string; note?: string;
+}
 export interface MedicalProfile {
   fullName?: string;
   birthDate?: string;
   sex?: string;
+  photo?: string;          // small data URL
   height?: string;         // cm
   weight?: string;         // kg
   bloodType?: string;      // A+, O-…
-  conditions?: string;     // maladies / pathologies
+  conditions?: string;     // (legacy free text)
+  conditionsList?: string[];
   allergies?: string;
-  treatments?: string;     // traitements en cours
+  treatments?: string;     // (legacy free text)
+  treatmentList?: TreatmentEntry[];
   history?: string;        // antécédents / passé médical
   surgeries?: string;
   emergencyName?: string;
   emergencyPhone?: string;
   notes?: string;
+  isMinor?: boolean;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianRelation?: string;
+}
+
+/** Age from birthDate (YYYY-MM-DD), or null. */
+export function ageFrom(birthDate?: string): number | null {
+  if (!birthDate) return null;
+  const b = new Date(birthDate); if (isNaN(b.getTime())) return null;
+  const n = new Date(); let a = n.getFullYear() - b.getFullYear();
+  if (n.getMonth() < b.getMonth() || (n.getMonth() === b.getMonth() && n.getDate() < b.getDate())) a--;
+  return a >= 0 && a < 130 ? a : null;
 }
 export function getMedicalProfile(): MedicalProfile { return read<MedicalProfile>(K_MEDICAL, {}); }
+
+/** All current treatments = app medications (reminders) + manually added ones in the fiche. */
+export function currentTreatments(): TreatmentEntry[] {
+  const fromMeds: TreatmentEntry[] = getMeds().map((m) => ({
+    name: m.name, dose: m.dose,
+    perDay: m.slots.length ? String(m.slots.length) : undefined,
+    timing: m.slots.length ? m.slots.map((s) => s.time).join(", ") : undefined,
+  }));
+  const manual = getMedicalProfile().treatmentList ?? [];
+  const seen = new Set(fromMeds.map((t) => t.name.toLowerCase()));
+  return [...fromMeds, ...manual.filter((t) => t.name && !seen.has(t.name.toLowerCase()))];
+}
 export function saveMedicalProfile(patch: Partial<MedicalProfile>): MedicalProfile {
   const next = { ...getMedicalProfile(), ...patch }; write(K_MEDICAL, next); return next;
 }

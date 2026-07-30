@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getMedicalProfile, getDoctors, getEntries, getSettings } from "@/lib/storage";
+import { getMedicalProfile, getDoctors, getEntries, getSettings, ageFrom, currentTreatments } from "@/lib/storage";
 import { listDocs, getDocBlob, DocMeta } from "@/lib/vault-db";
 import { listReports, getReportBlob, ReportMeta } from "@/lib/reports-db";
 import { createShare, SharePayload } from "@/lib/share";
@@ -32,8 +32,20 @@ export function ShareDoctorModal({ onClose }: { onClose: () => void }) {
     try {
       const prof = getMedicalProfile();
       const settings = getSettings();
-      const payload: SharePayload = { generatedAt: new Date().toISOString(), patientName: prof.fullName || settings.name };
-      if (infoSheet) payload.sheet = { conditions: prof.conditions, allergies: prof.allergies, treatments: prof.treatments, bloodType: prof.bloodType, height: prof.height, weight: prof.weight };
+      const payload: SharePayload = {
+        generatedAt: new Date().toISOString(),
+        patientName: prof.fullName || settings.name,
+        photo: prof.photo, sex: prof.sex, age: ageFrom(prof.birthDate),
+      };
+      if (prof.isMinor && (prof.guardianName || prof.guardianPhone)) payload.guardian = { name: prof.guardianName, phone: prof.guardianPhone, relation: prof.guardianRelation };
+      if (infoSheet) {
+        payload.sheet = {
+          conditions: prof.conditionsList && prof.conditionsList.length ? prof.conditionsList.join(", ") : prof.conditions,
+          allergies: prof.allergies, bloodType: prof.bloodType, height: prof.height, weight: prof.weight,
+        };
+        const tr = currentTreatments();
+        if (tr.length) payload.treatments = tr.map((t) => ({ name: t.name, dose: t.dose, perDay: t.perDay, timing: t.timing }));
+      }
       if (infoRx) payload.prescriptions = docs.filter((d) => d.type === "ordonnance" || d.type === "certificat").map((d) => ({ title: d.title, date: d.date, expiry: d.expiryDate, doctor: d.prescriber }));
       if (infoSy) {
         const since = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);

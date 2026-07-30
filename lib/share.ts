@@ -2,7 +2,12 @@ import { supabase } from "./supabase";
 
 export interface SharePayload {
   patientName?: string;
-  sheet?: { conditions?: string; allergies?: string; treatments?: string; bloodType?: string; height?: string; weight?: string };
+  photo?: string;                 // small data URL
+  sex?: string;
+  age?: number | null;
+  guardian?: { name?: string; phone?: string; relation?: string };
+  sheet?: { conditions?: string; allergies?: string; bloodType?: string; height?: string; weight?: string };
+  treatments?: { name: string; dose?: string; perDay?: string; timing?: string }[];
   prescriptions?: { title: string; date?: string; expiry?: string; doctor?: string }[];
   symptoms?: { date: string; symptoms: string[]; intensity?: number }[];
   generatedAt: string;

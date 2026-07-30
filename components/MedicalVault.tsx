@@ -2,18 +2,21 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  useStore, getMedicalProfile, saveMedicalProfile,
+  useStore, getMedicalProfile, saveMedicalProfile, getMeds,
   getDoctors, saveDoctor, deleteDoctor, Doctor,
-  getAppointments, saveAppointment, deleteAppointment, Appointment,
+  getAppointments, saveAppointment, deleteAppointment, Appointment, TreatmentEntry,
 } from "@/lib/storage";
 import { saveDoc, listDocs, getDocBlob, deleteDoc, openBlob, DocMeta, DocType } from "@/lib/vault-db";
 import { SpecialtyPicker } from "@/components/SpecialtyPicker";
+import { PathologyPicker } from "@/components/PathologyPicker";
+import { MedAutocomplete } from "@/components/MedAutocomplete";
 import { DocScanner } from "@/components/DocScanner";
 import { ShareDoctorModal } from "@/components/ShareDoctorModal";
 import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, User, Stethoscope, FileText, CalendarClock, ChevronDown,
   Phone, Mail, MapPin, FolderOpen, Upload, HeartPulse, Bell, ScanText, AlertTriangle, QrCode,
+  Camera, Pill, Check,
 } from "lucide-react";
 
 function expiryInfo(iso?: string): { label: string; urgent: boolean } | null {
@@ -89,17 +92,99 @@ function Field({ label, defVal, onSave, placeholder, type = "text", area }: { la
   );
 }
 
+async function compressPhoto(file: File): Promise<string> {
+  const bmp = await createImageBitmap(file);
+  const max = 320; const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+  const c = document.createElement("canvas"); c.width = w; c.height = h;
+  c.getContext("2d")!.drawImage(bmp, 0, 0, w, h);
+  return c.toDataURL("image/jpeg", 0.72);
+}
+
+function PhotoField() {
+  const p = getMedicalProfile();
+  const ref = useRef<HTMLInputElement>(null);
+  const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    try { saveMedicalProfile({ photo: await compressPhoto(f) }); } catch { /* */ }
+    e.target.value = "";
+  };
+  return (
+    <div className="flex items-center gap-4">
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={onPick} />
+      <button onClick={() => ref.current?.click()} className="relative h-20 w-20 rounded-full bg-brand-50 grid place-items-center overflow-hidden shrink-0 active:scale-95">
+        {p.photo ? <img src={p.photo} alt="" className="h-full w-full object-cover" /> : <Camera className="h-7 w-7 text-brand-600" />}
+      </button>
+      <div>
+        <p className="font-bold text-ink">Photo de profil</p>
+        <p className="text-[12.5px] text-ink-mute">Apparaîtra sur la fiche partagée au médecin.</p>
+        {p.photo && <button onClick={() => saveMedicalProfile({ photo: undefined })} className="text-[12.5px] font-bold text-red-400 mt-1">Retirer</button>}
+      </div>
+    </div>
+  );
+}
+
+function TreatmentsEditor() {
+  const p = getMedicalProfile();
+  const list = p.treatmentList ?? [];
+  const appMeds = getMeds();
+  const save = (l: TreatmentEntry[]) => saveMedicalProfile({ treatmentList: l });
+  const row = (name: string, meta: string, right: React.ReactNode, key: string) => (
+    <div key={key} className="rounded-2xl bg-brand-50/60 p-3 flex items-center gap-3">
+      <Pill className="h-4 w-4 text-[#c8622f] shrink-0" />
+      <div className="flex-1 min-w-0"><p className="font-bold text-ink text-[14px] truncate">{name}</p><p className="text-[12px] text-ink-mute">{meta || "—"}</p></div>
+      {right}
+    </div>
+  );
+  return (
+    <div className="space-y-2.5">
+      <p className="text-[12.5px] text-ink-mute">Tes médicaments de l'app apparaissent ici automatiquement. Tu peux en ajouter d'autres.</p>
+      {appMeds.map((m) => row(
+        m.name,
+        [m.dose, m.slots.length ? `${m.slots.length}×/j` : "", m.slots.map((s) => s.time).join(", ")].filter(Boolean).join(" · "),
+        <span className="text-[10px] font-bold text-brand-700 bg-white rounded-full px-2 py-0.5">app</span>,
+        m.id,
+      ))}
+      {list.map((t, i) => row(
+        t.name,
+        [t.dose, t.perDay ? `${t.perDay}×/j` : "", t.timing].filter(Boolean).join(" · "),
+        <button onClick={() => save(list.filter((_, j) => j !== i))} className="grid place-items-center h-8 w-8 rounded-lg text-red-400"><Trash2 className="h-4 w-4" /></button>,
+        "m" + i,
+      ))}
+      <ManualTreatmentForm onAdd={(t) => save([...list, t])} />
+    </div>
+  );
+}
+function ManualTreatmentForm({ onAdd }: { onAdd: (t: TreatmentEntry) => void }) {
+  const [name, setName] = useState(""); const [dose, setDose] = useState(""); const [perDay, setPerDay] = useState(""); const [timing, setTiming] = useState("");
+  const add = () => { if (!name.trim()) return; onAdd({ name: name.trim(), dose: dose.trim() || undefined, perDay: perDay.trim() || undefined, timing: timing.trim() || undefined }); setName(""); setDose(""); setPerDay(""); setTiming(""); };
+  return (
+    <div className="card p-3 space-y-2">
+      <MedAutocomplete value={name} onChange={setName} onPick={(nm) => setName(nm)} placeholder="Chercher un médicament…" />
+      <div className="grid grid-cols-3 gap-2">
+        <input value={dose} onChange={(e) => setDose(e.target.value)} placeholder="Dose" className="bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none text-[14px]" />
+        <input value={perDay} onChange={(e) => setPerDay(e.target.value)} placeholder="×/jour" inputMode="numeric" className="bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none text-[14px]" />
+        <input value={timing} onChange={(e) => setTiming(e.target.value)} placeholder="Moment" className="bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none text-[14px]" />
+      </div>
+      <button onClick={add} className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-brand-500 text-white font-bold text-sm active:scale-[.98]"><Plus className="h-4 w-4" /> Ajouter ce traitement</button>
+    </div>
+  );
+}
+
 function FicheTab() {
   const p = getMedicalProfile();
   const s = (k: keyof typeof p) => (v: string) => saveMedicalProfile({ [k]: v.trim() || undefined });
   return (
     <div className="space-y-5">
       <p className="text-[13px] text-ink-soft">Ces informations restent sur ton appareil. Utile en cas d'urgence ou de consultation.</p>
-      <Section title="Identité">
+      <Section title="Identité"><PhotoField />
         <Field label="Nom complet" defVal={p.fullName} onSave={s("fullName")} placeholder="Prénom Nom" />
         <div className="grid grid-cols-2 gap-2">
           <Field label="Naissance" defVal={p.birthDate} onSave={s("birthDate")} type="date" />
-          <Field label="Sexe" defVal={p.sex} onSave={s("sex")} placeholder="F / M / autre" />
+          <label className="block"><span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">Sexe</span>
+            <select defaultValue={p.sex ?? ""} onChange={(e) => saveMedicalProfile({ sex: e.target.value || undefined })} className="mt-1 w-full bg-brand-50 rounded-xl px-2 py-2.5 text-ink outline-none">
+              <option value="">—</option><option>Femme</option><option>Homme</option><option>Autre</option>
+            </select></label>
         </div>
       </Section>
       <Section title="Physique">
@@ -115,11 +200,11 @@ function FicheTab() {
           </label>
         </div>
       </Section>
-      <Section title="État de santé">
-        <Field label="Pathologies / maladies" defVal={p.conditions} onSave={s("conditions")} area placeholder="Ex : asthme, hypertension…" />
+      <Section title="Pathologies">
+        <PathologyPicker values={p.conditionsList ?? []} onChange={(v) => saveMedicalProfile({ conditionsList: v.length ? v : undefined })} />
         <Field label="Allergies" defVal={p.allergies} onSave={s("allergies")} area placeholder="Ex : pénicilline, arachide…" />
-        <Field label="Traitements en cours" defVal={p.treatments} onSave={s("treatments")} area />
       </Section>
+      <Section title="Traitements en cours"><TreatmentsEditor /></Section>
       <Section title="Antécédents (passé médical)">
         <Field label="Antécédents médicaux" defVal={p.history} onSave={s("history")} area />
         <Field label="Opérations / chirurgies" defVal={p.surgeries} onSave={s("surgeries")} area />
@@ -129,6 +214,21 @@ function FicheTab() {
           <Field label="Nom" defVal={p.emergencyName} onSave={s("emergencyName")} />
           <Field label="Téléphone" defVal={p.emergencyPhone} onSave={s("emergencyPhone")} type="tel" />
         </div>
+      </Section>
+      <Section title="Mineur ?">
+        <button onClick={() => saveMedicalProfile({ isMinor: !p.isMinor })} className="w-full flex items-center gap-3 text-left">
+          <span className={`grid place-items-center h-8 w-8 rounded-lg border-2 shrink-0 ${p.isMinor ? "bg-brand-500 border-brand-500 text-white" : "border-black/15 text-transparent"}`}><Check className="h-4 w-4" strokeWidth={3} /></span>
+          <span className="flex-1"><span className="font-bold text-ink text-[14px] block">Je suis mineur·e</span><span className="text-[12px] text-ink-mute">Ajoute le contact de ton référent légal</span></span>
+        </button>
+        {p.isMinor && (
+          <div className="grid grid-cols-1 gap-2 mt-3">
+            <Field label="Référent légal — nom" defVal={p.guardianName} onSave={s("guardianName")} />
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Téléphone" defVal={p.guardianPhone} onSave={s("guardianPhone")} type="tel" />
+              <Field label="Lien" defVal={p.guardianRelation} onSave={s("guardianRelation")} placeholder="Parent, tuteur…" />
+            </div>
+          </div>
+        )}
       </Section>
       <Section title="Notes libres"><Field label="Notes" defVal={p.notes} onSave={s("notes")} area /></Section>
     </div>

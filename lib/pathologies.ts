@@ -1,0 +1,77 @@
+// Liste de pathologies précises (FR) pour l'autocomplétion. Extensible.
+export interface Pathology { name: string; group: string; }
+
+const G = (group: string, ...names: string[]): Pathology[] => names.map((name) => ({ name, group }));
+
+export const PATHOLOGIES: Pathology[] = [
+  ...G("Cardiovasculaire",
+    "Hypertension artérielle essentielle", "Hypertension artérielle secondaire", "Insuffisance cardiaque chronique",
+    "Insuffisance cardiaque à fraction d'éjection réduite", "Fibrillation auriculaire", "Flutter auriculaire",
+    "Cardiopathie ischémique", "Angor stable", "Angor instable", "Infarctus du myocarde (antécédent)",
+    "Valvulopathie mitrale", "Rétrécissement aortique", "Insuffisance aortique", "Péricardite",
+    "Myocardiopathie dilatée", "Myocardiopathie hypertrophique", "Bloc auriculo-ventriculaire",
+    "Extrasystoles ventriculaires", "Artériopathie oblitérante des membres inférieurs",
+    "Thrombose veineuse profonde", "Embolie pulmonaire (antécédent)", "Hypercholestérolémie familiale",
+    "Hypertriglycéridémie", "Anévrisme de l'aorte abdominale"),
+  ...G("Respiratoire",
+    "Asthme allergique", "Asthme sévère", "Bronchopneumopathie chronique obstructive (BPCO)", "Emphysème",
+    "Apnées du sommeil (SAOS)", "Fibrose pulmonaire idiopathique", "Sarcoïdose", "Pneumonie",
+    "Bronchite chronique", "Dilatation des bronches", "Mucoviscidose", "Embolie pulmonaire",
+    "Épanchement pleural", "Rhinite allergique persistante", "Sinusite chronique"),
+  ...G("Endocrinien & métabolique",
+    "Diabète de type 1", "Diabète de type 2", "Diabète gestationnel", "Hypothyroïdie", "Hyperthyroïdie",
+    "Thyroïdite de Hashimoto", "Maladie de Basedow", "Nodule thyroïdien", "Insuffisance surrénalienne (Addison)",
+    "Syndrome de Cushing", "Hyperparathyroïdie", "Obésité", "Syndrome métabolique", "Goutte",
+    "Ostéoporose", "Ostéomalacie", "Carence en vitamine D", "Carence en fer", "Dénutrition"),
+  ...G("Digestif & hépatique",
+    "Reflux gastro-œsophagien", "Ulcère gastroduodénal", "Gastrite chronique", "Maladie cœliaque",
+    "Maladie de Crohn", "Rectocolite hémorragique", "Syndrome de l'intestin irritable", "Diverticulose colique",
+    "Hépatite B chronique", "Hépatite C chronique", "Stéatose hépatique (NASH)", "Cirrhose", "Lithiase biliaire",
+    "Pancréatite chronique", "Hémorroïdes", "Constipation chronique", "Intolérance au lactose"),
+  ...G("Neurologique",
+    "Migraine avec aura", "Migraine sans aura", "Céphalées de tension", "Épilepsie", "Maladie de Parkinson",
+    "Sclérose en plaques", "Accident vasculaire cérébral (antécédent)", "Accident ischémique transitoire",
+    "Maladie d'Alzheimer", "Démence vasculaire", "Neuropathie périphérique", "Névralgie du trijumeau",
+    "Syndrome des jambes sans repos", "Sclérose latérale amyotrophique", "Myasthénie", "Vertige positionnel paroxystique"),
+  ...G("Santé mentale",
+    "Épisode dépressif majeur", "Trouble dépressif récurrent", "Trouble bipolaire de type I", "Trouble bipolaire de type II",
+    "Trouble anxieux généralisé", "Trouble panique", "Phobie sociale", "Agoraphobie", "Trouble obsessionnel compulsif",
+    "État de stress post-traumatique", "Trouble du déficit de l'attention avec/sans hyperactivité (TDAH)",
+    "Trouble du spectre autistique", "Schizophrénie", "Trouble schizo-affectif", "Anorexie mentale",
+    "Boulimie", "Hyperphagie boulimique", "Trouble borderline de la personnalité", "Insomnie chronique",
+    "Addiction à l'alcool", "Addiction au tabac", "Addiction aux opioïdes", "Burn-out"),
+  ...G("Rhumatologique & osseux",
+    "Polyarthrite rhumatoïde", "Spondylarthrite ankylosante", "Arthrose", "Lombalgie chronique", "Sciatique",
+    "Hernie discale", "Fibromyalgie", "Lupus érythémateux systémique", "Sclérodermie", "Syndrome de Gougerot-Sjögren",
+    "Tendinite", "Goutte", "Chondrocalcinose", "Ostéoporose fracturaire"),
+  ...G("Rénal & urinaire",
+    "Insuffisance rénale chronique", "Lithiase rénale", "Infections urinaires récidivantes", "Pyélonéphrite",
+    "Hypertrophie bénigne de la prostate", "Incontinence urinaire", "Cystite interstitielle", "Néphropathie diabétique",
+    "Syndrome néphrotique", "Polykystose rénale"),
+  ...G("Gynéco & reproduction",
+    "Endométriose", "Syndrome des ovaires polykystiques", "Fibrome utérin", "Ménopause", "Syndrome prémenstruel",
+    "Infertilité", "Dysménorrhée", "Mastopathie bénigne"),
+  ...G("Dermatologique",
+    "Eczéma atopique", "Psoriasis", "Acné", "Rosacée", "Urticaire chronique", "Vitiligo", "Dermatite séborrhéique",
+    "Mélanome (antécédent)", "Alopécie"),
+  ...G("Ophtalmo & ORL",
+    "Glaucome", "Cataracte", "Dégénérescence maculaire liée à l'âge", "Rétinopathie diabétique", "Sécheresse oculaire",
+    "Acouphènes", "Surdité", "Vertiges de Menière", "Otite chronique"),
+  ...G("Hématologique & immunitaire",
+    "Anémie ferriprive", "Anémie par carence en B12", "Thalassémie", "Drépanocytose", "Thrombopénie",
+    "Hémophilie", "Leucémie (antécédent)", "Lymphome (antécédent)", "Déficit immunitaire", "VIH"),
+  ...G("Infectieux",
+    "Tuberculose (antécédent)", "Zona", "Herpès récidivant", "Hépatite virale", "Mononucléose (antécédent)",
+    "Maladie de Lyme", "COVID long"),
+  ...G("Cancérologie",
+    "Cancer du sein (antécédent)", "Cancer de la prostate", "Cancer colorectal", "Cancer du poumon",
+    "Cancer de la thyroïde", "Cancer de la peau"),
+  ...G("Autre", "Autre pathologie (à préciser)"),
+];
+
+const NORM = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+export function searchPathologies(q: string): Pathology[] {
+  const n = NORM(q.trim());
+  if (!n) return PATHOLOGIES;
+  return PATHOLOGIES.filter((p) => NORM(p.name).includes(n) || NORM(p.group).includes(n));
+}

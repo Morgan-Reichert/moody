@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  getEntries, dosesForDate, isMedTaken, getSettings, dailySeries,
+  getEntries, dosesForDate, isMedTaken, getSettings, dailySeries, getMeds,
   ENERGY_LABELS, APPETITE_LABELS,
 } from "@/lib/storage";
 import { aiNarrative, aiUsesLeft, AI_WEEKLY_MAX, AIQuotaError } from "@/lib/ai";
@@ -62,6 +62,7 @@ export function ReportSheet({ onClose }: { onClose: () => void }) {
       symptomLog: entries.filter((e) => e.symptoms && e.symptoms.length).map((e) => ({
         date: e.date, symptoms: e.symptoms!, intensity: e.symptomIntensity, note: e.symptomNote,
       })),
+      sideEffects: getMeds().flatMap((m) => (m.sideEffects ?? []).filter((x) => x.date >= start && x.date <= end).map((x) => ({ med: m.name, date: x.date, text: x.text }))),
     };
   };
 
@@ -79,6 +80,7 @@ export function ReportSheet({ onClose }: { onClose: () => void }) {
         s.sleepAvg != null ? `Sommeil : ${s.sleepAvg} h/nuit.` : "",
         s.adherence != null ? `Observance : ${s.adherence}% (${s.perMed.map((m) => `${m.name} ${Math.round((m.taken / m.sched) * 100)}%`).join(", ")}).` : "Aucun traitement suivi.",
         s.symptomLog.length ? `Symptômes signalés : ${s.symptomLog.map((x: any) => `${x.date} (${x.symptoms.join(", ")}${x.intensity ? `, intensité ${["", "légère", "modérée", "forte"][x.intensity]}` : ""})`).join(" | ")}` : "",
+        s.sideEffects.length ? `Effets indésirables signalés : ${s.sideEffects.map((x: any) => `${x.med} — ${x.text} (${x.date})`).join(" | ")}` : "",
         s.notes.length ? `Notes : ${s.notes.map((n) => `${n.date} — ${n.note}`).join(" | ")}` : "",
       ].filter(Boolean).join("\n");
 
@@ -314,6 +316,14 @@ async function makePdf(s: any, ai: string, kind: Kind, period: number, name?: st
     if (y > PH - 40) { doc.addPage(); y = 20; }
     heading("Symptômes signalés");
     s.symptomLog.forEach((x: any) => para(`${x.date} — ${x.symptoms.join(", ")}${x.intensity ? ` (${["", "léger", "modéré", "fort"][x.intensity]})` : ""}${x.note ? ` · ${x.note}` : ""}`, 9.5, [80, 90, 84]));
+    y += 3;
+  }
+
+  // ── adverse effects ──
+  if (s.sideEffects.length) {
+    if (y > PH - 40) { doc.addPage(); y = 20; }
+    heading("Effets indésirables signalés");
+    s.sideEffects.forEach((x: any) => para(`${x.date} — ${x.med} : ${x.text}`, 9.5, [80, 90, 84]));
     y += 3;
   }
 
