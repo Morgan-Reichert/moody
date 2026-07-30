@@ -7,10 +7,12 @@ import {
   Medication, ReminderSettings, Slot, ALL_DAYS, DAY_LABELS, MODULES,
 } from "@/lib/storage";
 import { requestNotifPermission } from "@/lib/reminders";
+import { setPin, disableSecurity, biometricsAvailable, registerFace } from "@/lib/security";
 import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
+  UserRound, Lock, ScanFace, CloudSun, Delete,
 } from "lucide-react";
 
 function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[]) => void }) {
@@ -75,6 +77,20 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="px-5 pb-8 space-y-6">
+            {/* Profile */}
+            <section>
+              <SectionTitle icon={<UserRound className="h-4 w-4" />} title="Profil & accueil" hint="Personnalise ta page d'accueil" />
+              <div className="card p-4 space-y-3">
+                <input defaultValue={settings.name ?? ""} onBlur={(e) => patch({ name: e.target.value.trim() || undefined })}
+                  placeholder="Ton prénom (pour le message d'accueil)" className="w-full bg-brand-50 rounded-xl px-3.5 py-3 font-semibold text-ink outline-none" />
+                <input defaultValue={settings.mantra ?? ""} onBlur={(e) => patch({ mantra: e.target.value.trim() || undefined })}
+                  placeholder="Ta phrase du moment (ex : Un jour à la fois)" className="w-full bg-brand-50 rounded-xl px-3.5 py-3 font-semibold text-ink outline-none" />
+              </div>
+              <div className="card mt-2">
+                <Toggle icon={<CloudSun className="h-5 w-5" />} title="Météo en direct" sub="Affiche la météo de ta position sur l'accueil" on={!!settings.weather} onToggle={() => patch({ weather: !settings.weather })} />
+              </div>
+            </section>
+
             {/* Mood times */}
             <section>
               <SectionTitle icon={<Smile className="h-4 w-4" />} title="Rappels d'humeur" hint="Aux heures (et jours) qui te vont" />
@@ -154,6 +170,12 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
                 </div>
               </button>
             </section>
+
+            {/* Security */}
+            <section>
+              <SectionTitle icon={<Lock className="h-4 w-4" />} title="Sécurité" hint="Protège l'accès à l'app" />
+              <SecurityBlock settings={settings} patch={patch} />
+            </section>
           </div>
         </div>
 
@@ -185,6 +207,71 @@ function Toggle({ icon, title, sub, on, onToggle }: { icon: React.ReactNode; tit
         <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${on ? "left-6" : "left-1"}`} />
       </span>
     </button>
+  );
+}
+
+function SecurityBlock({ settings, patch }: { settings: ReminderSettings; patch: (p: Partial<ReminderSettings>) => void }) {
+  const [setting, setSetting] = useState(false);
+  const [stage, setStage] = useState<"first" | "confirm">("first");
+  const [first, setFirst] = useState("");
+  const [buf, setBuf] = useState("");
+  const [err, setErr] = useState("");
+  const faceOk = biometricsAvailable();
+
+  const press = (d: string) => {
+    if (buf.length >= 4) return;
+    const nx = buf + d; setBuf(nx);
+    if (nx.length === 4) {
+      if (stage === "first") { setFirst(nx); setBuf(""); setStage("confirm"); setErr(""); }
+      else {
+        if (nx === first) { setPin(nx).then(() => { setSetting(false); setStage("first"); setFirst(""); setBuf(""); }); }
+        else { setErr("Les codes ne correspondent pas."); setBuf(""); setStage("first"); setFirst(""); }
+      }
+    }
+  };
+
+  const toggleFace = async () => {
+    if (settings.faceId) { patch({ faceId: false, faceCredId: undefined }); return; }
+    const ok = await registerFace();
+    if (!ok) alert("Biométrie indisponible ou refusée sur cet appareil.");
+  };
+
+  if (setting) {
+    return (
+      <div className="card p-5 flex flex-col items-center">
+        <p className="font-display text-lg font-semibold text-ink">{stage === "first" ? "Choisis un code" : "Confirme le code"}</p>
+        <p className="text-sm text-ink-mute mb-4">4 chiffres</p>
+        <div className="flex gap-3 mb-5">
+          {[0, 1, 2, 3].map((i) => <span key={i} className={`h-3.5 w-3.5 rounded-full ${i < buf.length ? "bg-brand-500" : "bg-black/12"}`} />)}
+        </div>
+        {err && <p className="text-sm text-red-500 mb-3">{err}</p>}
+        <div className="grid grid-cols-3 gap-3">
+          {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
+            <button key={d} onClick={() => press(d)} className="h-14 w-14 rounded-full bg-brand-50 font-display text-xl font-semibold text-ink active:scale-90">{d}</button>
+          ))}
+          <span />
+          <button onClick={() => press("0")} className="h-14 w-14 rounded-full bg-brand-50 font-display text-xl font-semibold text-ink active:scale-90">0</button>
+          <button onClick={() => setBuf((b) => b.slice(0, -1))} className="h-14 w-14 rounded-full grid place-items-center text-ink-soft active:scale-90"><Delete className="h-5 w-5" /></button>
+        </div>
+        <button onClick={() => { setSetting(false); setStage("first"); setFirst(""); setBuf(""); setErr(""); }} className="mt-4 text-sm font-semibold text-ink-mute">Annuler</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card divide-y divide-black/5">
+      <div className="flex items-center gap-3 p-4">
+        <span className={`grid place-items-center h-10 w-10 rounded-2xl shrink-0 ${settings.pinEnabled ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-700"}`}><Lock className="h-5 w-5" /></span>
+        <div className="flex-1"><p className="font-bold text-ink text-[15px]">Code PIN</p><p className="text-[12.5px] text-ink-mute">{settings.pinEnabled ? "Activé — demandé à l'ouverture" : "4 chiffres pour ouvrir l'app"}</p></div>
+        {settings.pinEnabled
+          ? <button onClick={() => disableSecurity()} className="rounded-xl px-3.5 py-2 bg-white shadow-card text-red-500 font-bold text-sm active:scale-95">Désactiver</button>
+          : <button onClick={() => setSetting(true)} className="rounded-xl px-3.5 py-2 bg-brand-500 text-white font-bold text-sm active:scale-95">Activer</button>}
+      </div>
+
+      {settings.pinEnabled && faceOk && (
+        <Toggle icon={<ScanFace className="h-5 w-5" />} title="Face ID / biométrie" sub="Déverrouille avec ton visage ou ton empreinte" on={!!settings.faceId} onToggle={toggleFace} />
+      )}
+    </div>
   );
 }
 

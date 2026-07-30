@@ -47,6 +47,16 @@ export interface ReminderSettings {
   snoozeMinutes: number;
   notifications: boolean;
   modules: ModuleKey[];             // enabled optional trackers
+  // profile / personalization
+  name?: string;
+  mantra?: string;
+  weather?: boolean;                // show live weather on dashboard
+  // security
+  pinEnabled?: boolean;
+  pinHash?: string;                 // sha-256(salt + pin)
+  pinSalt?: string;
+  faceId?: boolean;
+  faceCredId?: string;              // base64url WebAuthn credential id
 }
 
 export const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];

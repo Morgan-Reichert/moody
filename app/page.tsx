@@ -6,6 +6,8 @@ import { Dashboard } from "@/components/Dashboard";
 import { MoodScreen } from "@/components/MoodScreen";
 import { BottomNav } from "@/components/BottomNav";
 import { ReminderEngine } from "@/components/ReminderEngine";
+import { LockScreen } from "@/components/LockScreen";
+import { isLocked } from "@/lib/security";
 
 export default function Home() {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -14,6 +16,7 @@ export default function Home() {
   const [drag, setDrag] = useState(0);
   const [dragging, setDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [locked, setLocked] = useState(false);
 
   const start = useRef<{ x: number; y: number } | null>(null);
   const axis = useRef<"h" | "v" | null>(null);
@@ -22,6 +25,7 @@ export default function Home() {
 
   useEffect(() => {
     migrate();
+    setLocked(isLocked());
     setMounted(true);
     const el = wrapRef.current;
     if (el) {
@@ -61,6 +65,8 @@ export default function Home() {
     start.current = null; axis.current = null;
     setDrag(0); setDragging(false);
   };
+
+  if (locked) return <LockScreen onUnlock={() => setLocked(false)} />;
 
   return (
     <div className="fixed inset-0 flex flex-col bg-cream">

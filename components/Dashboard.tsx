@@ -10,6 +10,7 @@ import { MoodChart } from "@/components/MoodChart";
 import { RemindersSettings } from "@/components/RemindersSettings";
 import { ReportSheet } from "@/components/ReportSheet";
 import { WaterCard, AddictionsSection } from "@/components/DashboardCards";
+import { WeatherWidget } from "@/components/WeatherWidget";
 import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
   Check, Clock, AlertTriangle, FileText, CheckCircle2,
@@ -48,8 +49,8 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
 
   return (
     <div className="min-h-full pb-6">
-      {/* Sticky top bar */}
-      <header className="sticky top-0 z-30 bg-cream/85 backdrop-blur-md pt-safe px-5 pb-2.5 border-b border-black/[0.04]">
+      {/* Sticky top bar — opaque at the very top, fading translucent downward */}
+      <header className="sticky top-0 z-30 pt-safe px-5 pb-5 bg-gradient-to-b from-cream via-cream/90 to-transparent backdrop-blur-[6px]">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
           <img src="./brand/moody-wordmark-tight.png" alt="Moody" className="h-14 w-auto max-w-[58%]" />
           <div className="flex items-center gap-2">
@@ -65,9 +66,13 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
 
       <div className="px-5">
         <div className="max-w-md mx-auto stagger">
-        <div className="mt-4 mb-4">
-          <p className="text-sm text-ink-mute capitalize">{dateLabel}</p>
-          <h1 className="font-display text-[27px] font-semibold text-ink leading-tight">{hello}.</h1>
+        <div className="mt-4 mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-sm text-ink-mute capitalize">{dateLabel}</p>
+            <h1 className="font-display text-[27px] font-semibold text-ink leading-tight">{hello}{settings?.name ? `, ${settings.name}` : ""}.</h1>
+            {settings?.mantra && <p className="text-[13px] text-brand-700 font-semibold mt-1 leading-snug">{settings.mantra}</p>}
+          </div>
+          {mounted && settings?.weather && <WeatherWidget />}
         </div>
 
         {/* Mood of the day */}

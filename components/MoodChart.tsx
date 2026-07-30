@@ -1,6 +1,7 @@
 "use client";
 
 import { Area, AreaChart, ResponsiveContainer, YAxis, Tooltip } from "recharts";
+import { Sprout } from "lucide-react";
 
 export function MoodChart({ data }: { data: { date: string; value: number | null }[] }) {
   const pts = data.map((d) => ({
@@ -11,8 +12,10 @@ export function MoodChart({ data }: { data: { date: string; value: number | null
 
   if (!has) {
     return (
-      <div className="h-24 grid place-items-center text-sm text-ink-mute">
-        Note ton humeur quelques jours pour voir ta courbe.
+      <div className="min-h-24 flex flex-col items-center justify-center text-center gap-2 py-5 px-3">
+        <span className="grid place-items-center h-11 w-11 rounded-2xl bg-brand-50 text-brand-600"><Sprout className="h-6 w-6" /></span>
+        <p className="text-[14px] font-bold text-ink">Ta courbe se dessine ici</p>
+        <p className="text-[12.5px] text-ink-mute max-w-[240px]">Note ton humeur quelques jours de suite — persévère, et tu verras tes tendances apparaître.</p>
       </div>
     );
   }
