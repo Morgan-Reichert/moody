@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import { migrate } from "@/lib/storage";
+import { migrate, getSettings } from "@/lib/storage";
 import { Dashboard } from "@/components/Dashboard";
 import { MoodScreen } from "@/components/MoodScreen";
 import { BottomNav } from "@/components/BottomNav";
 import { ReminderEngine } from "@/components/ReminderEngine";
 import { LockScreen } from "@/components/LockScreen";
+import { Onboarding } from "@/components/Onboarding";
 import { isLocked } from "@/lib/security";
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
   const [dragging, setDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [locked, setLocked] = useState(false);
+  const [onboarded, setOnboarded] = useState(true);
 
   const start = useRef<{ x: number; y: number } | null>(null);
   const axis = useRef<"h" | "v" | null>(null);
@@ -26,6 +28,7 @@ export default function Home() {
   useEffect(() => {
     migrate();
     setLocked(isLocked());
+    setOnboarded(!!getSettings().onboarded);
     setMounted(true);
     const el = wrapRef.current;
     if (el) {
@@ -70,6 +73,7 @@ export default function Home() {
   };
 
   if (locked) return <LockScreen onUnlock={() => setLocked(false)} />;
+  if (mounted && !onboarded) return <Onboarding onDone={() => setOnboarded(true)} />;
 
   return (
     <div className="fixed inset-0 flex flex-col bg-cream">

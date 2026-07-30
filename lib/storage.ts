@@ -59,6 +59,7 @@ export interface ReminderSettings {
   faceCredId?: string;              // base64url WebAuthn credential id
   // dashboard card order
   dashOrder?: string[];
+  onboarded?: boolean;
 }
 
 export const ALL_DAYS = [0, 1, 2, 3, 4, 5, 6];
