@@ -8,11 +8,20 @@ import {
 } from "@/lib/storage";
 import { saveDoc, listDocs, getDocBlob, deleteDoc, openBlob, DocMeta, DocType } from "@/lib/vault-db";
 import { SpecialtyPicker } from "@/components/SpecialtyPicker";
+import { DocScanner } from "@/components/DocScanner";
 import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, User, Stethoscope, FileText, CalendarClock, ChevronDown,
-  Phone, Mail, MapPin, FolderOpen, Upload, HeartPulse, Bell,
+  Phone, Mail, MapPin, FolderOpen, Upload, HeartPulse, Bell, ScanText, AlertTriangle,
 } from "lucide-react";
+
+function expiryInfo(iso?: string): { label: string; urgent: boolean } | null {
+  if (!iso) return null;
+  const days = Math.round((new Date(iso).getTime() - Date.now()) / 864e5);
+  if (days < 0) return { label: `périmé depuis ${-days} j`, urgent: true };
+  if (days === 0) return { label: "périme aujourd'hui", urgent: true };
+  return { label: `périme dans ${days} j`, urgent: days <= 30 };
+}
 
 type Tab = "fiche" | "medecins" | "documents" | "rdv";
 const BLOOD = ["", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -167,6 +176,7 @@ function DoctorCard({ doc }: { doc: Doctor }) {
 
 function DocumentsTab({ doctors }: { doctors: Doctor[] }) {
   const [docs, setDocs] = useState<DocMeta[]>([]);
+  const [scan, setScan] = useState(false);
   const [dtype, setDtype] = useState<DocType>("ordonnance");
   const [dtitle, setDtitle] = useState("");
   const [ddoc, setDdoc] = useState("");
@@ -184,8 +194,13 @@ function DocumentsTab({ doctors }: { doctors: Doctor[] }) {
 
   return (
     <div className="space-y-4">
+      <button onClick={() => setScan(true)} className="w-full rounded-3xl py-4 bg-brand-500 text-white font-display text-[16px] font-semibold shadow-glow flex items-center justify-center gap-2 active:scale-[.99]">
+        <ScanText className="h-5 w-5" /> Scanner un document (auto)
+      </button>
+      {scan && <DocScanner onClose={() => setScan(false)} onSaved={refresh} />}
+
       <div className="card p-4 space-y-3">
-        <p className="font-display text-[15px] font-semibold text-ink">Ajouter un document</p>
+        <p className="font-display text-[15px] font-semibold text-ink">Ajouter manuellement</p>
         <div className="grid grid-cols-4 gap-1.5">
           {DOC_TYPES.map((t) => <button key={t.key} onClick={() => setDtype(t.key)} className={`rounded-xl py-2 text-[12px] font-bold transition ${dtype === t.key ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-soft"}`}>{t.label}</button>)}
         </div>
@@ -207,6 +222,11 @@ function DocumentsTab({ doctors }: { doctors: Doctor[] }) {
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-ink text-[14.5px] truncate">{d.title}</p>
                 <p className="text-[12px] text-ink-mute truncate capitalize">{d.type}{d.date ? ` · ${d.date}` : ""}{doc ? ` · ${doc.name}` : ""}</p>
+                {(() => { const ex = expiryInfo(d.expiryDate); return ex ? (
+                  <span className={`inline-flex items-center gap-1 mt-1 text-[11px] font-bold rounded-full px-2 py-0.5 ${ex.urgent ? "bg-[#fbe1da] text-[#c0402a]" : "bg-brand-50 text-brand-700"}`}>
+                    {ex.urgent && <AlertTriangle className="h-3 w-3" />}{ex.label}{d.notifyExpiry && <Bell className="h-3 w-3" />}
+                  </span>
+                ) : null; })()}
               </div>
               <button onClick={() => open(d.id)} className="grid place-items-center h-10 w-10 rounded-xl bg-brand-500 text-white active:scale-95"><FolderOpen className="h-[18px] w-[18px]" /></button>
               <button onClick={() => del(d.id)} className="grid place-items-center h-10 w-10 rounded-xl bg-white text-red-400 shadow-card active:scale-95"><Trash2 className="h-[18px] w-[18px]" /></button>

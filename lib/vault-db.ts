@@ -5,6 +5,9 @@ export interface DocMeta {
   id: string; createdAt: number;
   type: DocType; title: string; date?: string;
   doctorId?: string; mime: string; filename: string;
+  expiryDate?: string;      // YYYY-MM-DD (péremption / à renouveler avant)
+  prescriber?: string;      // nom détecté du médecin
+  notifyExpiry?: boolean;   // notifier à l'approche de la péremption
 }
 interface DocRecord extends DocMeta { blob: Blob; }
 
@@ -37,9 +40,22 @@ export async function getDocBlob(id: string): Promise<{ blob: Blob; meta: DocMet
   const rec = await new Promise<DocRecord | undefined>((res, rej) => { const r = tx(db, "readonly").get(id); r.onsuccess = () => res(r.result as DocRecord); r.onerror = () => rej(r.error); });
   if (!rec) return null; const { blob, ...meta } = rec; return { blob, meta };
 }
+export async function updateDocMeta(id: string, patch: Partial<DocMeta>): Promise<void> {
+  const db = await open();
+  const rec = await new Promise<DocRecord | undefined>((res, rej) => { const r = tx(db, "readonly").get(id); r.onsuccess = () => res(r.result as DocRecord); r.onerror = () => rej(r.error); });
+  if (!rec) return;
+  const next = { ...rec, ...patch, id: rec.id, createdAt: rec.createdAt, blob: rec.blob };
+  await new Promise<void>((res, rej) => { const r = tx(db, "readwrite").put(next); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
+}
+
 export async function deleteDoc(id: string): Promise<void> {
   const db = await open();
   await new Promise<void>((res, rej) => { const r = tx(db, "readwrite").delete(id); r.onsuccess = () => res(); r.onerror = () => rej(r.error); });
+}
+
+/** Docs flagged for expiry notification (loaded for the reminder engine). */
+export async function expiringDocs(): Promise<DocMeta[]> {
+  return (await listDocs()).filter((d) => d.notifyExpiry && d.expiryDate);
 }
 export function openBlob(blob: Blob): void {
   const url = URL.createObjectURL(blob);

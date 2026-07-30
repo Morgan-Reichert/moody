@@ -1,6 +1,31 @@
 import { ReminderSettings, Medication, Slot, dosesForDate, isMedTaken, Dose, getAppointments, getDoctors } from "./storage";
+import type { DocMeta } from "./vault-db";
 
-export type ReminderKind = "mood" | "med" | "appt";
+export type ReminderKind = "mood" | "med" | "appt" | "expiry";
+
+const EXPIRY_OFFSETS = [{ d: 30, label: "dans 30 jours" }, { d: 7, label: "dans 7 jours" }, { d: 1, label: "demain" }, { d: 0, label: "aujourd'hui" }];
+
+/** Reminders for documents approaching their expiry date (6h catch-up window). */
+export function expiryReminders(docs: DocMeta[], now = new Date()): DueReminder[] {
+  const out: DueReminder[] = [];
+  for (const doc of docs) {
+    if (!doc.expiryDate || !doc.notifyExpiry) continue;
+    const exp = new Date(doc.expiryDate + "T09:00:00").getTime();
+    if (exp < now.getTime() - 864e5) continue;
+    for (const off of EXPIRY_OFFSETS) {
+      const target = exp - off.d * 864e5;
+      const dt = now.getTime() - target;
+      if (dt >= 0 && dt <= 6 * 3600e3) {
+        out.push({
+          slot: `${doc.id}|expiry|${off.d}`, kind: "expiry", time: doc.expiryDate,
+          title: `${doc.title} à renouveler ${off.label}`,
+          body: `Ce document arrive à expiration le ${doc.expiryDate}.`,
+        });
+      }
+    }
+  }
+  return out;
+}
 
 const APPT_OFFSETS: { min: number; label: string }[] = [
   { min: 1440, label: "dans 24 h" },
