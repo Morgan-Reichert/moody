@@ -12,6 +12,7 @@ export async function initNative(): Promise<void> {
   try { await LocalNotifications.requestPermissions(); } catch { /* */ }
   try {
     await LocalNotifications.createChannel({ id: "moody-meds", name: "Médicaments", description: "Rappels de prise", importance: 5, vibration: true, visibility: 1 });
+    await LocalNotifications.createChannel({ id: "moody-meds-loud", name: "Médicaments (alarme forte)", description: "Alarme sonore de prise", importance: 5, sound: "alarm.wav", vibration: true, visibility: 1 });
     await LocalNotifications.createChannel({ id: "moody-mood", name: "Humeur & rendez-vous", description: "Rappels d'humeur et RDV", importance: 4, vibration: true, visibility: 1 });
   } catch { /* */ }
 }
@@ -39,11 +40,20 @@ export async function syncNative(): Promise<void> {
       notifs.push({ id: idFor(`mood-${slot.time}-${d}`), title: "Comment te sens-tu ?", body: "C'est l'heure de noter ton humeur.", channelId: "moody-mood", schedule: { on: { weekday: d + 1, hour: h, minute: m }, repeats: true, allowWhileIdle: true } });
     }
   }
+  const loud = !!settings.loudAlarm;
   for (const med of meds) {
     for (const slot of med.slots) {
       const [h, m] = slot.time.split(":").map(Number);
       for (const d of (slot.days.length ? slot.days : everyday)) {
-        notifs.push({ id: idFor(`med-${med.id}-${slot.time}-${d}`), title: `Médicament — ${med.name}`, body: med.dose ? `Il est temps de prendre ${med.name} (${med.dose}).` : `Il est temps de prendre ${med.name}.`, channelId: "moody-meds", schedule: { on: { weekday: d + 1, hour: h, minute: m }, repeats: true, allowWhileIdle: true } });
+        notifs.push({
+          id: idFor(`med-${med.id}-${slot.time}-${d}`),
+          title: `Médicament — ${med.name}`,
+          body: med.dose ? `Il est temps de prendre ${med.name} (${med.dose}).` : `Il est temps de prendre ${med.name}.`,
+          channelId: loud ? "moody-meds-loud" : "moody-meds",
+          ...(loud ? { sound: "alarm.wav" } : {}),
+          extra: { kind: "med", medId: med.id },
+          schedule: { on: { weekday: d + 1, hour: h, minute: m }, repeats: true, allowWhileIdle: true },
+        });
       }
     }
   }

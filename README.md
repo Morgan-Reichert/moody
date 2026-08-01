@@ -72,4 +72,8 @@ npm run cap:sync
 
 Config : `capacitor.config.ts` (`appId: tech.stariax.moody`, `webDir: out`).
 
+**Icônes & splash** : sources dans `assets/` (`icon.png`, `splash.png`, `splash-dark.png`). Régénérer avec `npx @capacitor/assets generate`.
+
+**Alarme forte des médicaments** : le son `alarm.wav` (26 s) est dans `android/app/src/main/res/raw/` (auto-inclus) et `ios/App/App/`. ⚠️ Sur **iOS**, il faut l'ajouter au bundle : dans Xcode, glisser `alarm.wav` dans le projet App et cocher la target « App » (Copy Bundle Resources). Quand « Alarme forte » est activée, les notifs médicaments utilisent ce son ; taper la notif ouvre l'alarme in-app avec **scan du médicament pour la couper**.
+
 <div align="center"><sub>Groupe Stariax · 100% privé, local-first.</sub></div>

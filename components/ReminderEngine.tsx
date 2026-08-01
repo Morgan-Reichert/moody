@@ -72,6 +72,27 @@ export function ReminderEngine({ onOpenMood }: { onOpenMood: () => void }) {
     alarmRef.current = alarm;
   };
 
+  // Native: when a medication OS-notification is tapped, raise the in-app loud alarm + scan-to-dismiss.
+  useEffect(() => {
+    const handler = (e: Event) => {
+      if (activeRef.current) return;
+      const medId = (e as CustomEvent).detail?.medId;
+      const med = getMeds().find((m) => m.id === medId);
+      if (!med) return;
+      const s = getSettings();
+      trigger({
+        slot: `native-${med.id}-${Date.now()}`, kind: "med",
+        time: new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        medId: med.id, barcode: med.barcode,
+        title: `Médicament — ${med.name}`,
+        body: med.dose ? `Il est temps de prendre ${med.name} (${med.dose}).` : `Il est temps de prendre ${med.name}.`,
+      }, s.loudAlarm);
+    };
+    window.addEventListener("moody:med-alarm", handler);
+    return () => window.removeEventListener("moody:med-alarm", handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const stopSound = () => { alarmRef.current?.stop(); alarmRef.current = null; };
 
   const validate = () => {

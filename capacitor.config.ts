@@ -16,6 +16,13 @@ const config: CapacitorConfig = {
     LocalNotifications: {
       smallIcon: "ic_stat_moody",
       iconColor: "#1aad55",
+      sound: "alarm.wav",
+    },
+    SplashScreen: {
+      launchShowDuration: 900,
+      backgroundColor: "#eef2ec",
+      showSpinner: false,
+      androidScaleType: "CENTER_CROP",
     },
   },
 };
