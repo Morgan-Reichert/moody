@@ -9,6 +9,7 @@ import { ReminderEngine } from "@/components/ReminderEngine";
 import { LockScreen } from "@/components/LockScreen";
 import { Onboarding } from "@/components/Onboarding";
 import { MedicalVault } from "@/components/MedicalVault";
+import { NativeBridge } from "@/components/NativeBridge";
 import { isLocked } from "@/lib/security";
 
 export default function Home() {
@@ -101,6 +102,7 @@ export default function Home() {
 
       <BottomNav tab={tab} onTab={goTo} onHealth={() => setShowVault(true)} />
       <ReminderEngine onOpenMood={() => goTo(1)} />
+      <NativeBridge />
       {showVault && <MedicalVault onClose={() => setShowVault(false)} />}
     </div>
   );

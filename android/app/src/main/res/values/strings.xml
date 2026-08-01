@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Moody</string>
+    <string name="title_activity_main">Moody</string>
+    <string name="package_name">tech.stariax.moody</string>
+    <string name="custom_url_scheme">tech.stariax.moody</string>
+</resources>

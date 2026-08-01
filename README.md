@@ -50,4 +50,26 @@ npm run dev      # http://localhost:3000
 npm run build    # export statique dans ./out
 ```
 
+## Apps natives iOS & Android (Capacitor)
+
+Le même code tourne en **app native** via [Capacitor](https://capacitorjs.com). Les projets natifs sont dans `ios/` et `android/`.
+
+**Notifications natives** : sur mobile, les rappels d'humeur, de médicaments et de rendez-vous sont programmés au niveau de l'OS (`@capacitor/local-notifications`) — ils sonnent **même app fermée**. Sur le web, le moteur in-app prend le relais.
+
+Prérequis : **Xcode** (iOS) + **CocoaPods** (`sudo gem install cocoapods`), **Android Studio** + **JDK 17** (Android).
+
+```bash
+# Android
+npm run android        # build + sync + ouvre Android Studio → Run
+
+# iOS (sur Mac)
+cd ios/App && pod install && cd ../..
+npm run ios            # build + sync + ouvre Xcode → Run (signer avec ton équipe Apple)
+
+# Après chaque changement de code web :
+npm run cap:sync
+```
+
+Config : `capacitor.config.ts` (`appId: tech.stariax.moody`, `webDir: out`).
+
 <div align="center"><sub>Groupe Stariax · 100% privé, local-first.</sub></div>
