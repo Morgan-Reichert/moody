@@ -79,8 +79,9 @@ export default function Home() {
   if (mounted && !onboarded) return <Onboarding onDone={() => setOnboarded(true)} />;
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-cream">
-      <div ref={wrapRef} className="flex-1 overflow-hidden relative">
+    <div className="fixed inset-0 bg-cream">
+      {/* Content fills the whole screen; the nav floats above it */}
+      <div ref={wrapRef} className="absolute inset-0 overflow-hidden">
         <div
           className="flex h-full"
           style={{
@@ -100,7 +101,11 @@ export default function Home() {
         </div>
       </div>
 
-      <BottomNav tab={tab} onTab={goTo} onHealth={() => setShowVault(true)} />
+      {/* Floating navigation — sits above the page (only the pill catches taps) */}
+      <div className="absolute bottom-0 inset-x-0 z-40 pointer-events-none">
+        <BottomNav tab={tab} onTab={goTo} onHealth={() => setShowVault(true)} />
+      </div>
+
       <ReminderEngine onOpenMood={() => goTo(1)} />
       <NativeBridge />
       {showVault && <MedicalVault onClose={() => setShowVault(false)} />}

@@ -136,7 +136,7 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   });
 
   return (
-    <div className="min-h-full pb-6">
+    <div className="min-h-full pb-[calc(104px_+_env(safe-area-inset-bottom))]">
       {/* Sticky top bar — opaque at the very top, fading translucent downward */}
       <header className="sticky top-0 z-30 pt-safe px-5 pb-6 bg-gradient-to-b from-cream via-cream/92 to-transparent backdrop-blur-[6px]">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3 pt-4">

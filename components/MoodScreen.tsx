@@ -78,7 +78,7 @@ export function MoodScreen() {
   };
 
   return (
-    <div className="min-h-full px-5 pt-safe pb-6">
+    <div className="min-h-full px-5 pt-safe pb-[calc(104px_+_env(safe-area-inset-bottom))]">
       <div className="max-w-md mx-auto stagger">
         <header className="pt-3 pb-1">
           <p className="text-[11px] font-bold tracking-widest uppercase text-brand-700/70">Nouvelle saisie</p>

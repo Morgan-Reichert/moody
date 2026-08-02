@@ -6,7 +6,7 @@ export function BottomNav({ tab, onTab, onHealth }: { tab: number; onTab: (i: nu
   return (
     <div className="pb-safe px-5 pt-1.5 shrink-0">
       <nav
-        className="mx-auto w-fit flex items-center gap-1 rounded-full px-1.5 py-1.5 border border-white/60 shadow-[0_12px_34px_-10px_rgba(16,40,28,.35)]"
+        className="mx-auto w-fit flex items-center gap-1 rounded-full px-1.5 py-1.5 border border-white/60 shadow-[0_12px_34px_-10px_rgba(16,40,28,.35)] pointer-events-auto"
         style={{ background: "rgba(255,255,255,0.55)", backdropFilter: "blur(22px) saturate(180%)", WebkitBackdropFilter: "blur(22px) saturate(180%)" }}
       >
         <button onClick={() => onTab(0)} aria-label="Accueil"
