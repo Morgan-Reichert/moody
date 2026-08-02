@@ -20,8 +20,8 @@ const config: CapacitorConfig = {
       sound: "alarm.wav",
     },
     SplashScreen: {
-      launchShowDuration: 2500,
-      launchAutoHide: false,
+      launchShowDuration: 500,
+      launchAutoHide: true,
       backgroundColor: "#eef2ec",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",

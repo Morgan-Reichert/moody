@@ -13,12 +13,10 @@ export function NativeBridge() {
     let cleanupTap: (() => void) | undefined;
 
     (async () => {
+      // Hide the native splash right away so nothing can block the launch.
+      try { const { SplashScreen } = await import("@capacitor/splash-screen"); SplashScreen.hide().catch(() => {}); } catch { /* */ }
       await initNative().catch(() => {});
       await syncNative().catch(() => {});
-      try {
-        const { SplashScreen } = await import("@capacitor/splash-screen");
-        SplashScreen.hide().catch(() => {});
-      } catch { /* */ }
       try {
         const { LocalNotifications } = await import("@capacitor/local-notifications");
         const h = await LocalNotifications.addListener("localNotificationActionPerformed", (ev: any) => {
