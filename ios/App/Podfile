@@ -22,6 +22,13 @@ end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
+  # Recent Xcode rejects double-quoted includes in framework headers (Capacitor/Cordova) — silence it.
+  installer.pods_project.targets.each do |t|
+    t.build_configurations.each do |config|
+      config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+      config.build_settings['GCC_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+    end
+  end
   # Recent Xcode requires each .xcodeproj to have its inner project.xcworkspace/contents.xcworkspacedata
   ['App.xcodeproj', 'Pods/Pods.xcodeproj'].each do |proj|
     ws = File.join(__dir__, proj, 'project.xcworkspace')
