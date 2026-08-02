@@ -135,6 +135,17 @@ export function fmtDuration(ms: number): string {
 
 // ── Notifications ────────────────────────────────────────────────────────────
 export async function requestNotifPermission(): Promise<boolean> {
+  // Native (Capacitor): ask the OS notification permission, not the Web Notification API
+  // (which is unavailable inside the iOS WebView).
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    if (Capacitor.isNativePlatform()) {
+      const { LocalNotifications } = await import("@capacitor/local-notifications");
+      let st = await LocalNotifications.checkPermissions();
+      if (st.display !== "granted") st = await LocalNotifications.requestPermissions();
+      return st.display === "granted";
+    }
+  } catch { /* fall through to web */ }
   if (typeof Notification === "undefined") return false;
   if (Notification.permission === "granted") return true;
   if (Notification.permission === "denied") return false;

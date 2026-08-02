@@ -78,7 +78,7 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
   const enableNotifs = async () => {
     const ok = await requestNotifPermission();
     patch({ notifications: ok });
-    if (!ok) alert("Notifications refusées. Active-les dans les réglages de ton navigateur/téléphone.");
+    if (!ok) alert("Notifications refusées. Autorise-les dans Réglages › Moody › Notifications.");
   };
 
   return (
@@ -194,7 +194,7 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
                 </span>
                 <div className="flex-1 text-left">
                   <p className="font-bold text-ink text-[15px]">{settings.notifications ? "Notifications activées" : "Activer les notifications"}</p>
-                  <p className="text-[12.5px] text-ink-mute">Une PWA ne peut pas sonner fort quand elle est fermée (surtout iPhone).</p>
+                  <p className="text-[12.5px] text-ink-mute">Rappels de prise, humeur et rendez-vous, même quand l'app est fermée.</p>
                 </div>
               </button>
             </section>

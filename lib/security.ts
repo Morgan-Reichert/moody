@@ -1,6 +1,8 @@
+import { Capacitor } from "@capacitor/core";
 import { getSettings, saveSettings } from "./storage";
 
 const UNLOCK_KEY = "moody_unlocked";
+const isNative = () => { try { return Capacitor.isNativePlatform(); } catch { return false; } };
 
 // ── base64url helpers ────────────────────────────────────────────────────────
 function bufToB64url(buf: ArrayBuffer): string {
@@ -49,11 +51,29 @@ export function isLocked(): boolean {
 export function unlockSession(): void { sessionStorage.setItem(UNLOCK_KEY, "1"); }
 export function lockNow(): void { sessionStorage.removeItem(UNLOCK_KEY); }
 
-// ── Face ID / biometrics (WebAuthn platform authenticator) ───────────────────
+// ── Face ID / biometrics ─────────────────────────────────────────────────────
+// Native (iOS/Android): the OS LocalAuthentication via @aparajita/capacitor-biometric-auth.
+// Web: WebAuthn platform authenticator.
 export function biometricsAvailable(): boolean {
+  if (isNative()) return true; // real availability is checked at register time
   return typeof window !== "undefined" && !!(window as any).PublicKeyCredential && !!navigator.credentials;
 }
 export async function registerFace(): Promise<boolean> {
+  if (isNative()) {
+    try {
+      const { BiometricAuth } = await import("@aparajita/capacitor-biometric-auth");
+      const info = await BiometricAuth.checkBiometry();
+      if (!info.isAvailable) return false;
+      await BiometricAuth.authenticate({
+        reason: "Confirme pour activer le déverrouillage biométrique",
+        cancelTitle: "Annuler",
+        iosFallbackTitle: "Utiliser le code",
+        allowDeviceCredential: false,
+      });
+      saveSettings({ faceId: true, faceCredId: "native" });
+      return true;
+    } catch { return false; }
+  }
   if (!biometricsAvailable()) return false;
   try {
     const challenge = crypto.getRandomValues(new Uint8Array(32));
@@ -76,7 +96,20 @@ export async function registerFace(): Promise<boolean> {
 }
 export async function verifyFace(): Promise<boolean> {
   const s = getSettings();
-  if (!biometricsAvailable() || !s.faceCredId) return false;
+  if (!s.faceCredId) return false;
+  if (isNative()) {
+    try {
+      const { BiometricAuth } = await import("@aparajita/capacitor-biometric-auth");
+      await BiometricAuth.authenticate({
+        reason: "Déverrouille Moody",
+        cancelTitle: "Annuler",
+        iosFallbackTitle: "Utiliser le code",
+        allowDeviceCredential: true,
+      });
+      return true;
+    } catch { return false; }
+  }
+  if (!biometricsAvailable()) return false;
   try {
     const challenge = crypto.getRandomValues(new Uint8Array(32));
     const assertion = await navigator.credentials.get({
