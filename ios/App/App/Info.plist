@@ -55,5 +55,7 @@
 	<string>Moody enregistre vos rapports et documents dans votre photothèque.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Moody utilise Face ID pour déverrouiller l'accès à vos données de santé.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
