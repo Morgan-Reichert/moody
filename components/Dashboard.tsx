@@ -138,9 +138,9 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   return (
     <div className="min-h-full pb-6">
       {/* Sticky top bar — opaque at the very top, fading translucent downward */}
-      <header className="sticky top-0 z-30 pt-safe px-5 pb-5 bg-gradient-to-b from-cream via-cream/90 to-transparent backdrop-blur-[6px]">
-        <div className="max-w-md mx-auto flex items-center justify-between gap-3">
-          <img src="./brand/moody-wordmark-tight.png" alt="Moody" className="h-14 w-auto max-w-[58%]" />
+      <header className="sticky top-0 z-30 pt-safe px-5 pb-6 bg-gradient-to-b from-cream via-cream/92 to-transparent backdrop-blur-[6px]">
+        <div className="max-w-md mx-auto flex items-center justify-between gap-3 pt-4">
+          <img src="./brand/moody-wordmark-tight.png" alt="Moody" className="h-[60px] w-auto max-w-[58%]" />
           <div className="flex items-center gap-2">
             <button onClick={() => setShowReport(true)} className="grid place-items-center h-11 w-11 rounded-2xl bg-white shadow-card text-ink-soft active:scale-95 transition" aria-label="Rapport">
               <FileText className="h-5 w-5" strokeWidth={2.2} />
