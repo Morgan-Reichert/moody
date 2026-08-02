@@ -22,4 +22,11 @@ end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
+  # Recent Xcode requires each .xcodeproj to have its inner project.xcworkspace/contents.xcworkspacedata
+  ['App.xcodeproj', 'Pods/Pods.xcodeproj'].each do |proj|
+    ws = File.join(__dir__, proj, 'project.xcworkspace')
+    Dir.mkdir(ws) unless Dir.exist?(ws)
+    f = File.join(ws, 'contents.xcworkspacedata')
+    File.write(f, %(<?xml version="1.0" encoding="UTF-8"?>\n<Workspace\n   version = "1.0">\n   <FileRef\n      location = "self:">\n   </FileRef>\n</Workspace>\n)) unless File.exist?(f)
+  end
 end
