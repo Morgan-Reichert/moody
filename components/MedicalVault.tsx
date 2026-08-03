@@ -98,14 +98,14 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
 
 function Field({ label, defVal, onSave, placeholder, type = "text", area }: { label: string; defVal?: string; onSave: (v: string) => void; placeholder?: string; type?: string; area?: boolean }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">{label}</span>
       {area ? (
         <textarea defaultValue={defVal} onBlur={(e) => onSave(e.target.value)} placeholder={placeholder} rows={2}
-          className="mt-1 w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none" />
+          className="mt-1 w-full min-w-0 bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none" />
       ) : (
         <input type={type} defaultValue={defVal} onBlur={(e) => onSave(e.target.value)} placeholder={placeholder}
-          className="mt-1 w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none" />
+          className="mt-1 w-full min-w-0 appearance-none bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none" />
       )}
     </label>
   );
@@ -200,8 +200,8 @@ function FicheTab() {
         <Field label="Nom complet" defVal={p.fullName} onSave={s("fullName")} placeholder="Prénom Nom" />
         <div className="grid grid-cols-2 gap-2">
           <Field label="Naissance" defVal={p.birthDate} onSave={s("birthDate")} type="date" />
-          <label className="block"><span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">Sexe</span>
-            <select defaultValue={p.sex ?? ""} onChange={(e) => saveMedicalProfile({ sex: e.target.value || undefined })} className="mt-1 w-full bg-brand-50 rounded-xl px-2 py-2.5 text-ink outline-none">
+          <label className="block min-w-0"><span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">Sexe</span>
+            <select defaultValue={p.sex ?? ""} onChange={(e) => saveMedicalProfile({ sex: e.target.value || undefined })} className="mt-1 w-full min-w-0 bg-brand-50 rounded-xl px-2 py-2.5 text-ink outline-none">
               <option value="">—</option><option>Femme</option><option>Homme</option><option>Autre</option>
             </select></label>
         </div>
@@ -387,7 +387,7 @@ function AppointmentCard({ appt, doctors }: { appt: Appointment; doctors: Doctor
       </div>
       <input type="datetime-local" defaultValue={localValue}
         onChange={(e) => { if (e.target.value) saveAppointment({ ...appt, datetime: new Date(e.target.value).toISOString() }); }}
-        className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 font-display font-semibold text-ink outline-none" />
+        className="block w-full min-w-0 max-w-full appearance-none bg-brand-50 rounded-xl px-3.5 py-2.5 font-display font-semibold text-ink outline-none" />
       <select value={appt.doctorId ?? ""} onChange={(e) => saveAppointment({ ...appt, doctorId: e.target.value || undefined })} className="w-full bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none">
         <option value="">Médecin (optionnel)</option>
         {doctors.map((d) => <option key={d.id} value={d.id}>{d.name || "Médecin"}{d.specialty ? ` — ${d.specialty}` : ""}</option>)}
