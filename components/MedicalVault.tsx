@@ -41,12 +41,28 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
   const doctors = getDoctors();
   const appts = getAppointments();
 
+  // Pull-down-to-dismiss (drag from the header/handle area)
+  const [dragY, setDragY] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startY = useRef(0);
+  const onDragStart = (e: React.TouchEvent) => { startY.current = e.touches[0].clientY; setDragging(true); };
+  const onDragMove = (e: React.TouchEvent) => { const dy = e.touches[0].clientY - startY.current; setDragY(dy > 0 ? dy : dy * 0.2); };
+  const onDragEnd = () => { setDragging(false); if (dragY > 110) onClose(); else setDragY(0); };
+
   return (
     <Portal>
       <div className="fixed inset-0 z-[60] flex flex-col justify-end" role="dialog" aria-modal="true">
-        <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative bg-cream rounded-t-4xl h-[94vh] flex flex-col animate-sheetUp">
-          <div className="px-5 pt-3 pb-2 shrink-0">
+        <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" style={{ opacity: dragging ? Math.max(0.35, 1 - dragY / 500) : 1 }} onClick={onClose} />
+        <div
+          className="relative rounded-t-4xl h-[88vh] flex flex-col animate-sheetUp bg-cream/75 backdrop-blur-2xl border-t border-white/40 shadow-[0_-12px_44px_-12px_rgba(16,40,28,.35)]"
+          style={dragging || dragY ? { transform: `translateY(${dragY}px)`, transition: dragging ? "none" : "transform .32s cubic-bezier(.22,.61,.36,1)" } : undefined}
+        >
+          <div
+            className="px-5 pt-3 pb-2 shrink-0 touch-none cursor-grab active:cursor-grabbing"
+            onTouchStart={onDragStart}
+            onTouchMove={onDragMove}
+            onTouchEnd={onDragEnd}
+          >
             <div className="mx-auto h-1.5 w-10 rounded-full bg-black/10 mb-3" />
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-xl font-semibold text-ink flex items-center gap-2"><HeartPulse className="h-5 w-5 text-brand-600" /> Espace santé</h2>
