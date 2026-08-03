@@ -3,7 +3,7 @@ import { supabase } from "./supabase";
 // Public URL where the /consult page is hosted (a doctor opens this from the QR).
 // On the native app window.location.origin is "capacitor://localhost" — unusable — so a
 // real, public https base is REQUIRED. Set NEXT_PUBLIC_CONSULT_BASE_URL at build time.
-const PUBLIC_BASE = (process.env.NEXT_PUBLIC_CONSULT_BASE_URL || "").replace(/\/+$/, "");
+const PUBLIC_BASE = (process.env.NEXT_PUBLIC_CONSULT_BASE_URL || "https://moody.clinic").replace(/\/+$/, "");
 function consultBaseUrl(): string {
   if (PUBLIC_BASE) return PUBLIC_BASE;
   const o = typeof window !== "undefined" ? window.location.origin : "";
