@@ -6,6 +6,7 @@ import {
   ENERGY_LABELS, APPETITE_LABELS,
 } from "@/lib/storage";
 import { vibrate } from "@/lib/reminders";
+import { hSelect, hSuccess } from "@/lib/haptics";
 import { COMMON_SYMPTOMS, getAdvice } from "@/lib/advice";
 import { aiUsesLeft, AI_WEEKLY_MAX } from "@/lib/ai";
 import { DragSlider } from "@/components/DragSlider";
@@ -60,6 +61,7 @@ export function MoodScreen() {
 
   const save = () => {
     if (mood == null) return;
+    hSuccess();
     saveEntry({
       datetime: new Date().toISOString(),
       mood,
@@ -103,7 +105,7 @@ export function MoodScreen() {
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => {
               const on = mood === n;
               return (
-                <button key={n} onClick={() => { setMood(n); vibrate(15); }}
+                <button key={n} onClick={() => { setMood(n); hSelect(); }}
                   className={`aspect-square rounded-2xl grid place-items-center font-display font-semibold text-[17px] transition-all active:scale-90 ${on ? "bg-brand-500 text-white shadow-glow scale-105" : "bg-brand-50 text-ink-soft"}`}>
                   {n}
                 </button>

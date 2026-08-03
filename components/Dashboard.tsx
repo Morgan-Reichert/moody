@@ -18,7 +18,9 @@ import { HelpModal } from "@/components/HelpModal";
 import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
   Check, Clock, AlertTriangle, FileText, CheckCircle2, Heart, Info, Wind, HeartHandshake,
+  HeartPulse, PlusCircle,
 } from "lucide-react";
+import { hTap } from "@/lib/haptics";
 
 function Ring({ value }: { value: number | null }) {
   const pct = value != null ? Math.max(4, (value / 10) * 100) : 0;
@@ -32,7 +34,7 @@ function Ring({ value }: { value: number | null }) {
   );
 }
 
-export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood: () => void }) {
+export function Dashboard({ mounted, onLogMood, onOpenVault }: { mounted: boolean; onLogMood: () => void; onOpenVault?: () => void }) {
   useStore();
   const [showSettings, setShowSettings] = useState(false);
   const [showReport, setShowReport] = useState(false);
@@ -83,6 +85,20 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
           <Stat icon={<TrendingUp className="h-[18px] w-[18px]" />} value={avg7 != null ? avg7.toFixed(1) : "—"} label="Moy. 7 j" />
           <Stat icon={<Flame className="h-[18px] w-[18px]" />} value={String(strk)} label={strk > 1 ? "jours de série" : "jour de série"} />
           <Stat icon={<Sparkles className="h-[18px] w-[18px]" />} value={String(today.length)} label="aujourd'hui" />
+        </section>
+      ),
+    },
+    {
+      key: "quick",
+      node: (
+        <section className="rounded-4xl p-5 bg-peach/55 shadow-soft">
+          <h2 className="font-display text-[16px] font-semibold text-ink mb-3">Raccourcis</h2>
+          <div className="grid grid-cols-2 gap-2.5">
+            <QuickTile icon={<PlusCircle className="h-6 w-6 text-brand-600" />} title="Noter humeur" sub="En 10 secondes" onClick={onLogMood} />
+            <QuickTile icon={<HeartPulse className="h-6 w-6 text-brand-600" />} title="Espace santé" sub="Ton carnet" onClick={() => onOpenVault?.()} />
+            <QuickTile icon={<FileText className="h-6 w-6 text-brand-600" />} title="Rapport" sub="PDF médecin" onClick={() => setShowReport(true)} />
+            <QuickTile icon={<Wind className="h-6 w-6 text-brand-600" />} title="Respirer" sub="1 min de calme" onClick={() => setShowBreathe(true)} />
+          </div>
         </section>
       ),
     },
@@ -194,6 +210,16 @@ function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; la
   );
 }
 
+function QuickTile({ icon, title, sub, onClick }: { icon: React.ReactNode; title: string; sub: string; onClick: () => void }) {
+  return (
+    <button onClick={() => { hTap(); onClick(); }} className="rounded-2xl bg-white shadow-card p-4 flex flex-col items-start gap-1.5 active:scale-[.98] transition-transform text-left">
+      {icon}
+      <span className="font-bold text-ink text-[14px]">{title}</span>
+      <span className="text-[11.5px] text-ink-mute">{sub}</span>
+    </button>
+  );
+}
+
 /** Live medication status — its own 1s tick so the rest of the dashboard doesn't re-render each second. */
 function MedStatusCard({ onManage }: { onManage: () => void }) {
   useStore();
@@ -247,7 +273,7 @@ function MedStatusCard({ onManage }: { onManage: () => void }) {
       <div className="divide-y divide-black/5">
         {s.doses.map((d) => (
           <div key={d.medId + d.time} className="flex items-center gap-2 py-2.5">
-            <button onClick={() => setMedTaken(date, d.medId, d.time, !d.taken)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+            <button onClick={() => { hTap(); setMedTaken(date, d.medId, d.time, !d.taken); }} className="flex items-center gap-3 flex-1 min-w-0 text-left">
               <span className="font-display font-semibold text-ink tabular-nums w-12">{d.time}</span>
               <span className="flex-1 min-w-0">
                 <span className="font-bold text-ink text-[15px] block truncate">{d.name}</span>
@@ -255,7 +281,7 @@ function MedStatusCard({ onManage }: { onManage: () => void }) {
               </span>
             </button>
             <button onClick={() => setInfo({ name: d.name, h: meds.find((m) => m.id === d.medId)?.highlights, medId: d.medId })} className="grid place-items-center h-8 w-8 rounded-lg text-brand-600 active:scale-90" aria-label="Infos médicament"><Info className="h-[18px] w-[18px]" /></button>
-            <button onClick={() => setMedTaken(date, d.medId, d.time, !d.taken)} className={`grid place-items-center h-7 w-7 rounded-lg border-2 transition shrink-0 ${d.taken ? "bg-brand-500 border-brand-500 text-white" : "border-black/15 text-transparent"}`}>
+            <button onClick={() => { hTap(); setMedTaken(date, d.medId, d.time, !d.taken); }} className={`grid place-items-center h-7 w-7 rounded-lg border-2 transition shrink-0 ${d.taken ? "bg-brand-500 border-brand-500 text-white" : "border-black/15 text-transparent"}`}>
               <Check className="h-4 w-4" strokeWidth={3} />
             </button>
           </div>

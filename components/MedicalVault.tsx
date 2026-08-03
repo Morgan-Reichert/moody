@@ -13,6 +13,7 @@ import { MedAutocomplete } from "@/components/MedAutocomplete";
 import { DocScanner } from "@/components/DocScanner";
 import { ShareDoctorModal } from "@/components/ShareDoctorModal";
 import { Portal } from "@/components/Portal";
+import { hSelect } from "@/lib/haptics";
 import {
   X, Plus, Trash2, User, Stethoscope, FileText, CalendarClock, ChevronDown,
   Phone, Mail, MapPin, FolderOpen, Upload, HeartPulse, Bell, ScanText, AlertTriangle, QrCode,
@@ -73,7 +74,7 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
             </div>
             <div className="flex gap-1.5 bg-white rounded-2xl p-1 shadow-card">
               {([["fiche", "Fiche", User], ["medecins", "Médecins", Stethoscope], ["documents", "Docs", FileText], ["rdv", "RDV", CalendarClock]] as const).map(([k, label, Icon]) => (
-                <button key={k} onClick={() => setTab(k)} className={`flex-1 flex flex-col items-center gap-0.5 rounded-xl py-2 transition ${tab === k ? "bg-brand-500 text-white shadow-glow" : "text-ink-mute"}`}>
+                <button key={k} onClick={() => { hSelect(); setTab(k); }} className={`flex-1 flex flex-col items-center gap-0.5 rounded-xl py-2 transition ${tab === k ? "bg-brand-500 text-white shadow-glow" : "text-ink-mute"}`}>
                   <Icon className="h-[18px] w-[18px]" /><span className="text-[11px] font-bold">{label}</span>
                 </button>
               ))}
@@ -81,10 +82,12 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex-1 overflow-y-auto overscroll-none px-5 pb-8 pt-2">
-            {tab === "fiche" && <FicheTab />}
-            {tab === "medecins" && <MedecinsTab doctors={doctors} />}
-            {tab === "documents" && <DocumentsTab doctors={doctors} />}
-            {tab === "rdv" && <RdvTab doctors={doctors} appts={appts} />}
+            <div key={tab} className="animate-tab">
+              {tab === "fiche" && <FicheTab />}
+              {tab === "medecins" && <MedecinsTab doctors={doctors} />}
+              {tab === "documents" && <DocumentsTab doctors={doctors} />}
+              {tab === "rdv" && <RdvTab doctors={doctors} appts={appts} />}
+            </div>
           </div>
         </div>
       </div>

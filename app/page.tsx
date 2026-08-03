@@ -93,7 +93,7 @@ export default function Home() {
           onTouchEnd={onTouchEnd}
         >
           <div className="flex-none w-full h-full overflow-y-auto overflow-x-hidden overscroll-none">
-            <Dashboard mounted={mounted} onLogMood={() => goTo(1)} />
+            <Dashboard mounted={mounted} onLogMood={() => goTo(1)} onOpenVault={() => setShowVault(true)} />
           </div>
           <div className="flex-none w-full h-full overflow-y-auto overflow-x-hidden overscroll-none">
             <MoodScreen />

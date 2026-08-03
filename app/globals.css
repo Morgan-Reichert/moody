@@ -26,6 +26,14 @@ html, body {
 
 * { -webkit-tap-highlight-color: transparent; }
 
+/* native tap feel: no long-press callout, no accidental text selection on controls */
+button, a, [role="button"], label, .card { -webkit-touch-callout: none; }
+button, a, [role="button"] { user-select: none; -webkit-user-select: none; }
+input, textarea, [contenteditable="true"] { user-select: text; -webkit-user-select: text; }
+
+/* inertial momentum scrolling on every scroll surface */
+.overflow-y-auto, .overflow-auto, .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+
 /* keep inputs from triggering iOS zoom (needs >=16px) */
 @media screen and (max-width: 640px) {
   input, textarea, select { font-size: 16px; }
@@ -76,6 +84,8 @@ html, body {
 }
 
 @keyframes rise { from { opacity:0; transform:translateY(14px) } to { opacity:1; transform:none } }
+@keyframes fadeTab { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
+.animate-tab { animation: fadeTab .28s cubic-bezier(.22,.61,.36,1) both; }
 @keyframes ring-spin { to { transform: rotate(360deg) } }
 @keyframes wiggle { 0%,100% { transform: rotate(-.55deg) } 50% { transform: rotate(.55deg) } }
 .wiggle { animation: wiggle .32s ease-in-out infinite; }
