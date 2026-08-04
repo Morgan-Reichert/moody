@@ -40,7 +40,7 @@ export interface Medication {
   sideEffects?: { date: string; text: string }[];  // effets indésirables signalés
 }
 
-export type ModuleKey = "sport" | "water" | "addiction";
+export type ModuleKey = "sport" | "water" | "addiction" | "brushing" | "menstrual" | "sexual";
 
 export interface Addiction {
   id: string;
@@ -57,6 +57,7 @@ export interface ReminderSettings {
   snoozeMinutes: number;
   notifications: boolean;
   modules: ModuleKey[];             // enabled optional trackers
+  brushSlots?: Slot[];              // teeth-brushing reminder times (brushing module)
   // profile / personalization
   name?: string;
   mantra?: string;
@@ -372,6 +373,9 @@ export const MODULES: { key: ModuleKey; name: string; desc: string }[] = [
   { key: "water", name: "Hydratation", desc: "Carte au dashboard : litres bus + ajout rapide" },
   { key: "sport", name: "Sport & activité", desc: "Minutes d'activité à la saisie d'humeur" },
   { key: "addiction", name: "Contrôle des addictions", desc: "Streaks, encouragements et journal de consommation" },
+  { key: "brushing", name: "Brossage des dents", desc: "Objectif quotidien + rappels de brossage" },
+  { key: "menstrual", name: "Suivi des règles", desc: "Cycle, jour en cours et prédiction des prochaines règles" },
+  { key: "sexual", name: "Vie sexuelle", desc: "Journal privé des rapports (protégé/non, fréquence)" },
 ];
 
 // ── Hydration (dashboard card) ───────────────────────────────────────────────
@@ -451,4 +455,96 @@ export function encouragement(days: number, name: string): string {
   if (days < 30) return `${days} jours ! Ton corps te remercie. Fier·e de toi.`;
   if (days < 90) return `${days} jours — c'est une vraie habitude qui s'installe. Bravo !`;
   return `${days} jours. Tu es un exemple de constance. Immense respect.`;
+}
+
+// ── Brushing (dashboard card + reminders) ────────────────────────────────────
+const K_BRUSH = "moody_brushing"; // date -> count
+export const BRUSH_GOAL = 2;
+export const DEFAULT_BRUSH_SLOTS: Slot[] = [{ time: "08:00", days: ALL_DAYS }, { time: "21:00", days: ALL_DAYS }];
+export function brushSlots(): Slot[] { return getSettings().brushSlots ?? DEFAULT_BRUSH_SLOTS; }
+export function getBrushToday(): number { return read<Record<string, number>>(K_BRUSH, {})[todayISO()] ?? 0; }
+export function addBrush(n = 1): void {
+  const map = read<Record<string, number>>(K_BRUSH, {}); const t = todayISO();
+  map[t] = Math.max(0, (map[t] ?? 0) + n);
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 120); const cut = cutoff.toISOString().slice(0, 10);
+  for (const k of Object.keys(map)) if (k < cut) delete map[k];
+  write(K_BRUSH, map);
+}
+export function resetBrushToday(): void { const map = read<Record<string, number>>(K_BRUSH, {}); delete map[todayISO()]; write(K_BRUSH, map); }
+export function brushStreak(): number {
+  const map = read<Record<string, number>>(K_BRUSH, {}); let n = 0; const d = new Date();
+  const ok = (day: Date) => (map[day.toISOString().slice(0, 10)] ?? 0) >= BRUSH_GOAL;
+  if (!ok(d)) d.setDate(d.getDate() - 1);
+  while (ok(d)) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+
+// ── Menstrual cycle (private, local only) ────────────────────────────────────
+const K_MENSTRUAL = "moody_menstrual";
+export interface PeriodEntry { start: string; end?: string; }   // YYYY-MM-DD
+export interface MenstrualData { periods: PeriodEntry[]; cycleLength: number; periodLength: number; }
+const DEFAULT_MENSTRUAL: MenstrualData = { periods: [], cycleLength: 28, periodLength: 5 };
+export function getMenstrual(): MenstrualData { return { ...DEFAULT_MENSTRUAL, ...read<Partial<MenstrualData>>(K_MENSTRUAL, {}) }; }
+function saveMenstrual(patch: Partial<MenstrualData>): void { write(K_MENSTRUAL, { ...getMenstrual(), ...patch }); }
+export function logPeriodStart(date = todayISO()): void {
+  const periods = getMenstrual().periods.filter((p) => p.start !== date);
+  periods.push({ start: date }); saveMenstrual({ periods });
+}
+export function endCurrentPeriod(date = todayISO()): void {
+  const periods = getMenstrual().periods.slice().sort((a, b) => a.start.localeCompare(b.start));
+  for (let i = periods.length - 1; i >= 0; i--) { if (!periods[i].end) { periods[i].end = date; break; } }
+  saveMenstrual({ periods });
+}
+export function deletePeriod(start: string): void { saveMenstrual({ periods: getMenstrual().periods.filter((p) => p.start !== start) }); }
+function ymd(d: Date) { return d.toISOString().slice(0, 10); }
+function daysDiffYmd(a: string, b: string) { return Math.round((new Date(b + "T12:00").getTime() - new Date(a + "T12:00").getTime()) / 864e5); }
+export interface MenstrualStatus {
+  onPeriod: boolean; periodDay: number | null; cycleDay: number | null;
+  nextInDays: number | null; predictedStart: string | null; avgCycle: number; hasData: boolean;
+}
+export function menstrualStatus(now = new Date()): MenstrualStatus {
+  const m = getMenstrual();
+  const periods = m.periods.slice().sort((a, b) => a.start.localeCompare(b.start));
+  const today = ymd(now);
+  if (!periods.length) return { onPeriod: false, periodDay: null, cycleDay: null, nextInDays: null, predictedStart: null, avgCycle: m.cycleLength, hasData: false };
+  const starts = periods.map((p) => p.start);
+  const gaps: number[] = [];
+  for (let i = 1; i < starts.length; i++) gaps.push(daysDiffYmd(starts[i - 1], starts[i]));
+  const recent = gaps.slice(-6).filter((g) => g >= 15 && g <= 60);
+  const avgCycle = recent.length ? Math.round(recent.reduce((a, b) => a + b, 0) / recent.length) : m.cycleLength;
+  const last = periods[periods.length - 1];
+  const sinceStart = daysDiffYmd(last.start, today);
+  const endBound = last.end ?? ymd(new Date(new Date(last.start + "T12:00").getTime() + (m.periodLength - 1) * 864e5));
+  const onPeriod = today >= last.start && today <= endBound;
+  const predictedStart = ymd(new Date(new Date(last.start + "T12:00").getTime() + avgCycle * 864e5));
+  return {
+    onPeriod,
+    periodDay: onPeriod ? sinceStart + 1 : null,
+    cycleDay: sinceStart >= 0 ? sinceStart + 1 : null,
+    nextInDays: daysDiffYmd(today, predictedStart),
+    predictedStart, avgCycle, hasData: true,
+  };
+}
+
+// ── Sexual activity log (private, local only) ────────────────────────────────
+const K_SEX = "moody_sexual";
+export interface SexLog { id: string; at: string; protected?: boolean; note?: string; }
+export function getSexLogs(): SexLog[] { return read<SexLog[]>(K_SEX, []).sort((a, b) => b.at.localeCompare(a.at)); }
+export function addSexLog(e: { at?: string; protected?: boolean; note?: string }): void {
+  const all = read<SexLog[]>(K_SEX, []);
+  all.push({ id: uid(), at: e.at ?? new Date().toISOString(), protected: e.protected, note: e.note });
+  write(K_SEX, all);
+}
+export function deleteSexLog(id: string): void { write(K_SEX, read<SexLog[]>(K_SEX, []).filter((l) => l.id !== id)); }
+export interface SexStats { last: string | null; total: number; monthCount: number; protectedRate: number | null; }
+export function sexStats(now = new Date()): SexStats {
+  const logs = getSexLogs();
+  const mk = now.toISOString().slice(0, 7);
+  const withProt = logs.filter((l) => l.protected != null);
+  return {
+    last: logs[0]?.at ?? null,
+    total: logs.length,
+    monthCount: logs.filter((l) => l.at.slice(0, 7) === mk).length,
+    protectedRate: withProt.length ? Math.round(withProt.filter((l) => l.protected).length / withProt.length * 100) : null,
+  };
 }

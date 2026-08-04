@@ -5,9 +5,13 @@ import {
   useStore, getWaterToday, addWater, resetWaterToday, WATER_GOAL_CL,
   getAddictions, addictionStat, logConsumption, undoLastConsumption,
   nextMilestone, encouragement, getDoctors, Appointment,
+  getBrushToday, addBrush, resetBrushToday, brushStreak, BRUSH_GOAL,
+  menstrualStatus, logPeriodStart, endCurrentPeriod, sexStats, addSexLog,
 } from "@/lib/storage";
+import { hTap } from "@/lib/haptics";
 import {
   GlassWater, Droplets, RotateCcw, Trophy, ShieldCheck, Undo2, Plus, CalendarClock, MapPin,
+  Sparkles, Droplet, Heart,
 } from "lucide-react";
 
 function relativeWhen(iso: string): string {
@@ -149,6 +153,106 @@ function AddictionCard({ id }: { id: string }) {
         )}
       </div>
       {st.todayCount > 0 && <p className="text-[12px] text-white/70 mt-2">{st.todayCount} consommation{st.todayCount > 1 ? "s" : ""} aujourd'hui · total {st.totalCount}</p>}
+    </section>
+  );
+}
+
+function relativeAgo(iso: string): string {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 864e5);
+  if (d <= 0) return "aujourd'hui";
+  if (d === 1) return "hier";
+  if (d < 30) return `il y a ${d} j`;
+  const mo = Math.floor(d / 30);
+  return `il y a ${mo} mois`;
+}
+
+// ── Brushing ─────────────────────────────────────────────────────────────────
+export function BrushingCard() {
+  useStore();
+  const c = getBrushToday();
+  const pct = Math.min(100, Math.round((c / BRUSH_GOAL) * 100));
+  const strk = brushStreak();
+  return (
+    <section className="card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Sparkles className="h-[18px] w-[18px] text-brand-600" /> Brossage des dents</h2>
+        <button onClick={resetBrushToday} className="grid place-items-center h-8 w-8 rounded-lg text-ink-mute active:scale-90" aria-label="Réinitialiser"><RotateCcw className="h-4 w-4" /></button>
+      </div>
+      <div className="flex items-end justify-between mb-1.5">
+        <span className="font-display text-3xl font-semibold text-ink tabular-nums">{c}/{BRUSH_GOAL}</span>
+        <span className="text-[13px] text-ink-mute mb-1">{strk > 0 ? `série ${strk} j` : "objectif du jour"}</span>
+      </div>
+      <div className="h-2.5 rounded-full bg-brand-50 overflow-hidden mb-4">
+        <div className="h-full rounded-full bg-brand-400 transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <button onClick={() => { hTap(); addBrush(1); }} className="w-full flex items-center justify-center gap-2 rounded-2xl py-3 bg-brand-500 text-white font-bold text-sm active:scale-[.98]"><Plus className="h-4 w-4" /> J'ai brossé mes dents</button>
+    </section>
+  );
+}
+
+// ── Menstrual cycle ──────────────────────────────────────────────────────────
+export function MenstrualCard() {
+  useStore();
+  const s = menstrualStatus();
+  const rose = "#e0588a";
+  return (
+    <section className="rounded-4xl p-5 shadow-soft" style={{ background: "#fbe3ec" }}>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Droplet className="h-[18px] w-[18px]" style={{ color: rose }} /> Cycle menstruel</h2>
+        {s.hasData && <span className="text-[12px] font-bold rounded-full px-2.5 py-1 bg-white/70" style={{ color: rose }}>~{s.avgCycle} j</span>}
+      </div>
+      {!s.hasData ? (
+        <>
+          <p className="text-[13.5px] text-ink-soft mb-3">Enregistre le 1ᵉʳ jour de tes règles pour suivre ton cycle et prédire les prochaines.</p>
+          <button onClick={() => { hTap(); logPeriodStart(); }} className="w-full rounded-2xl py-3 text-white font-bold text-sm active:scale-[.98]" style={{ background: rose }}>J'ai mes règles aujourd'hui</button>
+        </>
+      ) : s.onPeriod ? (
+        <>
+          <div className="flex items-end gap-2">
+            <span className="font-display text-4xl font-semibold text-ink tabular-nums">J{s.periodDay}</span>
+            <span className="text-ink-soft mb-1.5">Règles en cours</span>
+          </div>
+          <button onClick={() => { hTap(); endCurrentPeriod(); }} className="mt-3 w-full rounded-2xl py-3 bg-white font-bold text-sm active:scale-[.98]" style={{ color: rose }}>Mes règles sont terminées</button>
+        </>
+      ) : (
+        <>
+          <div className="flex items-end gap-2">
+            <span className="font-display text-4xl font-semibold text-ink tabular-nums">J{s.cycleDay}</span>
+            <span className="text-ink-soft mb-1.5">du cycle</span>
+          </div>
+          <p className="text-[13.5px] mt-1 font-semibold" style={{ color: rose }}>
+            {s.nextInDays != null && s.nextInDays > 0 ? `Prochaines règles dans ~${s.nextInDays} j`
+              : s.nextInDays === 0 ? "Règles prévues aujourd'hui"
+              : `Règles en retard de ${-(s.nextInDays ?? 0)} j`}
+          </p>
+          <button onClick={() => { hTap(); logPeriodStart(); }} className="mt-3 w-full rounded-2xl py-3 text-white font-bold text-sm active:scale-[.98]" style={{ background: rose }}>J'ai mes règles aujourd'hui</button>
+        </>
+      )}
+    </section>
+  );
+}
+
+// ── Sexual activity ──────────────────────────────────────────────────────────
+export function SexualCard() {
+  useStore();
+  const [open, setOpen] = useState(false);
+  const s = sexStats();
+  const purple = "#9b6dd6";
+  return (
+    <section className="rounded-4xl p-5 shadow-soft bg-lilac">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Heart className="h-[18px] w-[18px]" style={{ color: purple }} /> Vie sexuelle</h2>
+        <span className="text-[12px] font-bold text-brand-700 bg-white/70 rounded-full px-2.5 py-1">ce mois : {s.monthCount}</span>
+      </div>
+      <p className="text-[13.5px] text-ink-soft">Dernier : {s.last ? relativeAgo(s.last) : "aucun rapport"}{s.protectedRate != null ? ` · ${s.protectedRate}% protégés` : ""}</p>
+      {open ? (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button onClick={() => { hTap(); addSexLog({ protected: true }); setOpen(false); }} className="rounded-2xl py-3 bg-white font-bold text-sm text-ink active:scale-[.98]">Protégé</button>
+          <button onClick={() => { hTap(); addSexLog({ protected: false }); setOpen(false); }} className="rounded-2xl py-3 bg-white font-bold text-sm text-ink active:scale-[.98]">Non protégé</button>
+        </div>
+      ) : (
+        <button onClick={() => setOpen(true)} className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-white font-bold text-sm active:scale-[.98]" style={{ background: purple }}><Plus className="h-4 w-4" /> Ajouter un rapport</button>
+      )}
     </section>
   );
 }
