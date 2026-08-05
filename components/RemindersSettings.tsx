@@ -6,6 +6,7 @@ import {
   useStore, getSettings, saveSettings, getMeds, saveMed, deleteMed, toggleModule,
   getAddictions, saveAddiction, deleteAddiction, Addiction,
   Medication, ReminderSettings, Slot, ALL_DAYS, DAY_LABELS, MODULES,
+  DEFAULT_BRUSH_SLOTS,
 } from "@/lib/storage";
 import { requestNotifPermission } from "@/lib/reminders";
 import { setPin, disableSecurity, biometricsAvailable, registerFace } from "@/lib/security";
@@ -19,7 +20,7 @@ import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
   UserRound, Lock, ScanFace, CloudSun, Delete, HeartPulse, ChevronRight, ScanText, Loader2, Info,
-  Download, Upload, HeartHandshake, Database,
+  Download, Upload, HeartHandshake, Database, Sparkles, Droplet, Heart,
 } from "lucide-react";
 
 function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[]) => void }) {
@@ -153,7 +154,13 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
               <div className="card divide-y divide-black/5">
                 {MODULES.map((mod) => (
                   <Toggle key={mod.key}
-                    icon={mod.key === "sport" ? <Dumbbell className="h-5 w-5" /> : <Droplets className="h-5 w-5" />}
+                    icon={
+                      mod.key === "sport" ? <Dumbbell className="h-5 w-5" />
+                      : mod.key === "brushing" ? <Sparkles className="h-5 w-5" />
+                      : mod.key === "menstrual" ? <Droplet className="h-5 w-5" />
+                      : mod.key === "sexual" ? <Heart className="h-5 w-5" />
+                      : <Droplets className="h-5 w-5" />
+                    }
                     title={mod.name} sub={mod.desc}
                     on={settings.modules.includes(mod.key)}
                     onToggle={() => toggleModule(mod.key)} />
@@ -161,6 +168,24 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
               </div>
               <p className="text-[12px] text-ink-mute mt-2 px-1">D'autres suivis (alimentation détaillée, objectifs…) arrivent — dis-moi tes besoins.</p>
             </section>
+
+            {/* Brushing reminder times */}
+            {settings.modules.includes("brushing") && (
+              <section>
+                <SectionTitle icon={<Sparkles className="h-4 w-4" />} title="Rappels de brossage" hint="Aux heures (et jours) qui te vont" />
+                <div className="card p-4 space-y-2.5">
+                  {(settings.brushSlots ?? DEFAULT_BRUSH_SLOTS).map((s, i) => (
+                    <SlotRow key={i} slot={s}
+                      onChange={(ns) => patch({ brushSlots: (settings.brushSlots ?? DEFAULT_BRUSH_SLOTS).map((x, j) => (j === i ? ns : x)) })}
+                      onDelete={() => patch({ brushSlots: (settings.brushSlots ?? DEFAULT_BRUSH_SLOTS).filter((_, j) => j !== i) })} />
+                  ))}
+                  <button onClick={() => patch({ brushSlots: [...(settings.brushSlots ?? DEFAULT_BRUSH_SLOTS), { time: "13:00", days: ALL_DAYS }] })}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-brand-50 text-brand-700 font-bold text-sm active:scale-[.98]">
+                    <Plus className="h-4 w-4" /> Ajouter un horaire
+                  </button>
+                </div>
+              </section>
+            )}
 
             {/* Addictions management */}
             {settings.modules.includes("addiction") && (
