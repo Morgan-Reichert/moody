@@ -161,6 +161,7 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
                       : mod.key === "sexual" ? <Heart className="h-5 w-5" />
                       : mod.key === "insights" ? <Lightbulb className="h-5 w-5" />
                       : mod.key === "gratitude" ? <Sun className="h-5 w-5" />
+                      : mod.key === "adherence" ? <Pill className="h-5 w-5" />
                       : <Droplets className="h-5 w-5" />
                     }
                     title={mod.name} sub={mod.desc}

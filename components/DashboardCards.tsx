@@ -10,10 +10,11 @@ import {
   getGratitude, addGratitude, removeGratitude, gratitudeStreak,
 } from "@/lib/storage";
 import { moodInsights } from "@/lib/insights";
+import { adherenceStats } from "@/lib/adherence";
 import { hTap } from "@/lib/haptics";
 import {
   GlassWater, Droplets, RotateCcw, Trophy, ShieldCheck, Undo2, Plus, CalendarClock, MapPin,
-  Sparkles, Droplet, Heart, Lightbulb, TrendingUp, TrendingDown, Sun, X,
+  Sparkles, Droplet, Heart, Lightbulb, TrendingUp, TrendingDown, Sun, X, Pill, CheckCircle2,
 } from "lucide-react";
 
 function relativeWhen(iso: string): string {
@@ -282,6 +283,62 @@ export function InsightsCard() {
             </li>
           ))}
         </ul>
+      )}
+    </section>
+  );
+}
+
+// ── Medication adherence ─────────────────────────────────────────────────────
+export function AdherenceCard() {
+  useStore();
+  const [range, setRange] = useState<7 | 30>(7);
+  const s = adherenceStats(range);
+  if (s.scheduled === 0) {
+    return (
+      <section className="card p-4">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2 mb-1"><Pill className="h-[18px] w-[18px] text-[#c8622f]" /> Observance</h2>
+        <p className="text-[13px] text-ink-mute">Ajoute des médicaments avec des horaires — ton taux de prises apparaîtra ici.</p>
+      </section>
+    );
+  }
+  const color = s.pct >= 90 ? "#1aad55" : s.pct >= 70 ? "#c8912f" : "#d0492c";
+  return (
+    <section className="card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Pill className="h-[18px] w-[18px] text-[#c8622f]" /> Observance</h2>
+        <div className="flex bg-black/[0.04] rounded-full p-0.5">
+          {([7, 30] as const).map((r) => (
+            <button key={r} onClick={() => { hTap(); setRange(r); }}
+              className={`px-3 py-1 rounded-full text-[12px] font-bold transition ${range === r ? "bg-white shadow-card text-ink" : "text-ink-mute"}`}>{r} j</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-end gap-2 mb-1">
+        <span className="font-display text-4xl font-semibold tabular-nums" style={{ color }}>{s.pct}%</span>
+        <span className="text-[13px] text-ink-mute mb-1.5">de prises respectées</span>
+      </div>
+      <div className="h-2.5 rounded-full bg-black/[0.06] overflow-hidden mb-2">
+        <div className="h-full rounded-full transition-all" style={{ width: `${s.pct}%`, background: color }} />
+      </div>
+      <p className="text-[12.5px] text-ink-mute mb-3 flex items-center gap-1.5">
+        <CheckCircle2 className="h-4 w-4 text-brand-500" /> {s.taken}/{s.scheduled} prises · {s.perfectDays} jour{s.perfectDays > 1 ? "s" : ""} parfait{s.perfectDays > 1 ? "s" : ""}
+      </p>
+
+      {s.perMed.length > 1 && (
+        <div className="space-y-2.5 pt-1 border-t border-black/5">
+          {s.perMed.map((m) => (
+            <div key={m.medId} className="pt-1">
+              <div className="flex items-center justify-between text-[13px] mb-1">
+                <span className="font-semibold text-ink truncate mr-2">{m.name}</span>
+                <span className="tabular-nums font-bold" style={{ color: m.pct >= 90 ? "#1aad55" : m.pct >= 70 ? "#c8912f" : "#d0492c" }}>{m.pct}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${m.pct}%`, background: m.pct >= 90 ? "#1aad55" : m.pct >= 70 ? "#c8912f" : "#d0492c" }} />
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </section>
   );

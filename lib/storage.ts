@@ -40,7 +40,7 @@ export interface Medication {
   sideEffects?: { date: string; text: string }[];  // effets indésirables signalés
 }
 
-export type ModuleKey = "sport" | "water" | "addiction" | "brushing" | "menstrual" | "sexual" | "insights" | "gratitude";
+export type ModuleKey = "sport" | "water" | "addiction" | "brushing" | "menstrual" | "sexual" | "insights" | "gratitude" | "adherence";
 
 export interface Addiction {
   id: string;
@@ -378,6 +378,7 @@ export const MODULES: { key: ModuleKey; name: string; desc: string }[] = [
   { key: "sexual", name: "Vie sexuelle", desc: "Journal privé des rapports (protégé/non, fréquence)" },
   { key: "insights", name: "Corrélations d'humeur", desc: "Découvre ce qui influence ton moral (sommeil, sport, eau…)" },
   { key: "gratitude", name: "Journal de gratitude", desc: "3 choses positives par jour — bon pour le moral" },
+  { key: "adherence", name: "Observance des médicaments", desc: "% de prises respectées sur 7/30 jours, par médicament" },
 ];
 
 // ── Hydration (dashboard card) ───────────────────────────────────────────────
