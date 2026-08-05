@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { onChange } from "@/lib/storage";
 import { initNative, syncNative, isNative } from "@/lib/native";
+import { pushWidgetData } from "@/lib/widget";
 
 /** On native (Capacitor): schedules OS notifications (fire even when app is closed) and,
  *  when a medication notification is tapped, triggers the in-app loud alarm + scan-to-dismiss. */
@@ -17,6 +18,7 @@ export function NativeBridge() {
       try { const { SplashScreen } = await import("@capacitor/splash-screen"); SplashScreen.hide().catch(() => {}); } catch { /* */ }
       await initNative().catch(() => {});
       await syncNative().catch(() => {});
+      pushWidgetData().catch(() => {});
       try {
         const { LocalNotifications } = await import("@capacitor/local-notifications");
         const h = await LocalNotifications.addListener("localNotificationActionPerformed", (ev: any) => {
@@ -31,7 +33,7 @@ export function NativeBridge() {
 
     const off = onChange(() => {
       if (t.current) clearTimeout(t.current);
-      t.current = window.setTimeout(() => { syncNative().catch(() => {}); }, 800);
+      t.current = window.setTimeout(() => { syncNative().catch(() => {}); pushWidgetData().catch(() => {}); }, 800);
     });
     return () => { off(); cleanupTap?.(); };
   }, []);
