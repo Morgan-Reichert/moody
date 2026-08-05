@@ -40,7 +40,7 @@ export interface Medication {
   sideEffects?: { date: string; text: string }[];  // effets indésirables signalés
 }
 
-export type ModuleKey = "sport" | "water" | "addiction" | "brushing" | "menstrual" | "sexual";
+export type ModuleKey = "sport" | "water" | "addiction" | "brushing" | "menstrual" | "sexual" | "insights" | "gratitude";
 
 export interface Addiction {
   id: string;
@@ -376,6 +376,8 @@ export const MODULES: { key: ModuleKey; name: string; desc: string }[] = [
   { key: "brushing", name: "Brossage des dents", desc: "Objectif quotidien + rappels de brossage" },
   { key: "menstrual", name: "Suivi des règles", desc: "Cycle, jour en cours et prédiction des prochaines règles" },
   { key: "sexual", name: "Vie sexuelle", desc: "Journal privé des rapports (protégé/non, fréquence)" },
+  { key: "insights", name: "Corrélations d'humeur", desc: "Découvre ce qui influence ton moral (sommeil, sport, eau…)" },
+  { key: "gratitude", name: "Journal de gratitude", desc: "3 choses positives par jour — bon pour le moral" },
 ];
 
 // ── Hydration (dashboard card) ───────────────────────────────────────────────
@@ -394,6 +396,7 @@ export function addWater(cl: number): void {
 export function resetWaterToday(): void {
   const map = read<Record<string, number>>(K_WATER, {}); delete map[todayISO()]; write(K_WATER, map);
 }
+export function getWaterHistory(): Record<string, number> { return read<Record<string, number>>(K_WATER, {}); }
 
 // ── Addictions ───────────────────────────────────────────────────────────────
 interface AddictLog { id: string; at: string; }
@@ -547,4 +550,32 @@ export function sexStats(now = new Date()): SexStats {
     monthCount: logs.filter((l) => l.at.slice(0, 7) === mk).length,
     protectedRate: withProt.length ? Math.round(withProt.filter((l) => l.protected).length / withProt.length * 100) : null,
   };
+}
+
+// ── Gratitude journal (private, local only) ──────────────────────────────────
+const K_GRATITUDE = "moody_gratitude"; // date -> string[]
+export function getGratitude(date = todayISO()): string[] { return read<Record<string, string[]>>(K_GRATITUDE, {})[date] ?? []; }
+export function addGratitude(text: string, date = todayISO()): void {
+  const t = text.trim(); if (!t) return;
+  const map = read<Record<string, string[]>>(K_GRATITUDE, {});
+  const arr = map[date] ?? [];
+  if (arr.length >= 3) return;
+  arr.push(t); map[date] = arr;
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 180); const cut = cutoff.toISOString().slice(0, 10);
+  for (const k of Object.keys(map)) if (k < cut) delete map[k];
+  write(K_GRATITUDE, map);
+}
+export function removeGratitude(index: number, date = todayISO()): void {
+  const map = read<Record<string, string[]>>(K_GRATITUDE, {});
+  const arr = map[date] ?? []; arr.splice(index, 1);
+  if (arr.length) map[date] = arr; else delete map[date];
+  write(K_GRATITUDE, map);
+}
+export function gratitudeStreak(): number {
+  const map = read<Record<string, string[]>>(K_GRATITUDE, {});
+  let n = 0; const d = new Date();
+  const has = (day: Date) => (map[day.toISOString().slice(0, 10)]?.length ?? 0) > 0;
+  if (!has(d)) d.setDate(d.getDate() - 1);
+  while (has(d)) { n++; d.setDate(d.getDate() - 1); }
+  return n;
 }

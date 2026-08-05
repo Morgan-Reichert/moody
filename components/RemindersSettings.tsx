@@ -20,7 +20,7 @@ import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
   UserRound, Lock, ScanFace, CloudSun, Delete, HeartPulse, ChevronRight, ScanText, Loader2, Info,
-  Download, Upload, HeartHandshake, Database, Sparkles, Droplet, Heart,
+  Download, Upload, HeartHandshake, Database, Sparkles, Droplet, Heart, Lightbulb, Sun,
 } from "lucide-react";
 
 function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[]) => void }) {
@@ -159,6 +159,8 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
                       : mod.key === "brushing" ? <Sparkles className="h-5 w-5" />
                       : mod.key === "menstrual" ? <Droplet className="h-5 w-5" />
                       : mod.key === "sexual" ? <Heart className="h-5 w-5" />
+                      : mod.key === "insights" ? <Lightbulb className="h-5 w-5" />
+                      : mod.key === "gratitude" ? <Sun className="h-5 w-5" />
                       : <Droplets className="h-5 w-5" />
                     }
                     title={mod.name} sub={mod.desc}

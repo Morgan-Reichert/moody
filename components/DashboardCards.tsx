@@ -7,11 +7,13 @@ import {
   nextMilestone, encouragement, getDoctors, Appointment,
   getBrushToday, addBrush, resetBrushToday, brushStreak, BRUSH_GOAL,
   menstrualStatus, logPeriodStart, endCurrentPeriod, sexStats, addSexLog,
+  getGratitude, addGratitude, removeGratitude, gratitudeStreak,
 } from "@/lib/storage";
+import { moodInsights } from "@/lib/insights";
 import { hTap } from "@/lib/haptics";
 import {
   GlassWater, Droplets, RotateCcw, Trophy, ShieldCheck, Undo2, Plus, CalendarClock, MapPin,
-  Sparkles, Droplet, Heart,
+  Sparkles, Droplet, Heart, Lightbulb, TrendingUp, TrendingDown, Sun, X,
 } from "lucide-react";
 
 function relativeWhen(iso: string): string {
@@ -252,6 +254,70 @@ export function SexualCard() {
         </div>
       ) : (
         <button onClick={() => setOpen(true)} className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-white font-bold text-sm active:scale-[.98]" style={{ background: purple }}><Plus className="h-4 w-4" /> Ajouter un rapport</button>
+      )}
+    </section>
+  );
+}
+
+// ── Mood insights / correlations ─────────────────────────────────────────────
+export function InsightsCard() {
+  useStore();
+  const insights = moodInsights().slice(0, 3);
+  return (
+    <section className="rounded-4xl p-5 bg-mint shadow-soft">
+      <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2 mb-3"><Lightbulb className="h-[18px] w-[18px] text-brand-600" /> Ce qui influence ton humeur</h2>
+      {insights.length === 0 ? (
+        <p className="text-[13.5px] text-ink-soft">Continue à noter ton humeur et tes activités quelques jours — Moody détectera ce qui te fait du bien.</p>
+      ) : (
+        <ul className="space-y-2.5">
+          {insights.map((i) => (
+            <li key={i.key} className="flex items-start gap-3 rounded-2xl bg-white/70 px-3.5 py-3">
+              <span className={`grid place-items-center h-8 w-8 rounded-xl shrink-0 ${i.direction === "positive" ? "bg-brand-100 text-brand-700" : "bg-[#fbe1da] text-[#c0402a]"}`}>
+                {i.direction === "positive" ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              </span>
+              <div className="min-w-0">
+                <p className="text-[13.5px] font-semibold text-ink leading-snug">{i.text}</p>
+                <p className="text-[11.5px] text-ink-mute mt-0.5">écart ~{i.delta} pt · sur {i.sample} jours</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// ── Gratitude journal ────────────────────────────────────────────────────────
+export function GratitudeCard() {
+  useStore();
+  const [text, setText] = useState("");
+  const items = getGratitude();
+  const strk = gratitudeStreak();
+  const add = () => { if (!text.trim()) return; hTap(); addGratitude(text); setText(""); };
+  return (
+    <section className="rounded-4xl p-5 shadow-soft" style={{ background: "#fdeede" }}>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Sun className="h-[18px] w-[18px] text-[#e08a2f]" /> Gratitude du jour</h2>
+        {strk > 0 && <span className="text-[12px] font-bold text-[#c8622f] bg-white/70 rounded-full px-2.5 py-1">série {strk} j</span>}
+      </div>
+      <p className="text-[12.5px] text-ink-mute mb-3">Note jusqu'à 3 choses positives d'aujourd'hui.</p>
+      {items.length > 0 && (
+        <ul className="space-y-2 mb-3">
+          {items.map((it, i) => (
+            <li key={i} className="flex items-center gap-2 rounded-2xl bg-white/70 px-3.5 py-2.5">
+              <Heart className="h-3.5 w-3.5 text-[#e08a2f] shrink-0 fill-[#f6c98a]" />
+              <span className="flex-1 min-w-0 text-[14px] text-ink">{it}</span>
+              <button onClick={() => { hTap(); removeGratitude(i); }} className="grid place-items-center h-6 w-6 rounded-lg text-ink-mute active:scale-90" aria-label="Retirer"><X className="h-4 w-4" /></button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {items.length < 3 && (
+        <div className="flex items-center gap-2">
+          <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }}
+            placeholder="Une chose positive…" className="flex-1 min-w-0 bg-white rounded-2xl px-3.5 py-2.5 text-ink outline-none text-[14px]" />
+          <button onClick={add} className="grid place-items-center h-11 w-11 rounded-2xl text-white shrink-0 active:scale-95" style={{ background: "#e08a2f" }} aria-label="Ajouter"><Plus className="h-5 w-5" /></button>
+        </div>
       )}
     </section>
   );
