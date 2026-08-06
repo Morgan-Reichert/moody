@@ -8,7 +8,6 @@
 import WidgetKit
 import SwiftUI
 
-@main
 struct MoodyWidgetBundle: WidgetBundle {
     var body: some Widget {
         MoodyWidget()

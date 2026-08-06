@@ -1,8 +1,8 @@
-// MoodyWidget.swift — iOS home-screen widget for Moody.
+// MoodyWidget.swift — iOS home-screen widgets for Moody (3 focused widgets).
 // Reads the summary the app writes into the shared App Group and renders it.
-// After creating the Widget Extension target in Xcode, REPLACE the generated
-// file's contents with this, and make sure the App Group below matches the one
-// enabled on BOTH the app target and this widget target.
+// After creating the Widget Extension in Xcode, REPLACE the generated
+// `MoodyWidget.swift` with this file. The @main lives in MoodyWidgetBundle.swift.
+// The App Group below must match the one enabled on BOTH the app and this target.
 
 import WidgetKit
 import SwiftUI
@@ -15,16 +15,19 @@ let WIDGET_KEY = "moody_widget"
 struct MoodyData: Codable {
     var mood: Double?
     var moodLabel: String
-    var medLabel: String
-    var medState: String   // "done" | "overdue" | "next" | "none"
-    var adherence: Int     // 0..100, or -1 if no data
-    var brush: String      // "1/2" or ""
-    var water: String      // "0,50 L" or ""
+    var moodStreak: Int
+    var medStatus: String     // none | done | overdue | next
+    var medPrimary: String
+    var medSecondary: String
+    var medTaken: Int
+    var medTotal: Int
+    var adherence: Int        // 0..100, or -1 if no data
 }
 
 func loadMoodyData() -> MoodyData {
-    let fallback = MoodyData(mood: nil, moodLabel: "Pas encore noté", medLabel: "Aucun médicament",
-                             medState: "none", adherence: -1, brush: "", water: "")
+    let fallback = MoodyData(mood: nil, moodLabel: "Pas encore noté", moodStreak: 0,
+                             medStatus: "none", medPrimary: "Aucun médicament", medSecondary: "",
+                             medTaken: 0, medTotal: 0, adherence: -1)
     guard let ud = UserDefaults(suiteName: APP_GROUP),
           let raw = ud.string(forKey: WIDGET_KEY),
           let data = raw.data(using: .utf8),
@@ -34,135 +37,190 @@ func loadMoodyData() -> MoodyData {
 }
 
 // MARK: - Timeline
-struct MoodyEntry: TimelineEntry {
-    let date: Date
-    let data: MoodyData
-}
+struct MoodyEntry: TimelineEntry { let date: Date; let data: MoodyData }
 
 struct MoodyProvider: TimelineProvider {
-    func placeholder(in context: Context) -> MoodyEntry { MoodyEntry(date: Date(), data: loadMoodyData()) }
-    func getSnapshot(in context: Context, completion: @escaping (MoodyEntry) -> Void) {
+    func placeholder(in c: Context) -> MoodyEntry { MoodyEntry(date: Date(), data: loadMoodyData()) }
+    func getSnapshot(in c: Context, completion: @escaping (MoodyEntry) -> Void) {
         completion(MoodyEntry(date: Date(), data: loadMoodyData()))
     }
-    func getTimeline(in context: Context, completion: @escaping (Timeline<MoodyEntry>) -> Void) {
-        let entry = MoodyEntry(date: Date(), data: loadMoodyData())
-        // Fallback refresh in ~30 min (the app also reloads the widget on every data change).
-        let next = Calendar.current.date(byAdding: .minute, value: 30, to: Date()) ?? Date().addingTimeInterval(1800)
-        completion(Timeline(entries: [entry], policy: .after(next)))
+    func getTimeline(in c: Context, completion: @escaping (Timeline<MoodyEntry>) -> Void) {
+        let e = MoodyEntry(date: Date(), data: loadMoodyData())
+        let next = Calendar.current.date(byAdding: .minute, value: 20, to: Date()) ?? Date().addingTimeInterval(1200)
+        completion(Timeline(entries: [e], policy: .after(next)))
     }
 }
 
-// MARK: - Colors
+// MARK: - Style
 extension Color {
-    init(hexString: String) {
-        let s = Scanner(string: hexString.replacingOccurrences(of: "#", with: ""))
-        var rgb: UInt64 = 0; s.scanHexInt64(&rgb)
-        self.init(.sRGB,
-                  red: Double((rgb >> 16) & 0xFF) / 255,
-                  green: Double((rgb >> 8) & 0xFF) / 255,
-                  blue: Double(rgb & 0xFF) / 255, opacity: 1)
+    init(hx: String) {
+        let s = Scanner(string: hx); var v: UInt64 = 0; s.scanHexInt64(&v)
+        self.init(.sRGB, red: Double((v >> 16) & 0xff) / 255, green: Double((v >> 8) & 0xff) / 255, blue: Double(v & 0xff) / 255, opacity: 1)
     }
 }
-let moodyGreen = Color(hexString: "1aad55")
-let moodyInk = Color(hexString: "16211b")
-let moodyCream = Color(hexString: "eef2ec")
+let mGreen = Color(hx: "1aad55"), mInk = Color(hx: "16211b"), mCream = Color(hx: "eef2ec")
+let mOrange = Color(hx: "c8622f"), mRed = Color(hx: "d0492c")
 
 func medColor(_ s: String) -> Color {
-    switch s {
-    case "overdue": return Color(hexString: "d0492c")
-    case "done": return moodyGreen
-    default: return moodyInk.opacity(0.7)
+    switch s { case "overdue": return mRed; case "done": return mGreen; case "none": return mInk.opacity(0.45); default: return mOrange }
+}
+
+extension View {
+    // iOS 17+ needs containerBackground; older versions use a plain background.
+    @ViewBuilder func mBg(_ c: Color) -> some View {
+        if #available(iOS 17.0, *) { self.containerBackground(c, for: .widget) } else { self.background(c) }
     }
 }
 
-// iOS 17+ needs containerBackground; older versions use a plain background.
-extension View {
-    @ViewBuilder func moodyBackground(_ color: Color) -> some View {
-        if #available(iOS 17.0, *) { self.containerBackground(color, for: .widget) }
-        else { self.background(color) }
+struct MProgress: View {
+    let taken: Int; let total: Int
+    var body: some View {
+        GeometryReader { g in
+            ZStack(alignment: .leading) {
+                Capsule().fill(mInk.opacity(0.08))
+                Capsule().fill(mGreen).frame(width: total > 0 ? g.size.width * CGFloat(taken) / CGFloat(total) : 0)
+            }
+        }.frame(height: 6)
     }
+}
+
+func header(_ icon: String, _ title: String, _ color: Color) -> some View {
+    HStack(spacing: 5) {
+        Image(systemName: icon).font(.system(size: 12))
+        Text(title).font(.system(size: 12, weight: .bold))
+    }.foregroundColor(color)
 }
 
 // MARK: - Views
-struct SmallView: View {
+struct MedsView: View {
     let d: MoodyData
+    var medium: Bool
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("Moody").font(.system(size: 13, weight: .heavy)).foregroundColor(moodyGreen)
+        VStack(alignment: .leading, spacing: medium ? 8 : 6) {
+            HStack {
+                header("pills.fill", "Médicaments", mOrange)
+                if medium && d.adherence >= 0 { Spacer(); Text("\(d.adherence)%").font(.system(size: 12, weight: .bold)).foregroundColor(mGreen) }
+            }
             Spacer(minLength: 2)
-            Text(d.mood != nil ? String(format: "%.1f", d.mood!) : "—")
-                .font(.system(size: 36, weight: .bold)).foregroundColor(moodyInk)
-            Text(d.moodLabel).font(.system(size: 12, weight: .semibold)).foregroundColor(.secondary).lineLimit(1)
+            HStack(spacing: 8) {
+                Circle().fill(medColor(d.medStatus)).frame(width: 9, height: 9)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(d.medPrimary).font(.system(size: medium ? 19 : 16, weight: .bold)).foregroundColor(mInk).lineLimit(1).minimumScaleFactor(0.8)
+                    if !d.medSecondary.isEmpty {
+                        Text(d.medSecondary).font(.system(size: 12, weight: .semibold)).foregroundColor(medColor(d.medStatus)).lineLimit(1)
+                    }
+                }
+            }
             Spacer(minLength: 4)
-            HStack(spacing: 4) {
-                Image(systemName: "pills.fill").font(.system(size: 11))
-                Text(d.medLabel).font(.system(size: 11, weight: .medium)).lineLimit(1)
-            }.foregroundColor(medColor(d.medState))
+            if d.medTotal > 0 {
+                MProgress(taken: d.medTaken, total: d.medTotal)
+                Text("\(d.medTaken)/\(d.medTotal) aujourd'hui").font(.system(size: 11, weight: .semibold)).foregroundColor(mInk.opacity(0.6))
+            }
         }
-        .padding(14)
+        .padding(medium ? 16 : 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .moodyBackground(moodyCream)
+        .mBg(mCream)
     }
 }
 
-struct MediumView: View {
+struct MoodView: View {
+    let d: MoodyData
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            header("face.smiling", "Humeur", mGreen)
+            Spacer(minLength: 2)
+            Text(d.mood != nil ? String(format: "%.1f", d.mood!) : "—").font(.system(size: 38, weight: .bold)).foregroundColor(mInk)
+            Text(d.moodLabel).font(.system(size: 12, weight: .semibold)).foregroundColor(.secondary).lineLimit(1)
+            Spacer(minLength: 4)
+            if d.moodStreak > 0 {
+                HStack(spacing: 4) {
+                    Image(systemName: "flame.fill").font(.system(size: 11)).foregroundColor(mOrange)
+                    Text("\(d.moodStreak) j de suite").font(.system(size: 11, weight: .semibold)).foregroundColor(mInk.opacity(0.6))
+                }
+            } else {
+                Text("Note ton humeur").font(.system(size: 11, weight: .bold)).foregroundColor(mGreen)
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .mBg(mCream)
+    }
+}
+
+struct TodayView: View {
     let d: MoodyData
     var body: some View {
         HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Moody").font(.system(size: 13, weight: .heavy)).foregroundColor(moodyGreen)
-                Spacer()
-                Text(d.mood != nil ? String(format: "%.1f", d.mood!) : "—")
-                    .font(.system(size: 40, weight: .bold)).foregroundColor(moodyInk)
-                Text(d.moodLabel).font(.system(size: 12, weight: .semibold)).foregroundColor(.secondary).lineLimit(1)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("MOODY").font(.system(size: 12, weight: .heavy)).foregroundColor(mGreen)
+                Spacer(minLength: 2)
+                Text(d.mood != nil ? String(format: "%.1f", d.mood!) : "—").font(.system(size: 42, weight: .bold)).foregroundColor(mInk)
+                Text(d.moodLabel).font(.system(size: 11, weight: .semibold)).foregroundColor(.secondary).lineLimit(1)
+                if d.moodStreak > 0 {
+                    HStack(spacing: 3) { Image(systemName: "flame.fill").font(.system(size: 10)); Text("\(d.moodStreak) j").font(.system(size: 11, weight: .semibold)) }.foregroundColor(mOrange)
+                }
                 Spacer()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            VStack(alignment: .leading, spacing: 9) {
-                row(icon: "pills.fill", text: d.medLabel, color: medColor(d.medState))
-                if d.adherence >= 0 { row(icon: "checkmark.seal.fill", text: "Observance \(d.adherence)%", color: moodyInk.opacity(0.8)) }
-                if !d.brush.isEmpty { row(icon: "sparkles", text: "Brossage \(d.brush)", color: moodyInk.opacity(0.8)) }
-                if !d.water.isEmpty { row(icon: "drop.fill", text: d.water, color: Color(hexString: "3aa7d6")) }
+            Divider()
+
+            VStack(alignment: .leading, spacing: 5) {
+                header("pills.fill", "Médicaments", mOrange)
+                HStack(spacing: 6) {
+                    Circle().fill(medColor(d.medStatus)).frame(width: 8, height: 8)
+                    Text(d.medPrimary).font(.system(size: 15, weight: .bold)).foregroundColor(mInk).lineLimit(1).minimumScaleFactor(0.8)
+                }
+                if !d.medSecondary.isEmpty {
+                    Text(d.medSecondary).font(.system(size: 11, weight: .semibold)).foregroundColor(medColor(d.medStatus)).lineLimit(1)
+                }
+                if d.medTotal > 0 {
+                    MProgress(taken: d.medTaken, total: d.medTotal)
+                    Text("\(d.medTaken)/\(d.medTotal) aujourd'hui").font(.system(size: 10, weight: .semibold)).foregroundColor(mInk.opacity(0.6))
+                }
+                if d.adherence >= 0 {
+                    Text("Observance \(d.adherence)%").font(.system(size: 11, weight: .semibold)).foregroundColor(mGreen)
+                }
+                Spacer()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .moodyBackground(moodyCream)
-    }
-
-    func row(icon: String, text: String, color: Color) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon).font(.system(size: 12)).frame(width: 16)
-            Text(text).font(.system(size: 13, weight: .semibold)).lineLimit(1)
-        }.foregroundColor(color)
+        .mBg(mCream)
     }
 }
 
-struct MoodyWidgetEntryView: View {
+// MARK: - Widgets (no @main here — see MoodyWidgetBundle.swift)
+struct MedsEntryView: View {
     var entry: MoodyEntry
-    @Environment(\.widgetFamily) var family
-    var body: some View {
-        switch family {
-        case .systemSmall: SmallView(d: entry.data)
-        default: MediumView(d: entry.data)
-        }
+    @Environment(\.widgetFamily) var fam
+    var body: some View { MedsView(d: entry.data, medium: fam == .systemMedium) }
+}
+
+struct MoodyMedsWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "MoodyMeds", provider: MoodyProvider()) { e in MedsEntryView(entry: e) }
+            .configurationDisplayName("Médicaments")
+            .description("Prochaine prise et progression du jour.")
+            .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
 
-// MARK: - Widget
-// NOTE: pas de @main ici — c'est le fichier généré `MoodyWidgetBundle.swift`
-// (créé par Xcode avec l'extension) qui porte @main et référence MoodyWidget().
-// Il ne doit y avoir QU'UN SEUL @main dans la cible widget.
-struct MoodyWidget: Widget {
-    let kind = "MoodyWidget"
+struct MoodyMoodWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: MoodyProvider()) { entry in
-            MoodyWidgetEntryView(entry: entry)
-        }
-        .configurationDisplayName("Moody")
-        .description("Ton humeur et tes rappels en un coup d'œil.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        StaticConfiguration(kind: "MoodyMood", provider: MoodyProvider()) { e in MoodView(d: e.data) }
+            .configurationDisplayName("Humeur")
+            .description("Ton humeur du jour et ta série.")
+            .supportedFamilies([.systemSmall])
+    }
+}
+
+struct MoodyTodayWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "MoodyToday", provider: MoodyProvider()) { e in TodayView(d: e.data) }
+            .configurationDisplayName("Aujourd'hui")
+            .description("Humeur + médicaments en un coup d'œil.")
+            .supportedFamilies([.systemMedium])
     }
 }

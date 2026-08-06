@@ -23,14 +23,22 @@ App Group utilisé partout : **`group.tech.stariax.moodyapp`**
 - Coche/ajoute le **même** `group.tech.stariax.moodyapp`
 - Vérifie que la **Team** est ton organisation payante (comme l'app)
 
-## 4. Coller le code du widget
-- Dans le dossier **MoodyWidget** généré, ouvre le fichier `MoodyWidget.swift`
-- Remplace **tout** son contenu par celui de `ios/widget/MoodyWidget.swift` (ce dossier)
-- **NE SUPPRIME PAS** le fichier `MoodyWidgetBundle.swift` généré : c'est lui qui porte
-  le `@main` et référence `MoodyWidget()`. Mon fichier n'a **pas** de `@main` exprès.
-- Règle d'or : il ne doit y avoir **qu'un seul `@main`** dans la cible widget.
-  - Erreur « 'main' attribute can only apply to one type » = tu as deux `@main`
-    → garde celui de `MoodyWidgetBundle.swift`, enlève tout autre `@main`.
+## 4. Coller le code des widgets (2 fichiers)
+Le dossier `ios/widget/` contient **deux** fichiers à recopier :
+- **`MoodyWidget.swift`** → les 3 widgets (Médicaments, Humeur, Aujourd'hui), **sans** `@main`.
+- **`MoodyWidgetBundle.swift`** → le **seul** `@main`, qui liste les 3 widgets.
+
+Dans le dossier **MoodyWidget** généré par Xcode :
+- Ouvre le `MoodyWidget.swift` généré → remplace **tout** son contenu par le mien.
+- Ouvre le `MoodyWidgetBundle.swift` généré → remplace **tout** son contenu par le mien.
+  (Si Xcode n'a pas créé de `MoodyWidgetBundle.swift`, fais **File → New → File → Swift File**,
+   nomme-le `MoodyWidgetBundle`, coche la cible **MoodyWidgetExtension**, et colle mon contenu.)
+
+Règle d'or : il ne doit y avoir **qu'un seul `@main`** dans la cible widget (celui du Bundle).
+Erreur « 'main' attribute can only apply to one type » = tu as deux `@main` → enlève tous
+les `@main` sauf celui de `MoodyWidgetBundle.swift`.
+
+Une fois lancé, un appui long sur l'écran d'accueil → ＋ → **Moody** te proposera les **3 widgets**.
 
 ## 5. Lancer
 - Sélectionne le scheme **App** (pas le widget) → **▶ Run** sur ton iPhone
