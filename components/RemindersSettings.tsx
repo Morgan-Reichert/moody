@@ -16,6 +16,7 @@ import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { MedicalVault } from "@/components/MedicalVault";
 import { MedAutocomplete } from "@/components/MedAutocomplete";
 import { MedInfoModal } from "@/components/MedInfoModal";
+import { CloudBackupCard } from "@/components/CloudBackupCard";
 import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
@@ -248,6 +249,9 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
               {importMsg && <p className="text-sm text-brand-700 font-semibold mt-2 px-1">{importMsg}</p>}
               <p className="text-[12px] text-ink-mute mt-2 px-1">Les documents scannés et rapports PDF ne sont pas inclus.</p>
             </section>
+
+            {/* Encrypted cloud backup */}
+            <CloudBackupCard />
 
             {/* Help */}
             <section>
