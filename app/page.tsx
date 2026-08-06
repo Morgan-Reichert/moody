@@ -17,18 +17,17 @@ export default function Home() {
   const [view, setView] = useState<"loading" | "landing" | "app">("loading");
 
   useEffect(() => {
-    let entered = false;
-    try { entered = localStorage.getItem("moody_entered") === "1"; } catch { /* */ }
-    // Installed PWA (standalone) or iOS home-screen app should open the product directly.
+    // A normal browser tab ALWAYS shows the showcase (moody.clinic is the landing page).
+    // Only the installed PWA (standalone) or the native app open the product directly.
     const standalone = typeof window !== "undefined" &&
       (window.matchMedia?.("(display-mode: standalone)").matches || (window.navigator as any).standalone === true);
-    if (isNative() || standalone || entered || getSettings().onboarded) setView("app");
+    if (isNative() || standalone) setView("app");
     else setView("landing");
   }, []);
 
   if (view === "loading") return <div className="fixed inset-0 bg-cream" />;
   if (view === "landing") {
-    return <Landing onEnter={() => { try { localStorage.setItem("moody_entered", "1"); } catch { /* */ } setView("app"); }} />;
+    return <Landing onEnter={() => setView("app")} />;
   }
   return <MoodyApp />;
 }

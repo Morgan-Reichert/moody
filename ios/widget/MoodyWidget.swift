@@ -152,7 +152,9 @@ struct MoodyWidgetEntryView: View {
 }
 
 // MARK: - Widget
-@main
+// NOTE: pas de @main ici — c'est le fichier généré `MoodyWidgetBundle.swift`
+// (créé par Xcode avec l'extension) qui porte @main et référence MoodyWidget().
+// Il ne doit y avoir QU'UN SEUL @main dans la cible widget.
 struct MoodyWidget: Widget {
     let kind = "MoodyWidget"
     var body: some WidgetConfiguration {

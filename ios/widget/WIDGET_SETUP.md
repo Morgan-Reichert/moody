@@ -26,8 +26,11 @@ App Group utilisé partout : **`group.tech.stariax.moodyapp`**
 ## 4. Coller le code du widget
 - Dans le dossier **MoodyWidget** généré, ouvre le fichier `MoodyWidget.swift`
 - Remplace **tout** son contenu par celui de `ios/widget/MoodyWidget.swift` (ce dossier)
-- Supprime les autres fichiers générés qui contiennent un second `@main`
-  (ex. `MoodyWidgetBundle.swift`) — il ne doit rester **qu'un seul** `@main`
+- **NE SUPPRIME PAS** le fichier `MoodyWidgetBundle.swift` généré : c'est lui qui porte
+  le `@main` et référence `MoodyWidget()`. Mon fichier n'a **pas** de `@main` exprès.
+- Règle d'or : il ne doit y avoir **qu'un seul `@main`** dans la cible widget.
+  - Erreur « 'main' attribute can only apply to one type » = tu as deux `@main`
+    → garde celui de `MoodyWidgetBundle.swift`, enlève tout autre `@main`.
 
 ## 5. Lancer
 - Sélectionne le scheme **App** (pas le widget) → **▶ Run** sur ton iPhone
