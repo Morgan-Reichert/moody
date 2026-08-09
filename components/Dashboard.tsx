@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  useStore, getTodayEntries, average, streak, dailySeries, moodLabel,
+  useStore, getTodayEntries, average, streak, moodLabel,
   getSettings, getMeds, todayISO, setMedTaken, upcomingAppointments,
 } from "@/lib/storage";
 import { todayMedStatus, fmtDuration } from "@/lib/reminders";
@@ -44,7 +44,6 @@ export function Dashboard({ mounted, onLogMood, onOpenVault }: { mounted: boolea
   const today = mounted ? getTodayEntries() : [];
   const avg7 = mounted ? average(7) : null;
   const strk = mounted ? streak() : 0;
-  const series = mounted ? dailySeries(14) : [];
   const meds = mounted ? getMeds() : [];
   const settings = mounted ? getSettings() : null;
 
@@ -129,10 +128,10 @@ export function Dashboard({ mounted, onLogMood, onOpenVault }: { mounted: boolea
     node: (
       <section className="card p-4">
         <div className="flex items-center justify-between px-1 mb-1">
-          <h2 className="font-display text-[16px] font-semibold text-ink">Ton humeur — 14 jours</h2>
+          <h2 className="font-display text-[16px] font-semibold text-ink">Ton humeur</h2>
           <button onClick={() => setShowReport(true)} className="text-[12.5px] font-bold text-brand-700">Rapport</button>
         </div>
-        <MoodChart data={series} />
+        <MoodChart />
       </section>
     ),
   });

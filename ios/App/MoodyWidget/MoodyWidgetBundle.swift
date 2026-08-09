@@ -1,17 +1,15 @@
-//
-//  MoodyWidgetBundle.swift
-//  MoodyWidget
-//
-//  Created by Morgan Reichert on 06/08/2026.
-//
+// MoodyWidgetBundle.swift — the single @main entry point for the widget extension.
+// Xcode generates a file like this automatically; REPLACE its contents with this.
+// It must be the ONLY @main in the widget target.
 
 import WidgetKit
 import SwiftUI
 
+@main
 struct MoodyWidgetBundle: WidgetBundle {
     var body: some Widget {
-        MoodyWidget()
-        MoodyWidgetControl()
-        MoodyWidgetLiveActivity()
+        MoodyMedsWidget()
+        MoodyMoodWidget()
+        MoodyTodayWidget()
     }
 }
