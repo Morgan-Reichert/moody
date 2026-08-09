@@ -22,12 +22,15 @@ struct MoodyData: Codable {
     var medTaken: Int
     var medTotal: Int
     var adherence: Int        // 0..100, or -1 if no data
+    var tip: String
+    var tipEvening: Bool
 }
 
 func loadMoodyData() -> MoodyData {
     let fallback = MoodyData(mood: nil, moodLabel: "Pas encore noté", moodStreak: 0,
                              medStatus: "none", medPrimary: "Aucun médicament", medSecondary: "",
-                             medTaken: 0, medTotal: 0, adherence: -1)
+                             medTaken: 0, medTotal: 0, adherence: -1,
+                             tip: "Prends un instant pour toi.", tipEvening: false)
     guard let ud = UserDefaults(suiteName: APP_GROUP),
           let raw = ud.string(forKey: WIDGET_KEY),
           let data = raw.data(using: .utf8),
@@ -222,5 +225,108 @@ struct MoodyTodayWidget: Widget {
             .configurationDisplayName("Aujourd'hui")
             .description("Humeur + médicaments en un coup d'œil.")
             .supportedFamilies([.systemMedium])
+    }
+}
+
+// MARK: - Check-in "Comment vas-tu ?"
+struct CheckinView: View {
+    let d: MoodyData
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            header("face.smiling", "Moody", mGreen)
+            Spacer(minLength: 2)
+            if let m = d.mood {
+                Text(String(format: "%.1f", m)).font(.system(size: 40, weight: .bold)).foregroundColor(mInk)
+                Text(d.moodLabel).font(.system(size: 12, weight: .semibold)).foregroundColor(.secondary).lineLimit(1)
+                Spacer(minLength: 2)
+                Text("Toucher pour mettre à jour").font(.system(size: 11, weight: .semibold)).foregroundColor(mGreen)
+            } else {
+                Text("Comment vas-tu ?").font(.system(size: 21, weight: .bold)).foregroundColor(mInk).lineLimit(2)
+                Spacer(minLength: 4)
+                Text("Noter mon humeur").font(.system(size: 12, weight: .bold)).foregroundColor(.white)
+                    .padding(.horizontal, 12).padding(.vertical, 7)
+                    .background(Capsule().fill(mGreen))
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .mBg(mCream)
+    }
+}
+
+struct MoodyCheckinWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "MoodyCheckin", provider: MoodyProvider()) { e in
+            CheckinView(d: e.data).widgetURL(URL(string: "moody://mood"))
+        }
+        .configurationDisplayName("Comment vas-tu ?")
+        .description("Note ton humeur en un tap.")
+        .supportedFamilies([.systemSmall])
+    }
+}
+
+// MARK: - Conseil du jour / du soir
+struct TipView: View {
+    let d: MoodyData
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            header(d.tipEvening ? "moon.fill" : "sun.max.fill",
+                   d.tipEvening ? "Conseil du soir" : "Conseil du jour",
+                   d.tipEvening ? Color(hx: "6b4fb0") : Color(hx: "a9821f"))
+            Spacer(minLength: 2)
+            Text(d.tip).font(.system(size: 15, weight: .semibold)).foregroundColor(mInk).lineLimit(5).minimumScaleFactor(0.85)
+            Spacer(minLength: 2)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .mBg(d.tipEvening ? Color(hx: "e7e3f5") : Color(hx: "f6ecc9"))
+    }
+}
+
+struct MoodyTipWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "MoodyTip", provider: MoodyProvider()) { e in TipView(d: e.data) }
+            .configurationDisplayName("Conseil")
+            .description("Une astuce bien-être chaque jour.")
+            .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+// MARK: - Lock-screen widgets (iOS 16+)
+@available(iOS 16.0, *)
+struct LockView: View {
+    let d: MoodyData
+    @Environment(\.widgetFamily) var fam
+    var body: some View {
+        switch fam {
+        case .accessoryInline:
+            Text(d.mood != nil ? "Humeur \(String(format: "%.0f", d.mood!))/10" : "Note ton humeur")
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: 0) {
+                    Image(systemName: "heart.fill").font(.system(size: 11))
+                    Text(d.mood != nil ? String(format: "%.0f", d.mood!) : "—").font(.system(size: 16, weight: .bold))
+                }
+            }
+        default: // accessoryRectangular
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Moody").font(.system(size: 12, weight: .bold))
+                Text(d.mood != nil ? "Humeur \(String(format: "%.1f", d.mood!)) · \(d.moodLabel)" : "Comment vas-tu ?").font(.system(size: 13)).lineLimit(1)
+                Text(d.medStatus == "done" ? "Médicaments : tout est pris" : d.medPrimary).font(.system(size: 12)).lineLimit(1)
+            }
+        }
+    }
+}
+
+@available(iOS 16.0, *)
+struct MoodyLockWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: "MoodyLock", provider: MoodyProvider()) { e in
+            LockView(d: e.data).widgetURL(URL(string: "moody://mood"))
+        }
+        .configurationDisplayName("Moody (verrouillé)")
+        .description("Humeur & médicaments sur l'écran verrouillé.")
+        .supportedFamilies([.accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
