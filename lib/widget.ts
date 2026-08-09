@@ -3,6 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { getTodayEntries, moodLabel, streak } from "./storage";
 import { todayMedStatus, fmtDuration } from "./reminders";
 import { adherenceStats } from "./adherence";
+import { tipOfDay } from "./tips";
 
 export const WIDGET_GROUP = "group.tech.stariax.moodyapp";
 export const WIDGET_KEY = "moody_widget";
@@ -18,6 +19,8 @@ export interface WidgetData {
   medTaken: number;
   medTotal: number;
   adherence: number;     // last 7 days %, -1 if no data
+  tip: string;           // wellbeing tip (evening tips after 20h)
+  tipEvening: boolean;
 }
 
 function buildPayload(): WidgetData {
@@ -34,6 +37,7 @@ function buildPayload(): WidgetData {
   }
 
   const adh = adherenceStats(7);
+  const tip = tipOfDay();
 
   return {
     updated: new Date().toISOString(),
@@ -43,6 +47,7 @@ function buildPayload(): WidgetData {
     medStatus, medPrimary, medSecondary,
     medTaken: s.takenCount, medTotal: s.total,
     adherence: adh.scheduled ? adh.pct : -1,
+    tip: tip.text, tipEvening: tip.evening,
   };
 }
 

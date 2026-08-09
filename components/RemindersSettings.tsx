@@ -21,7 +21,7 @@ import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
   UserRound, Lock, ScanFace, CloudSun, Delete, HeartPulse, ChevronRight, ScanText, Loader2, Info,
-  Download, Upload, HeartHandshake, Database, Sparkles, Droplet, Heart, Lightbulb, Sun,
+  Download, Upload, HeartHandshake, Database, Sparkles, Droplet, Heart, Lightbulb, Sun, Moon,
 } from "lucide-react";
 
 function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[]) => void }) {
@@ -163,6 +163,7 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
                       : mod.key === "insights" ? <Lightbulb className="h-5 w-5" />
                       : mod.key === "gratitude" ? <Sun className="h-5 w-5" />
                       : mod.key === "adherence" ? <Pill className="h-5 w-5" />
+                      : mod.key === "tips" ? <Sun className="h-5 w-5" />
                       : <Droplets className="h-5 w-5" />
                     }
                     title={mod.name} sub={mod.desc}
@@ -190,6 +191,22 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
                 </div>
               </section>
             )}
+
+            {/* Bedtime wind-down reminder */}
+            <section>
+              <SectionTitle icon={<Moon className="h-4 w-4" />} title="Rappel du soir" hint="Une notification douce pour ralentir avant de dormir" />
+              <div className="card divide-y divide-black/5">
+                <Toggle icon={<Moon className="h-5 w-5" />} title="Activer le rappel du soir" sub="Un conseil coucher à l'heure de ton choix"
+                  on={!!settings.bedtimeEnabled} onToggle={() => patch({ bedtimeEnabled: !settings.bedtimeEnabled })} />
+                {settings.bedtimeEnabled && (
+                  <div className="p-4 flex items-center justify-between">
+                    <span className="text-[14px] font-semibold text-ink">Heure</span>
+                    <input type="time" value={settings.bedtimeTime || "22:00"} onChange={(e) => patch({ bedtimeTime: e.target.value })}
+                      className="bg-brand-50 rounded-xl px-3 py-2 font-display font-semibold text-ink outline-none appearance-none" />
+                  </div>
+                )}
+              </div>
+            </section>
 
             {/* Addictions management */}
             {settings.modules.includes("addiction") && (

@@ -11,10 +11,11 @@ import {
 } from "@/lib/storage";
 import { moodInsights } from "@/lib/insights";
 import { adherenceStats } from "@/lib/adherence";
+import { tipOfDay } from "@/lib/tips";
 import { hTap } from "@/lib/haptics";
 import {
   GlassWater, Droplets, RotateCcw, Trophy, ShieldCheck, Undo2, Plus, CalendarClock, MapPin,
-  Sparkles, Droplet, Heart, Lightbulb, TrendingUp, TrendingDown, Sun, X, Pill, CheckCircle2,
+  Sparkles, Droplet, Heart, Lightbulb, TrendingUp, TrendingDown, Sun, Moon, X, Pill, CheckCircle2,
 } from "lucide-react";
 
 function relativeWhen(iso: string): string {
@@ -256,6 +257,22 @@ export function SexualCard() {
       ) : (
         <button onClick={() => setOpen(true)} className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-white font-bold text-sm active:scale-[.98]" style={{ background: purple }}><Plus className="h-4 w-4" /> Ajouter un rapport</button>
       )}
+    </section>
+  );
+}
+
+// ── Daily wellbeing tip ──────────────────────────────────────────────────────
+export function TipsCard() {
+  useStore();
+  const t = tipOfDay();
+  const evening = t.evening;
+  return (
+    <section className="rounded-4xl p-5 shadow-soft" style={{ background: evening ? "#e7e3f5" : "#f6ecc9" }}>
+      <div className="flex items-center gap-2 mb-2">
+        {evening ? <Moon className="h-[18px] w-[18px]" style={{ color: "#6b4fb0" }} /> : <Sun className="h-[18px] w-[18px]" style={{ color: "#a9821f" }} />}
+        <h2 className="font-display text-[16px] font-semibold text-ink">{evening ? "Conseil du soir" : "Conseil du jour"}</h2>
+      </div>
+      <p className="text-[15px] text-ink-soft leading-relaxed">{t.text}</p>
     </section>
   );
 }

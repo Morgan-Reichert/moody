@@ -40,7 +40,7 @@ export interface Medication {
   sideEffects?: { date: string; text: string }[];  // effets indésirables signalés
 }
 
-export type ModuleKey = "sport" | "water" | "addiction" | "brushing" | "menstrual" | "sexual" | "insights" | "gratitude" | "adherence";
+export type ModuleKey = "sport" | "water" | "addiction" | "brushing" | "menstrual" | "sexual" | "insights" | "gratitude" | "adherence" | "tips";
 
 export interface Addiction {
   id: string;
@@ -58,6 +58,8 @@ export interface ReminderSettings {
   notifications: boolean;
   modules: ModuleKey[];             // enabled optional trackers
   brushSlots?: Slot[];              // teeth-brushing reminder times (brushing module)
+  bedtimeEnabled?: boolean;         // gentle evening wind-down reminder
+  bedtimeTime?: string;             // "HH:mm"
   // profile / personalization
   name?: string;
   mantra?: string;
@@ -379,6 +381,7 @@ export const MODULES: { key: ModuleKey; name: string; desc: string }[] = [
   { key: "insights", name: "Corrélations d'humeur", desc: "Découvre ce qui influence ton moral (sommeil, sport, eau…)" },
   { key: "gratitude", name: "Journal de gratitude", desc: "3 choses positives par jour — bon pour le moral" },
   { key: "adherence", name: "Observance des médicaments", desc: "% de prises respectées sur 7/30 jours, par médicament" },
+  { key: "tips", name: "Conseils bien-être", desc: "Une astuce douce chaque jour (et des conseils coucher le soir)" },
 ];
 
 // ── Hydration (dashboard card) ───────────────────────────────────────────────

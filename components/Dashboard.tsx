@@ -10,7 +10,7 @@ import { MoodChart } from "@/components/MoodChart";
 import { RemindersSettings } from "@/components/RemindersSettings";
 import { ReportSheet } from "@/components/ReportSheet";
 import { MedInfoModal } from "@/components/MedInfoModal";
-import { WaterCard, AddictionsSection, NextApptCard, BrushingCard, MenstrualCard, SexualCard, InsightsCard, GratitudeCard, AdherenceCard } from "@/components/DashboardCards";
+import { WaterCard, AddictionsSection, NextApptCard, BrushingCard, MenstrualCard, SexualCard, InsightsCard, GratitudeCard, AdherenceCard, TipsCard } from "@/components/DashboardCards";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { SortableList, SortItem } from "@/components/SortableList";
 import { BreathingModal } from "@/components/BreathingModal";
@@ -110,6 +110,7 @@ export function Dashboard({ mounted, onLogMood, onOpenVault }: { mounted: boolea
   if (mounted && settings?.modules.includes("brushing")) cards.push({ key: "brushing", node: <BrushingCard /> });
   if (mounted && settings?.modules.includes("menstrual")) cards.push({ key: "menstrual", node: <MenstrualCard /> });
   if (mounted && settings?.modules.includes("sexual")) cards.push({ key: "sexual", node: <SexualCard /> });
+  if (mounted && settings?.modules.includes("tips")) cards.push({ key: "tips", node: <TipsCard /> });
   if (mounted && settings?.modules.includes("gratitude")) cards.push({ key: "gratitude", node: <GratitudeCard /> });
   if (mounted && settings?.modules.includes("insights")) cards.push({ key: "insights", node: <InsightsCard /> });
   if (mounted && settings?.modules.includes("addiction")) cards.push({ key: "addiction", node: <AddictionsSection onManage={() => setShowSettings(true)} /> });
