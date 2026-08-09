@@ -48,6 +48,13 @@ export function MoodyApp() {
     }
   }, []);
 
+  // Widget / deep-link "Comment vas-tu ?" → open the mood screen
+  useEffect(() => {
+    const h = () => goTo(1);
+    window.addEventListener("moody:open-mood", h);
+    return () => window.removeEventListener("moody:open-mood", h);
+  }, [goTo]);
+
   const onTouchStart = (e: React.TouchEvent) => {
     start.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     axis.current = null;

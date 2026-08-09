@@ -57,5 +57,16 @@
 	<string>Moody utilise Face ID pour déverrouiller l'accès à vos données de santé.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>tech.stariax.moodyapp</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>moody</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

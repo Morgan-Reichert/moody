@@ -12,6 +12,7 @@ export function NativeBridge() {
   useEffect(() => {
     if (!isNative()) return;
     let cleanupTap: (() => void) | undefined;
+    let cleanupUrl: (() => void) | undefined;
 
     (async () => {
       // Hide the native splash right away so nothing can block the launch.
@@ -29,13 +30,21 @@ export function NativeBridge() {
         });
         cleanupTap = () => h.remove();
       } catch { /* */ }
+      try {
+        const { App } = await import("@capacitor/app");
+        const h2 = await App.addListener("appUrlOpen", (ev: any) => {
+          const u = (ev?.url || "").toLowerCase();
+          if (u.includes("mood")) window.dispatchEvent(new CustomEvent("moody:open-mood"));
+        });
+        cleanupUrl = () => h2.remove();
+      } catch { /* */ }
     })();
 
     const off = onChange(() => {
       if (t.current) clearTimeout(t.current);
       t.current = window.setTimeout(() => { syncNative().catch(() => {}); pushWidgetData().catch(() => {}); }, 800);
     });
-    return () => { off(); cleanupTap?.(); };
+    return () => { off(); cleanupTap?.(); cleanupUrl?.(); };
   }, []);
   return null;
 }

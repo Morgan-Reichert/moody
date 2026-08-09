@@ -8,8 +8,11 @@ import SwiftUI
 @main
 struct MoodyWidgetBundle: WidgetBundle {
     var body: some Widget {
-        MoodyMedsWidget()
-        MoodyMoodWidget()
-        MoodyTodayWidget()
+        MoodyCheckinWidget()   // Comment vas-tu ?
+        MoodyMedsWidget()      // Médicaments
+        MoodyMoodWidget()      // Humeur
+        MoodyTodayWidget()     // Aujourd'hui
+        MoodyTipWidget()       // Conseil
+        if #available(iOS 16.0, *) { MoodyLockWidget() }  // écran verrouillé
     }
 }
