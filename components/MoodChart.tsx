@@ -30,6 +30,9 @@ export function MoodChart() {
   }));
   const real = pts.filter((p) => p.value != null) as { date: string; label: string; value: number }[];
   const has = real.length > 0;
+  // Start the curve at the first logged day so long ranges (30/90 j) have no empty gap on the left.
+  const firstIdx = pts.findIndex((p) => p.value != null);
+  const chartPts = firstIdx > 0 ? pts.slice(firstIdx) : pts;
 
   const mean = avg(real.map((p) => p.value));
   // trend: first half vs second half average
@@ -73,8 +76,8 @@ export function MoodChart() {
         <>
           <div className="h-36 -mx-1">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={pts} margin={{ top: 10, right: 8, bottom: 0, left: 8 }}
-                onClick={(e: any) => { const i = e?.activeTooltipIndex; if (i != null && pts[i]?.value != null) setDay(pts[i].date); }}>
+              <AreaChart data={chartPts} margin={{ top: 10, right: 8, bottom: 0, left: 8 }}
+                onClick={(e: any) => { const i = e?.activeTooltipIndex; if (i != null && chartPts[i]?.value != null) setDay(chartPts[i].date); }}>
                 <defs>
                   <linearGradient id="moodfill" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#1aad55" stopOpacity={0.32} />
