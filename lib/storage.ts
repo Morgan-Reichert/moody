@@ -40,7 +40,7 @@ export interface Medication {
   sideEffects?: { date: string; text: string }[];  // effets indésirables signalés
 }
 
-export type ModuleKey = "sport" | "water" | "addiction" | "brushing" | "menstrual" | "sexual" | "insights" | "gratitude" | "adherence" | "tips";
+export type ModuleKey = "sport" | "water" | "addiction" | "brushing" | "menstrual" | "sexual" | "insights" | "gratitude" | "adherence" | "tips" | "health";
 
 export interface Addiction {
   id: string;
@@ -382,6 +382,7 @@ export const MODULES: { key: ModuleKey; name: string; desc: string }[] = [
   { key: "gratitude", name: "Journal de gratitude", desc: "3 choses positives par jour — bon pour le moral" },
   { key: "adherence", name: "Observance des médicaments", desc: "% de prises respectées sur 7/30 jours, par médicament" },
   { key: "tips", name: "Conseils bien-être", desc: "Une astuce douce chaque jour (et des conseils coucher le soir)" },
+  { key: "health", name: "Santé connectée (Apple Santé)", desc: "Sommeil, activité et FC au repos depuis Garmin, Coros, Apple Watch…" },
 ];
 
 // ── Hydration (dashboard card) ───────────────────────────────────────────────

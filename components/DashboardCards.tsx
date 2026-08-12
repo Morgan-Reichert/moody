@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useStore, getWaterToday, addWater, resetWaterToday, WATER_GOAL_CL,
   getAddictions, addictionStat, logConsumption, undoLastConsumption,
@@ -12,10 +12,12 @@ import {
 import { moodInsights } from "@/lib/insights";
 import { adherenceStats } from "@/lib/adherence";
 import { tipOfDay } from "@/lib/tips";
+import { getHealthSnapshot, syncHealth } from "@/lib/health";
 import { hTap } from "@/lib/haptics";
 import {
   GlassWater, Droplets, RotateCcw, Trophy, ShieldCheck, Undo2, Plus, CalendarClock, MapPin,
   Sparkles, Droplet, Heart, Lightbulb, TrendingUp, TrendingDown, Sun, Moon, X, Pill, CheckCircle2,
+  Activity, Footprints, HeartPulse,
 } from "lucide-react";
 
 function relativeWhen(iso: string): string {
@@ -256,6 +258,60 @@ export function SexualCard() {
         </div>
       ) : (
         <button onClick={() => setOpen(true)} className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-white font-bold text-sm active:scale-[.98]" style={{ background: purple }}><Plus className="h-4 w-4" /> Ajouter un rapport</button>
+      )}
+    </section>
+  );
+}
+
+// ── Connected health (Apple Health) ──────────────────────────────────────────
+function fmtSleep(v: number): string { const h = Math.floor(v); const m = Math.round((v - h) * 60); return m ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`; }
+
+export function HealthCard() {
+  const [snap, setSnap] = useState(getHealthSnapshot());
+  useEffect(() => {
+    let alive = true;
+    const on = () => { if (alive) setSnap(getHealthSnapshot()); };
+    window.addEventListener("moody:health", on);
+    syncHealth().then((s) => { if (alive && s) setSnap(s); });
+    return () => { alive = false; window.removeEventListener("moody:health", on); };
+  }, []);
+
+  const s = snap;
+  const empty = !s || (s.sleepHours == null && s.steps == null && s.restingHR == null && s.activeKcal == null);
+  return (
+    <section className="card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><HeartPulse className="h-[18px] w-[18px] text-[#d0492c]" /> Santé connectée</h2>
+        {s?.updated && !empty && <span className="text-[11px] text-ink-mute">maj {relativeAgo(s.updated)}</span>}
+      </div>
+      {empty ? (
+        <p className="text-[13px] text-ink-mute">Autorise <b>Apple Santé</b> (dans Réglages → Santé connectée) pour voir ton sommeil, ton activité et ta FC au repos. Garmin et Coros y écrivent déjà leurs données.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="rounded-2xl bg-lilac/60 p-3 flex flex-col gap-1">
+              <Moon className="h-[18px] w-[18px]" style={{ color: "#6b4fb0" }} />
+              <span className="font-display text-lg font-semibold text-ink leading-none tabular-nums">{s!.sleepHours != null ? fmtSleep(s!.sleepHours) : "—"}</span>
+              <span className="text-[10.5px] text-ink-mute font-semibold">Sommeil</span>
+            </div>
+            <div className="rounded-2xl bg-mint p-3 flex flex-col gap-1">
+              <Footprints className="h-[18px] w-[18px] text-brand-600" />
+              <span className="font-display text-lg font-semibold text-ink leading-none tabular-nums">{s!.steps != null ? s!.steps.toLocaleString("fr-FR") : "—"}</span>
+              <span className="text-[10.5px] text-ink-mute font-semibold">Pas</span>
+            </div>
+            <div className="rounded-2xl bg-[#fbe1da] p-3 flex flex-col gap-1">
+              <HeartPulse className="h-[18px] w-[18px] text-[#d0492c]" />
+              <span className="font-display text-lg font-semibold text-ink leading-none tabular-nums">{s!.restingHR != null ? s!.restingHR : "—"}</span>
+              <span className="text-[10.5px] text-ink-mute font-semibold">FC repos</span>
+            </div>
+          </div>
+          {(s!.exerciseMin != null || s!.activeKcal != null) && (
+            <p className="text-[12px] text-ink-mute mt-2.5 flex items-center gap-1.5">
+              <Activity className="h-4 w-4 text-brand-600" />
+              {s!.exerciseMin != null ? `${s!.exerciseMin} min d'activité` : ""}{s!.exerciseMin != null && s!.activeKcal != null ? " · " : ""}{s!.activeKcal != null ? `${s!.activeKcal} kcal` : ""}
+            </p>
+          )}
+        </>
       )}
     </section>
   );

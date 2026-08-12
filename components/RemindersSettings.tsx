@@ -6,8 +6,9 @@ import {
   useStore, getSettings, saveSettings, getMeds, saveMed, deleteMed, toggleModule,
   getAddictions, saveAddiction, deleteAddiction, Addiction,
   Medication, ReminderSettings, Slot, ALL_DAYS, DAY_LABELS, MODULES,
-  DEFAULT_BRUSH_SLOTS,
+  DEFAULT_BRUSH_SLOTS, ModuleKey,
 } from "@/lib/storage";
+import { requestHealthAuth, syncHealth } from "@/lib/health";
 import { requestNotifPermission } from "@/lib/reminders";
 import { setPin, disableSecurity, biometricsAvailable, registerFace } from "@/lib/security";
 import { exportData, importData } from "@/lib/backup";
@@ -76,6 +77,13 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
   const settings: ReminderSettings = getSettings();
   const meds = getMeds();
   const patch = (p: Partial<ReminderSettings>) => saveSettings(p);
+
+  const onToggleModule = (key: ModuleKey) => {
+    const next = toggleModule(key);
+    if (key === "health" && next.modules.includes("health")) {
+      requestHealthAuth().then((ok) => { if (ok) syncHealth(); });
+    }
+  };
 
   const enableNotifs = async () => {
     const ok = await requestNotifPermission();
@@ -164,11 +172,12 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
                       : mod.key === "gratitude" ? <Sun className="h-5 w-5" />
                       : mod.key === "adherence" ? <Pill className="h-5 w-5" />
                       : mod.key === "tips" ? <Sun className="h-5 w-5" />
+                      : mod.key === "health" ? <HeartPulse className="h-5 w-5" />
                       : <Droplets className="h-5 w-5" />
                     }
                     title={mod.name} sub={mod.desc}
                     on={settings.modules.includes(mod.key)}
-                    onToggle={() => toggleModule(mod.key)} />
+                    onToggle={() => onToggleModule(mod.key)} />
                 ))}
               </div>
               <p className="text-[12px] text-ink-mute mt-2 px-1">D'autres suivis (alimentation détaillée, objectifs…) arrivent — dis-moi tes besoins.</p>
