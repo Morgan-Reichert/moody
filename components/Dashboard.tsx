@@ -18,6 +18,7 @@ import { HelpModal } from "@/components/HelpModal";
 import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
   Check, Clock, AlertTriangle, FileText, CheckCircle2, Info, Wind, HeartHandshake,
+  PlusCircle, HeartPulse,
 } from "lucide-react";
 import { hTap } from "@/lib/haptics";
 
