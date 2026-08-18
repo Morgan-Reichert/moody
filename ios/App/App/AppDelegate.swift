@@ -291,6 +291,15 @@ final class Store: ObservableObject {
 
     // — humeur —
     func addEntry(_ e: MoodEntry) { entries.append(e); persist() }
+    func deleteEntry(_ id: String) { entries.removeAll { $0.id == id }; persist() }
+    func entries(on day: String) -> [MoodEntry] {
+        entries.filter { $0.date == day }.sorted { $0.datetime < $1.datetime }
+    }
+    /// Moyenne d'humeur d'un jour donné.
+    func dayAverage(_ day: String) -> Double? {
+        let sel = entries.filter { $0.date == day }.map(\.mood)
+        return sel.isEmpty ? nil : sel.reduce(0, +) / Double(sel.count)
+    }
     var todayEntries: [MoodEntry] { entries.filter { $0.date == Dates.dayKey() } }
     var todayAvg: Double? {
         let t = todayEntries; guard !t.isEmpty else { return nil }
@@ -728,6 +737,8 @@ struct DashboardView: View {
     @State private var showBreathe = false
     @State private var showHelp = false
     @State private var showReport = false
+    @State private var showDayDetail = false
+    @State private var showTrend = false
     @State private var showEditHome = false
 
     private var hello: String {
@@ -775,6 +786,8 @@ struct DashboardView: View {
         .sheet(isPresented: $showHelp) { HelpView() }
         .sheet(isPresented: $showReport) { ReportView() }
         .sheet(isPresented: $showEditHome) { EditHomeSheet() }
+        .sheet(isPresented: $showDayDetail) { DayDetailSheet() }
+        .sheet(isPresented: $showTrend) { MoodTrendSheet() }
     }
 
     private var header: some View {
@@ -810,10 +823,14 @@ struct DashboardView: View {
                 Text(Date().formatted(.dateTime.weekday(.wide).locale(Locale(identifier: "fr_FR"))).capitalized)
                     .font(.system(size: 13, weight: .bold)).foregroundStyle(Color.brand700.opacity(0.8))
                 Spacer(minLength: 8)
-                Text("HUMEUR DU JOUR")
-                    .font(.system(size: 10, weight: .bold)).kerning(1.2)
-                    .foregroundStyle(Color.brand700.opacity(0.6))
-                    .lineLimit(1).minimumScaleFactor(0.7)
+                HStack(spacing: 4) {
+                    Text("HUMEUR DU JOUR")
+                        .font(.system(size: 10, weight: .bold)).kerning(1.2)
+                        .foregroundStyle(Color.brand700.opacity(0.6))
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                    Image(systemName: "chevron.right.circle.fill")
+                        .font(.system(size: 11)).foregroundStyle(Color.brand700.opacity(0.45))
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: 10) {
@@ -844,6 +861,8 @@ struct DashboardView: View {
         }
         .padding(16)
         .background(RoundedRectangle(cornerRadius: 30, style: .continuous).fill(Color.mint))
+        .contentShape(RoundedRectangle(cornerRadius: 30, style: .continuous))
+        .onTapGesture { showDayDetail = true }
     }
 
     private var statsRow: some View {
@@ -874,9 +893,13 @@ struct DashboardView: View {
                     Text("Ton humeur — 14 jours")
                         .font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
                     Spacer()
-                    Button { showReport = true } label: {
-                        Text("Rapport").font(.system(size: 12, weight: .bold)).foregroundStyle(Color.inkSoft)
-                            .padding(.horizontal, 12).padding(.vertical, 6).background(Capsule().fill(Color.cream))
+                    Button { showTrend = true } label: {
+                        HStack(spacing: 3) {
+                            Text("Détails").font(.system(size: 12, weight: .bold))
+                            Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
+                        }
+                        .foregroundStyle(Color.accentDeep)
+                        .padding(.horizontal, 12).padding(.vertical, 6).background(Capsule().fill(Color.accentSoft))
                     }
                 }
                 let series = store.dailySeries(14)
@@ -930,6 +953,8 @@ struct DashboardView: View {
                 }
             }
         }
+        .contentShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .onTapGesture { showTrend = true }
     }
 
     private var wellbeingRow: some View {
@@ -1548,6 +1573,604 @@ enum CrisisProtocol {
         "Maintenant, nomme autour de toi : 5 choses que tu VOIS… 4 que tu peux TOUCHER… 3 que tu ENTENDS… 2 que tu SENS… 1 que tu peux GOÛTER.",
         "Comment tu te sens, là ? La vague redescend ? Je reste avec toi le temps qu'il faut. Si les crises se répètent, parles-en à ton médecin : ça se soigne très bien.",
     ]
+}
+
+// MARK: - Détail de la journée (depuis la carte « Humeur du jour »)
+
+struct DayDetailSheet: View {
+    @EnvironmentObject var store: Store
+    @Environment(\.dismiss) private var dismiss
+    @State private var offset = 0          // 0 = aujourd'hui, -1 = hier…
+
+    private var dayKey: String { Dates.dayKey(Calendar.current.date(byAdding: .day, value: offset, to: Date()) ?? Date()) }
+    private var dayDate: Date { Calendar.current.date(byAdding: .day, value: offset, to: Date()) ?? Date() }
+    private var dayEntries: [MoodEntry] { store.entries(on: dayKey) }
+    private var log: DayLog { store.dayLogs[dayKey] ?? DayLog() }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 14) {
+                    dayPicker
+                    heroBlock
+                    if dayEntries.isEmpty && store.dayLogs[dayKey] == nil {
+                        Card {
+                            VStack(spacing: 8) {
+                                Image(systemName: "moon.zzz").font(.system(size: 26)).foregroundStyle(Color.inkMute)
+                                Text("Rien de noté ce jour-là.")
+                                    .font(.system(size: 14, weight: .bold)).foregroundStyle(Color.inkSoft)
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 18)
+                        }
+                    } else {
+                        if !dayEntries.isEmpty { timelineBlock }
+                        journalBlock
+                        if !store.addictions.isEmpty { consoBlock }
+                        medsBlock
+                        comparisonBlock
+                    }
+                }
+                .padding(18)
+            }
+            .background(Color.cream.ignoresSafeArea())
+            .navigationTitle("Ma journée")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Fermer") { dismiss() } } }
+        }
+    }
+
+    private var dayPicker: some View {
+        HStack {
+            Button { withAnimation { offset -= 1 } } label: {
+                Image(systemName: "chevron.left").font(.system(size: 13, weight: .bold)).foregroundStyle(Color.inkC)
+                    .frame(width: 36, height: 36).background(Circle().fill(.white))
+            }
+            Spacer()
+            VStack(spacing: 1) {
+                Text(dayDate.formatted(.dateTime.weekday(.wide).day().month(.wide).locale(Locale(identifier: "fr_FR"))).capitalized)
+                    .font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                Text(offset == 0 ? "Aujourd'hui" : offset == -1 ? "Hier" : "il y a \(-offset) jours")
+                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.inkMute)
+            }
+            Spacer()
+            Button { withAnimation { offset = min(0, offset + 1) } } label: {
+                Image(systemName: "chevron.right").font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(offset == 0 ? Color.inkMute.opacity(0.4) : Color.inkC)
+                    .frame(width: 36, height: 36).background(Circle().fill(.white))
+            }
+            .disabled(offset == 0)
+        }
+    }
+
+    private var heroBlock: some View {
+        Card {
+            HStack(spacing: 16) {
+                MoodRing(value: store.dayAverage(dayKey))
+                VStack(alignment: .leading, spacing: 3) {
+                    if let avg = store.dayAverage(dayKey) {
+                        Text(String(format: "%.1f/10", avg))
+                            .font(.system(size: 26, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                        Text(Store.moodLabel(avg)).font(.system(size: 13.5, weight: .bold)).foregroundStyle(Color.brand700)
+                        Text("\(dayEntries.count) saisie\(dayEntries.count > 1 ? "s" : "") dans la journée")
+                            .font(.system(size: 11.5)).foregroundStyle(Color.inkMute)
+                    } else {
+                        Text("Pas d'humeur notée").font(.system(size: 16, weight: .bold)).foregroundStyle(Color.inkSoft)
+                    }
+                }
+                Spacer()
+            }
+        }
+    }
+
+    private var timelineBlock: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 12) {
+                blockTitle("clock.fill", "Fil de la journée", Color.accentDeep, Color.accentSoft)
+                ForEach(dayEntries) { e in
+                    VStack(alignment: .leading, spacing: 7) {
+                        HStack(spacing: 8) {
+                            Text(String(e.datetime.dropFirst(11).prefix(5)))
+                                .font(.system(size: 12, weight: .heavy, design: .rounded)).foregroundStyle(.white)
+                                .padding(.horizontal, 9).padding(.vertical, 4)
+                                .background(Capsule().fill(Color.inkC))
+                            Text(String(format: "%.0f/10", e.mood))
+                                .font(.system(size: 14, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                            Text(Store.moodLabel(e.mood)).font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.inkMute)
+                            Spacer()
+                            Button(role: .destructive) { store.deleteEntry(e.id) } label: {
+                                Image(systemName: "trash").font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.inkMute)
+                            }
+                        }
+                        let chips = detailChips(e)
+                        if !chips.isEmpty {
+                            FlowChips(items: chips)
+                        }
+                        if let n = e.note, !n.isEmpty {
+                            Text(n).font(.system(size: 12.5)).foregroundStyle(Color.inkSoft)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(10).background(RoundedRectangle(cornerRadius: 10).fill(Color.cream))
+                        }
+                    }
+                    .padding(12)
+                    .background(RoundedRectangle(cornerRadius: 16, style: .continuous).fill(Color.cream.opacity(0.6)))
+                }
+            }
+        }
+    }
+
+    private func detailChips(_ e: MoodEntry) -> [(String, String)] {
+        var c: [(String, String)] = []
+        if let v = e.energy { c.append(("bolt.fill", String(format: "Énergie %.0f/10", v))) }
+        if let v = e.appetite { c.append(("fork.knife", String(format: "Appétit %.0f/10", v))) }
+        if let v = e.sleep {
+            var t = String(format: "Nuit %.1f h", v)
+            if let b = e.bedTime, let w = e.wakeTime { t += " (\(b)→\(w))" }
+            c.append(("moon.fill", t))
+        }
+        if let v = e.napMinutes, v > 0 { c.append(("bed.double.fill", "Sieste \(Int(v)) min")) }
+        if let ws = e.workouts, !ws.isEmpty {
+            for w in ws { c.append(("figure.run", "\(w.sport) \(w.minutes) min")) }
+        } else if let v = e.sport, v > 0 { c.append(("figure.run", "Sport \(Int(v)) min")) }
+        if let v = e.menstruation { c.append(("drop.fill", ["Pas de règles", "Règles légères", "Règles moyennes", "Règles abondantes"][min(3, Int(v))])) }
+        if e.sexualActivity == true { c.append(("heart.fill", "Activité intime")) }
+        if let v = e.spending, v > 0 { c.append(("eurosign.circle.fill", String(format: "%.0f €", v))) }
+        return c
+    }
+
+    private var journalBlock: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 10) {
+                blockTitle("sparkles", "Hygiène & journée", Color(hex: 0xB07F14), Color.butterC)
+                grid([
+                    ("shower.fill", "Douche matin", boolText(log.showerAM)),
+                    ("shower.fill", "Douche soir", boolText(log.showerPM)),
+                    ("mouth.fill", "Dents matin", boolText(log.teethAM)),
+                    ("mouth.fill", "Dents soir", boolText(log.teethPM)),
+                    ("drop.fill", "Eau", log.waterGlasses.map { "\(Int($0)) verre\($0 > 1 ? "s" : "")" } ?? "—"),
+                    ("heart.fill", "Rapports", log.sexCount.map { "\(Int($0))" } ?? "—"),
+                ])
+            }
+        }
+    }
+    private func boolText(_ b: Bool?) -> String { b == true ? "Oui" : b == false ? "Non" : "—" }
+
+    private var consoBlock: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 10) {
+                blockTitle("takeoutbag.and.cup.and.straw.fill", "Consommations", Color.rose, Color.peachC)
+                ForEach(store.addictions) { a in
+                    let n = store.addictionLog.filter { $0.id == a.id && $0.at.hasPrefix(dayKey) }.count
+                    HStack {
+                        Text(a.name).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Color.inkC)
+                        Spacer()
+                        Text("\(n) \(a.unit ?? "")")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundStyle(n > 0 ? Color.rose : Color.inkMute)
+                    }
+                    .padding(.vertical, 3)
+                }
+            }
+        }
+    }
+
+    private var medsBlock: some View {
+        let wd = Calendar.current.component(.weekday, from: dayDate) - 1
+        let doses = store.dosesFor(dayKey: dayKey, jsWeekday: wd).sorted { $0.time < $1.time }
+        return Group {
+            if !doses.isEmpty {
+                Card {
+                    VStack(alignment: .leading, spacing: 10) {
+                        let taken = doses.filter(\.taken).count
+                        HStack {
+                            blockTitle("pills.fill", "Médicaments", Color.rose, Color.peachC)
+                            Spacer()
+                            Text("\(taken)/\(doses.count)")
+                                .font(.system(size: 12, weight: .heavy, design: .rounded))
+                                .foregroundStyle(taken == doses.count ? Color.brand700 : Color.inkMute)
+                        }
+                        ForEach(doses) { d in
+                            HStack(spacing: 8) {
+                                Image(systemName: d.taken ? "checkmark.circle.fill" : "circle")
+                                    .font(.system(size: 14)).foregroundStyle(d.taken ? Color.brand : Color.inkMute.opacity(0.5))
+                                Text(d.time).font(.system(size: 12, weight: .bold, design: .rounded)).foregroundStyle(Color.inkMute)
+                                Text(d.name).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Color.inkC)
+                                    .lineLimit(1).minimumScaleFactor(0.8)
+                                Spacer()
+                                if let dose = d.dose { Text(dose).font(.system(size: 11.5)).foregroundStyle(Color.inkMute) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var comparisonBlock: some View {
+        let avg = store.dayAverage(dayKey)
+        let prevKey = Dates.dayKey(Calendar.current.date(byAdding: .day, value: -1, to: dayDate) ?? dayDate)
+        let prev = store.dayAverage(prevKey)
+        let week = store.average(days: 7)
+        return Card {
+            VStack(alignment: .leading, spacing: 10) {
+                blockTitle("chart.line.uptrend.xyaxis", "Comparaison", Color.accentDeep, Color.accentSoft)
+                if let avg {
+                    if let prev {
+                        let d = avg - prev
+                        compareRow("Vs la veille", d)
+                    }
+                    if let week {
+                        compareRow("Vs ta moyenne 7 jours", avg - week)
+                    }
+                } else {
+                    Text("Note ton humeur pour voir les comparaisons.")
+                        .font(.system(size: 12.5)).foregroundStyle(Color.inkMute)
+                }
+            }
+        }
+    }
+    private func compareRow(_ label: String, _ delta: Double) -> some View {
+        HStack {
+            Text(label).font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.inkSoft)
+            Spacer()
+            HStack(spacing: 4) {
+                Image(systemName: delta > 0.05 ? "arrow.up.right" : delta < -0.05 ? "arrow.down.right" : "equal")
+                    .font(.system(size: 10, weight: .heavy))
+                Text(String(format: "%+.1f", delta)).font(.system(size: 13, weight: .bold, design: .rounded))
+            }
+            .foregroundStyle(delta > 0.05 ? Color.brand700 : delta < -0.05 ? Color.rose : Color.inkMute)
+        }
+    }
+
+    private func blockTitle(_ icon: String, _ text: String, _ fg: Color, _ bg: Color) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon).font(.system(size: 12, weight: .bold)).foregroundStyle(fg)
+                .frame(width: 28, height: 28).background(Circle().fill(bg))
+            Text(text).font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+        }
+    }
+    private func grid(_ items: [(String, String, String)]) -> some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+            ForEach(Array(items.enumerated()), id: \.offset) { _, it in
+                HStack(spacing: 6) {
+                    Image(systemName: it.0).font(.system(size: 10, weight: .bold)).foregroundStyle(Color.inkMute)
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(it.1).font(.system(size: 10.5)).foregroundStyle(Color.inkMute).lineLimit(1)
+                        Text(it.2).font(.system(size: 13, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                    }
+                    Spacer(minLength: 0)
+                }
+                .padding(9)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Color.cream))
+            }
+        }
+    }
+}
+
+/// Petites pastilles qui passent à la ligne.
+struct FlowChips: View {
+    var items: [(String, String)]
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(Array(items.enumerated()), id: \.offset) { _, it in
+                    HStack(spacing: 4) {
+                        Image(systemName: it.0).font(.system(size: 9, weight: .bold))
+                        Text(it.1).font(.system(size: 11, weight: .semibold)).fixedSize()
+                    }
+                    .foregroundStyle(Color.inkSoft)
+                    .padding(.horizontal, 9).padding(.vertical, 5)
+                    .background(Capsule().fill(.white))
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Détail des tendances (depuis la carte « Ton humeur — 14 jours »)
+
+struct MoodTrendSheet: View {
+    @EnvironmentObject var store: Store
+    @Environment(\.dismiss) private var dismiss
+    @State private var days = 14
+
+    private var series: [(date: Date, value: Double?)] { store.dailySeries(days) }
+    private var values: [Double] { series.compactMap(\.value) }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 14) {
+                    periodPicker
+                    if values.isEmpty {
+                        Card {
+                            VStack(spacing: 8) {
+                                Image(systemName: "chart.xyaxis.line").font(.system(size: 26)).foregroundStyle(Color.inkMute)
+                                Text("Pas encore de données sur cette période.")
+                                    .font(.system(size: 14, weight: .bold)).foregroundStyle(Color.inkSoft)
+                            }
+                            .frame(maxWidth: .infinity).padding(.vertical, 20)
+                        }
+                    } else {
+                        chartBlock
+                        kpiBlock
+                        extremesBlock
+                        distributionBlock
+                        weekdayBlock
+                        sleepBlock
+                        listBlock
+                    }
+                }
+                .padding(18)
+            }
+            .background(Color.cream.ignoresSafeArea())
+            .navigationTitle("Tes tendances")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Fermer") { dismiss() } } }
+        }
+    }
+
+    private var periodPicker: some View {
+        Picker("", selection: $days) {
+            Text("7 j").tag(7); Text("14 j").tag(14); Text("30 j").tag(30); Text("90 j").tag(90)
+        }
+        .pickerStyle(.segmented)
+    }
+
+    private var chartBlock: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Évolution de ton humeur")
+                    .font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                Chart {
+                    ForEach(Array(series.enumerated()), id: \.offset) { _, pt in
+                        if let v = pt.value {
+                            AreaMark(x: .value("Jour", pt.date, unit: .day), y: .value("Humeur", v))
+                                .foregroundStyle(LinearGradient(colors: [.accentBlue.opacity(0.25), .accentBlue.opacity(0)],
+                                                                startPoint: .top, endPoint: .bottom))
+                            LineMark(x: .value("Jour", pt.date, unit: .day), y: .value("Humeur", v))
+                                .foregroundStyle(Color.accentBlue)
+                                .lineStyle(StrokeStyle(lineWidth: 2.4, lineCap: .round))
+                            if days <= 30 {
+                                PointMark(x: .value("Jour", pt.date, unit: .day), y: .value("Humeur", v))
+                                    .foregroundStyle(Color.accentBlue).symbolSize(26)
+                            }
+                        }
+                    }
+                    if let avg = mean {
+                        RuleMark(y: .value("Moyenne", avg))
+                            .foregroundStyle(Color.brand.opacity(0.55))
+                            .lineStyle(StrokeStyle(lineWidth: 1.2, dash: [4, 4]))
+                            .annotation(position: .trailing, spacing: 2) {
+                                Text(String(format: "%.1f", avg))
+                                    .font(.system(size: 9, weight: .bold)).foregroundStyle(Color.brand700)
+                            }
+                    }
+                }
+                .chartYScale(domain: 0...10)
+                .chartYAxis {
+                    AxisMarks(values: [0, 2, 4, 6, 8, 10]) { _ in
+                        AxisGridLine().foregroundStyle(.black.opacity(0.06))
+                        AxisValueLabel().font(.system(size: 9, weight: .semibold)).foregroundStyle(Color.inkMute)
+                    }
+                }
+                .chartXAxis {
+                    AxisMarks(values: .stride(by: .day, count: days <= 14 ? 2 : days <= 30 ? 5 : 15)) { _ in
+                        AxisValueLabel(format: .dateTime.day().month(.narrow), centered: true)
+                            .font(.system(size: 9, weight: .semibold)).foregroundStyle(Color.inkMute)
+                    }
+                }
+                .frame(height: 210)
+            }
+        }
+    }
+
+    private var mean: Double? { values.isEmpty ? nil : values.reduce(0, +) / Double(values.count) }
+    private var median: Double? {
+        guard !values.isEmpty else { return nil }
+        let s = values.sorted()
+        return s.count % 2 == 0 ? (s[s.count/2 - 1] + s[s.count/2]) / 2 : s[s.count/2]
+    }
+
+    private var kpiBlock: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+            kpi("Moyenne", mean.map { String(format: "%.1f", $0) } ?? "—", "chart.bar.fill", Color.accentDeep, Color.accentSoft)
+            kpi("Médiane", median.map { String(format: "%.1f", $0) } ?? "—", "equal.circle.fill", Color.brand700, Color.mint)
+            kpi("Amplitude", values.isEmpty ? "—" : String(format: "%.0f → %.0f", values.min()!, values.max()!),
+                "arrow.up.arrow.down", Color(hex: 0xB07F14), Color.butterC)
+            kpi("Jours notés", "\(values.count)/\(days)", "calendar", Color.rose, Color.peachC)
+        }
+    }
+    private func kpi(_ label: String, _ value: String, _ icon: String, _ fg: Color, _ bg: Color) -> some View {
+        Card(padding: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Image(systemName: icon).font(.system(size: 12, weight: .bold)).foregroundStyle(fg)
+                    .frame(width: 30, height: 30).background(Circle().fill(bg))
+                Text(value).font(.system(size: 19, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+                Text(label).font(.system(size: 11, weight: .semibold)).foregroundStyle(Color.inkMute)
+            }
+        }
+    }
+
+    private var extremesBlock: some View {
+        let noted = series.compactMap { pt in pt.value.map { (pt.date, $0) } }
+        let best = noted.max { $0.1 < $1.1 }
+        let worst = noted.min { $0.1 < $1.1 }
+        // évolution vs période précédente
+        let prevCut = Calendar.current.date(byAdding: .day, value: -days * 2, to: Date())!
+        let curCut = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
+        let prevVals = store.entries.filter { $0.date >= Dates.dayKey(prevCut) && $0.date < Dates.dayKey(curCut) }.map(\.mood)
+        let prevAvg = prevVals.isEmpty ? nil : prevVals.reduce(0, +) / Double(prevVals.count)
+        return Card {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Points marquants").font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                if let best {
+                    extremeRow("sun.max.fill", Color.brand700, "Meilleur jour",
+                               best.0.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).locale(Locale(identifier: "fr_FR"))),
+                               String(format: "%.1f", best.1))
+                }
+                if let worst {
+                    extremeRow("cloud.rain.fill", Color.rose, "Jour le plus dur",
+                               worst.0.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).locale(Locale(identifier: "fr_FR"))),
+                               String(format: "%.1f", worst.1))
+                }
+                if let m = mean, let p = prevAvg {
+                    let d = m - p
+                    HStack {
+                        Image(systemName: d > 0.05 ? "arrow.up.right" : d < -0.05 ? "arrow.down.right" : "equal")
+                            .font(.system(size: 11, weight: .heavy))
+                            .foregroundStyle(d > 0.05 ? Color.brand700 : d < -0.05 ? Color.rose : Color.inkMute)
+                            .frame(width: 28, height: 28)
+                            .background(Circle().fill(d > 0.05 ? Color.mint : d < -0.05 ? Color.peachC : Color.cream))
+                        Text("Vs les \(days) jours précédents")
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(Color.inkSoft)
+                        Spacer()
+                        Text(String(format: "%+.1f", d))
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundStyle(d > 0.05 ? Color.brand700 : d < -0.05 ? Color.rose : Color.inkMute)
+                    }
+                }
+            }
+        }
+    }
+    private func extremeRow(_ icon: String, _ tint: Color, _ label: String, _ date: String, _ value: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon).font(.system(size: 12, weight: .bold)).foregroundStyle(tint)
+                .frame(width: 28, height: 28).background(Circle().fill(tint.opacity(0.12)))
+            VStack(alignment: .leading, spacing: 0) {
+                Text(label).font(.system(size: 11)).foregroundStyle(Color.inkMute)
+                Text(date.capitalized).font(.system(size: 13, weight: .bold)).foregroundStyle(Color.inkC)
+            }
+            Spacer()
+            Text(value).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(tint)
+        }
+    }
+
+    private var distributionBlock: some View {
+        let buckets = [("1-2", 1.0...2.0), ("3-4", 3.0...4.0), ("5-6", 5.0...6.0), ("7-8", 7.0...8.0), ("9-10", 9.0...10.0)]
+        let counts = buckets.map { b in values.filter { b.1.contains($0.rounded()) }.count }
+        let maxC = max(counts.max() ?? 1, 1)
+        return Card {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Répartition de tes journées")
+                    .font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                HStack(alignment: .bottom, spacing: 10) {
+                    ForEach(Array(buckets.enumerated()), id: \.offset) { i, b in
+                        VStack(spacing: 5) {
+                            Text(counts[i] > 0 ? "\(counts[i])" : "")
+                                .font(.system(size: 10, weight: .bold)).foregroundStyle(Color.inkMute)
+                            RoundedRectangle(cornerRadius: 7)
+                                .fill(bucketColor(i))
+                                .frame(height: max(6, CGFloat(counts[i]) / CGFloat(maxC) * 90))
+                            Text(b.0).font(.system(size: 10, weight: .bold)).foregroundStyle(Color.inkMute)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .frame(height: 130, alignment: .bottom)
+            }
+        }
+    }
+    private func bucketColor(_ i: Int) -> Color {
+        [Color.rose, Color(hex: 0xE8845C), Color(hex: 0xE8B23C), Color(hex: 0x7FC24B), Color.brand][min(4, i)]
+    }
+
+    private var weekdayBlock: some View {
+        let names = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"]
+        var sums = [Double](repeating: 0, count: 7), counts = [Int](repeating: 0, count: 7)
+        for pt in series { if let v = pt.value {
+            let wd = Calendar.current.component(.weekday, from: pt.date) - 1
+            sums[wd] += v; counts[wd] += 1
+        } }
+        let avgs = (0..<7).map { counts[$0] > 0 ? sums[$0] / Double(counts[$0]) : nil }
+        return Card {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Ton humeur selon le jour")
+                    .font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                HStack(alignment: .bottom, spacing: 7) {
+                    ForEach(1..<8, id: \.self) { idx in
+                        let i = idx % 7   // commence lundi
+                        VStack(spacing: 5) {
+                            Text(avgs[i].map { String(format: "%.1f", $0) } ?? "—")
+                                .font(.system(size: 9.5, weight: .bold)).foregroundStyle(Color.inkMute)
+                            RoundedRectangle(cornerRadius: 6)
+                                .fill(avgs[i] == nil ? Color.cream : Color.accentBlue.opacity(0.75))
+                                .frame(height: max(6, CGFloat(avgs[i] ?? 0) / 10 * 80))
+                            Text(names[i]).font(.system(size: 10, weight: .bold)).foregroundStyle(Color.inkMute)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .frame(height: 120, alignment: .bottom)
+            }
+        }
+    }
+
+    private var sleepBlock: some View {
+        let cut = Dates.dayKey(Calendar.current.date(byAdding: .day, value: -days, to: Date())!)
+        let sel = store.entries.filter { $0.date >= cut && $0.sleep != nil }
+        let good = sel.filter { ($0.sleep ?? 0) >= 7 }.map(\.mood)
+        let short = sel.filter { ($0.sleep ?? 0) < 7 }.map(\.mood)
+        return Group {
+            if good.count >= 2 && short.count >= 2 {
+                let ga = good.reduce(0, +) / Double(good.count)
+                let sa = short.reduce(0, +) / Double(short.count)
+                Card {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("Sommeil et humeur").font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                        HStack(spacing: 12) {
+                            sleepStat("≥ 7 h", ga, good.count, Color.brand, Color.mint)
+                            sleepStat("< 7 h", sa, short.count, Color.rose, Color.peachC)
+                        }
+                        Text(ga - sa >= 0.5
+                             ? String(format: "Tes nuits longues s'accompagnent d'une humeur supérieure de %.1f point. Le sommeil te fait clairement du bien.", ga - sa)
+                             : "Pas d'écart marqué entre tes nuits courtes et longues sur cette période.")
+                            .font(.system(size: 12)).foregroundStyle(Color.inkMute)
+                    }
+                }
+            }
+        }
+    }
+    private func sleepStat(_ label: String, _ avg: Double, _ n: Int, _ fg: Color, _ bg: Color) -> some View {
+        VStack(spacing: 3) {
+            Text(label).font(.system(size: 11, weight: .bold)).foregroundStyle(Color.inkMute)
+            Text(String(format: "%.1f", avg)).font(.system(size: 22, weight: .bold, design: .rounded)).foregroundStyle(fg)
+            Text("\(n) jour\(n > 1 ? "s" : "")").font(.system(size: 10)).foregroundStyle(Color.inkMute)
+        }
+        .frame(maxWidth: .infinity).padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 14).fill(bg))
+    }
+
+    private var listBlock: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Jour par jour").font(.system(size: 15, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                ForEach(Array(series.reversed().enumerated()), id: \.offset) { _, pt in
+                    HStack(spacing: 10) {
+                        Text(pt.date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).locale(Locale(identifier: "fr_FR"))).capitalized)
+                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.inkSoft)
+                            .frame(width: 92, alignment: .leading)
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                Capsule().fill(Color.cream).frame(height: 8)
+                                if let v = pt.value {
+                                    Capsule().fill(Color.accentBlue.opacity(0.8))
+                                        .frame(width: geo.size.width * CGFloat(v / 10), height: 8)
+                                }
+                            }
+                            .frame(height: 8)
+                            .frame(maxHeight: .infinity, alignment: .center)
+                        }
+                        .frame(height: 16)
+                        Text(pt.value.map { String(format: "%.1f", $0) } ?? "—")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .foregroundStyle(pt.value == nil ? Color.inkMute.opacity(0.5) : Color.inkC)
+                            .frame(width: 30, alignment: .trailing)
+                    }
+                }
+            }
+        }
+    }
 }
 
 // MARK: - Carte assistant sur l'accueil
