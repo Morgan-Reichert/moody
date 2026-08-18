@@ -6,6 +6,8 @@
 import SwiftUI
 import Speech
 import AVFoundation
+import SQLite3
+import CoreLocation
 import Charts
 import AVFoundation
 import UserNotifications
@@ -1134,6 +1136,248 @@ struct AddProductSheet: View {
     }
 }
 
+// MARK: - Base de données médicaments ANSM (15 857 spécialités, embarquée)
+
+struct DrugInfo {
+    var name: String
+    var form: String
+    var route: String
+    var marketed: Bool
+    var surveillance: Bool
+    var substances: String?
+    var generGroup: String?
+    var conditions: String?
+}
+
+enum DrugDB {
+    private static var db: OpaquePointer? = {
+        guard let path = Bundle.main.path(forResource: "bdpm", ofType: "sqlite") else { return nil }
+        var d: OpaquePointer?
+        return sqlite3_open_v2(path, &d, SQLITE_OPEN_READONLY, nil) == SQLITE_OK ? d : nil
+    }()
+
+    /// Recherche par nom (insensible aux accents/majuscules), commercialisés d'abord.
+    static func search(_ query: String, limit: Int = 5) -> [DrugInfo] {
+        guard let db else { return [] }
+        let q = query.folding(options: [.diacriticInsensitive, .caseInsensitive], locale: Locale(identifier: "fr"))
+            .uppercased().trimmingCharacters(in: .whitespaces)
+        guard q.count >= 3 else { return [] }
+        var stmt: OpaquePointer?
+        let sql = """
+            SELECT name, form, route, marketed, surv, substances, gener, conditions FROM meds
+            WHERE nname LIKE ? ORDER BY marketed DESC, LENGTH(name) LIMIT ?
+            """
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else { return [] }
+        defer { sqlite3_finalize(stmt) }
+        sqlite3_bind_text(stmt, 1, "%\(q)%", -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+        sqlite3_bind_int(stmt, 2, Int32(limit))
+        var out: [DrugInfo] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            func col(_ i: Int32) -> String? { sqlite3_column_text(stmt, i).map { String(cString: $0) } }
+            out.append(DrugInfo(name: col(0) ?? "", form: col(1) ?? "", route: col(2) ?? "",
+                                marketed: sqlite3_column_int(stmt, 3) == 1,
+                                surveillance: sqlite3_column_int(stmt, 4) == 1,
+                                substances: col(5), generGroup: col(6), conditions: col(7)))
+        }
+        return out
+    }
+
+    static func describe(_ d: DrugInfo) -> String {
+        var parts: [String] = []
+        parts.append("\(d.name) — \(d.form), voie \(d.route.lowercased()).")
+        if let s = d.substances { parts.append("Principe(s) actif(s) : \(s).") }
+        if let g = d.generGroup { parts.append("Famille : \(g).") }
+        if let c = d.conditions { parts.append("Délivrance : \(c.lowercased()).") }
+        if d.surveillance { parts.append("⚠️ Sous surveillance renforcée ANSM.") }
+        if !d.marketed { parts.append("(N'est plus commercialisé.)") }
+        parts.append("Je ne remplace ni ta notice ni ton médecin — en cas de doute, demande à ton pharmacien.")
+        return parts.joined(separator: " ")
+    }
+}
+
+// MARK: - Météo locale (Open-Meteo, sans clé)
+
+@MainActor
+final class WeatherService: NSObject, ObservableObject, CLLocationManagerDelegate {
+    static let shared = WeatherService()
+    private let manager = CLLocationManager()
+    private var cache: (at: Date, text: String)?
+    private var pending: [(String) -> Void] = []
+
+    func current(_ done: @escaping (String) -> Void) {
+        if let c = cache, Date().timeIntervalSince(c.at) < 1800 { done(c.text); return }
+        pending.append(done)
+        manager.delegate = self
+        switch manager.authorizationStatus {
+        case .notDetermined: manager.requestWhenInUseAuthorization()
+        case .denied, .restricted:
+            flush("Je n'ai pas accès à ta position — autorise la localisation dans Réglages pour la météo.")
+        default: manager.requestLocation()
+        }
+    }
+    nonisolated func locationManagerDidChangeAuthorization(_ m: CLLocationManager) {
+        Task { @MainActor in
+            if m.authorizationStatus == .authorizedWhenInUse || m.authorizationStatus == .authorizedAlways { m.requestLocation() }
+            else if m.authorizationStatus == .denied { flush("Sans accès à ta position, pas de météo — tu peux l'autoriser dans Réglages.") }
+        }
+    }
+    nonisolated func locationManager(_ m: CLLocationManager, didUpdateLocations locs: [CLLocation]) {
+        guard let l = locs.first else { return }
+        Task { @MainActor in await fetch(lat: l.coordinate.latitude, lon: l.coordinate.longitude) }
+    }
+    nonisolated func locationManager(_ m: CLLocationManager, didFailWithError error: Error) {
+        Task { @MainActor in flush("Impossible de te localiser pour la météo, réessaie dehors ou plus tard.") }
+    }
+
+    private func fetch(lat: Double, lon: Double) async {
+        do {
+            let url = URL(string: "https://api.open-meteo.com/v1/forecast?latitude=\(lat)&longitude=\(lon)&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=1")!
+            let (data, _) = try await URLSession.shared.data(from: url)
+            struct R: Decodable {
+                struct C: Decodable { let temperature_2m: Double; let weather_code: Int; let wind_speed_10m: Double }
+                struct D: Decodable { let temperature_2m_max: [Double]; let temperature_2m_min: [Double]; let precipitation_probability_max: [Int] }
+                let current: C; let daily: D
+            }
+            let r = try JSONDecoder().decode(R.self, from: data)
+            let desc = Self.codeText(r.current.weather_code)
+            let rain = r.daily.precipitation_probability_max.first ?? 0
+            var t = String(format: "Il fait %.0f °C, %@. Aujourd'hui : %.0f à %.0f °C", r.current.temperature_2m, desc,
+                           r.daily.temperature_2m_min.first ?? 0, r.daily.temperature_2m_max.first ?? 0)
+            t += rain >= 50 ? ", \(rain) % de risque de pluie — pense au parapluie ☔️." : rain >= 25 ? ", \(rain) % de risque de pluie." : ", temps plutôt sec."
+            if r.current.weather_code <= 1 && r.current.temperature_2m >= 15 { t += " Idéal pour une marche — ton humeur adore ça !" }
+            cache = (Date(), t); flush(t)
+        } catch { flush("La météo ne répond pas pour le moment.") }
+    }
+    private func flush(_ text: String) { pending.forEach { $0(text) }; pending = [] }
+
+    static func codeText(_ c: Int) -> String {
+        switch c {
+        case 0: return "grand ciel bleu"
+        case 1: return "plutôt dégagé"
+        case 2: return "partiellement nuageux"
+        case 3: return "couvert"
+        case 45, 48: return "brouillard"
+        case 51...57: return "bruine"
+        case 61...67, 80...82: return "pluie"
+        case 71...77, 85, 86: return "neige"
+        case 95...99: return "orage"
+        default: return "temps changeant"
+        }
+    }
+}
+
+// MARK: - Orientation médicale (spécialistes + signaux d'urgence)
+
+enum Triage {
+    /// Signaux d'alerte → urgences immédiates.
+    static let redFlags: [(keys: [String], reply: String)] = [
+        (["douleur poitrine", "douleur thoracique", "oppression poitrine", "bras gauche engourdi"],
+         "⚠️ Une douleur dans la poitrine peut être une urgence cardiaque. Appelle le 15 (SAMU) ou le 112 MAINTENANT, surtout si elle irradie vers le bras ou la mâchoire."),
+        (["difficulté à respirer", "je n'arrive plus à respirer", "étouffe"],
+         "⚠️ Difficulté à respirer = urgence. Appelle le 15 ou le 112 sans attendre."),
+        (["visage paralysé", "bras paralysé", "trouble de la parole", "bouche déviée"],
+         "⚠️ Ces signes évoquent un AVC : chaque minute compte. Appelle le 15 ou le 112 immédiatement."),
+        (["envie de mourir", "suicidaire", "me faire du mal", "plus envie de vivre", "en finir"],
+         "Ce que tu ressens est sérieux et tu n'as pas à le porter seul·e. 💚 Appelle le 3114 (numéro national de prévention du suicide, gratuit, 24 h/24) ou le 15. Parle-en aussi à ton médecin — et à un proche ce soir si tu peux."),
+    ]
+
+    static let specialists: [(keys: [String], who: String, why: String)] = [
+        (["déprime", "dépression", "anxiété", "angoisse", "panique", "moral", "burn out", "burnout", "stress chronique"],
+         "un psychiatre ou un psychologue", "c'est leur spécialité, et ton médecin traitant peut t'orienter (le psychiatre est remboursé)"),
+        (["coeur", "palpitation", "tachycardie", "essoufflement effort", "tension"],
+         "un cardiologue", "il vérifiera ton cœur et ta tension (ECG, Holter si besoin)"),
+        (["peau", "bouton", "eczéma", "acné", "psoriasis", "grain de beauté", "démangeaison"],
+         "un dermatologue", "photographie la zone en attendant, ça aide au diagnostic"),
+        (["estomac", "ventre", "digestion", "reflux", "ballonnement", "constipation", "diarrhée", "intestin"],
+         "un gastro-entérologue", "note ce que tu manges et tes symptômes quelques jours avant le rendez-vous"),
+        (["dos", "lombaire", "articulation", "genou", "épaule", "arthrose", "tendinite"],
+         "un rhumatologue (ou un kiné sur prescription)", "en attendant, évite le repos strict : bouger doucement aide souvent plus"),
+        (["migraine", "mal de tête", "céphalée", "vertige", "fourmillement", "mémoire"],
+         "un neurologue", "tiens un journal de tes crises (fréquence, durée, déclencheurs)"),
+        (["thyroïde", "diabète", "hormone", "poids inexpliqué", "fatigue chronique"],
+         "un endocrinologue", "une prise de sang prescrite par ton médecin traitant est souvent la première étape"),
+        (["règles", "menstruation douloureuse", "cycle", "contraception", "gynéco", "endométriose"],
+         "un·e gynécologue ou une sage-femme", "note tes cycles dans Moody, ça fera un historique précieux en consultation"),
+        (["urine", "vessie", "cystite", "rein", "prostate"],
+         "un urologue (ou ton médecin pour une cystite simple)", "bois beaucoup d'eau en attendant"),
+        (["yeux", "vision", "vue trouble", "ophtalmo"],
+         "un ophtalmologiste", "les délais sont longs : prends rendez-vous dès maintenant"),
+        (["oreille", "audition", "gorge", "sinus", "acouphène", "nez bouché chronique"],
+         "un ORL", "un médecin généraliste peut traiter les cas simples d'abord"),
+        (["poumon", "toux chronique", "asthme", "bronchite répétée"],
+         "un pneumologue", "si tu fumes, c'est LE moment d'en parler aussi"),
+        (["dent", "gencive", "mâchoire"],
+         "un dentiste", "n'attends pas que ça s'aggrave, les soins précoces coûtent moins cher"),
+        (["sommeil", "insomnie chronique", "apnée", "ronflement"],
+         "un médecin du sommeil (via ton médecin traitant)", "tes données de sommeil Moody seront très utiles en consultation"),
+        (["allergie", "rhume des foins", "urticaire"],
+         "un allergologue", "note quand et où les symptômes apparaissent"),
+    ]
+
+    static func answer(_ q: String) -> String? {
+        for f in redFlags where f.keys.contains(where: { q.contains($0) }) { return f.reply }
+        guard q.contains("spécialiste") || q.contains("specialiste") || q.contains("quel médecin") || q.contains("quel medecin")
+                || q.contains("qui consulter") || q.contains("orienter") || q.contains("consulter pour") else {
+            for f in redFlags where f.keys.contains(where: { q.contains($0) }) { return f.reply }
+            return nil
+        }
+        for s in specialists where s.keys.contains(where: { q.contains($0) }) {
+            return "Pour ça, je t'oriente vers \(s.who) — \(s.why). Le bon réflexe : passe d'abord par ton médecin traitant pour être bien remboursé·e et orienté·e."
+        }
+        return "Décris-moi ce qui te gêne (par ex. « qui consulter pour mes migraines ? ») et je t'oriente vers le bon spécialiste. Et dans le doute, ton médecin traitant reste la meilleure porte d'entrée."
+    }
+}
+
+// MARK: - Banque de conseils bien-être
+
+enum TipBank {
+    static let sommeil = [
+        "Couche-toi et lève-toi à heures régulières, même le week-end — ton horloge interne adore la routine.",
+        "Éteins les écrans 30 à 60 min avant de dormir : la lumière bleue retarde la mélatonine.",
+        "Chambre idéale : 18-19 °C, noir complet, silence (ou bruit blanc).",
+        "Évite la caféine après 14 h — elle reste 6 h dans ton corps.",
+        "Si tu ne dors pas au bout de 20 min, lève-toi et lis dans une autre pièce, lumière douce.",
+        "La sieste parfaite : 15-20 min avant 15 h. Plus longue, elle vole ta nuit.",
+        "Un bain ou une douche chaude 1 h avant le lit aide le corps à basculer en mode sommeil.",
+        "L'alcool endort mais fragmente la nuit : il sabote le sommeil profond.",
+    ]
+    static let stress = [
+        "Respiration 4-7-8 : inspire 4 s, retiens 7 s, expire 8 s. Trois cycles suffisent à calmer le système nerveux.",
+        "5 minutes de cohérence cardiaque (5 s inspiration / 5 s expiration) trois fois par jour, ça change tout.",
+        "Écris ce qui te tracasse sur papier avant de dormir : ton cerveau arrête de le ruminer.",
+        "La règle des 5-4-3-2-1 en crise d'angoisse : nomme 5 choses que tu vois, 4 que tu touches, 3 que tu entends, 2 que tu sens, 1 que tu goûtes.",
+        "Marche 10 minutes dehors sans téléphone. C'est le plus vieux anxiolytique du monde.",
+        "Réduis les infos anxiogènes : un point d'actualité par jour suffit largement.",
+        "Dire non à une sollicitation, c'est dire oui à ton équilibre.",
+    ]
+    static let alimentation = [
+        "Un petit-déjeuner protéiné (œufs, yaourt, fromage blanc) stabilise l'humeur et l'énergie jusqu'au midi.",
+        "Vise 3 couleurs de légumes par jour — la variété nourrit ton microbiote, allié de ton moral.",
+        "Les oméga-3 (sardines, maquereau, noix) sont associés à une meilleure santé mentale.",
+        "Bois avant d'avoir soif : la déshydratation légère fatigue et irrite.",
+        "Le sucre rapide console 10 minutes et fatigue 2 heures. Une poignée d'amandes tient mieux.",
+        "Mange en pleine conscience une fois par jour : sans écran, en mâchant vraiment.",
+    ]
+    static let activite = [
+        "20 minutes de marche rapide = effet mesurable sur l'humeur pendant 2 h.",
+        "L'exercice du matin cale ton horloge interne et améliore la nuit suivante.",
+        "Monte les escaliers aujourd'hui. Chaque marche compte, littéralement.",
+        "Étire-toi 5 minutes au réveil : dos, nuque, épaules. Ton corps portera mieux ta journée.",
+        "Le sport le plus efficace est celui que tu referas demain. Choisis celui qui te plaît.",
+    ]
+    static let moral = [
+        "Note chaque soir 3 choses positives de ta journée, même minuscules. En 3 semaines, le cerveau change de filtre.",
+        "Appelle quelqu'un que tu aimes aujourd'hui. Le lien social est le meilleur prédicteur du bien-être.",
+        "Fais une chose qui te fait plaisir PAR JOUR, sans la mériter. C'est de la maintenance, pas du luxe.",
+        "Compare-toi à toi d'hier, jamais aux autres d'aujourd'hui.",
+        "Range 10 minutes : un espace clair apaise vraiment le mental.",
+        "La lumière du jour dans les 30 min après le réveil booste l'humeur toute la journée.",
+    ]
+    static func random(_ category: [String]) -> String {
+        category[Int(Date().timeIntervalSince1970 / 60) % category.count]
+    }
+}
+
 // MARK: - Carte assistant sur l'accueil
 
 struct BotCard: View {
@@ -1333,6 +1577,69 @@ final class BilanBot: ObservableObject {
     private func answerQuestion(_ text: String) {
         guard let store else { return }
         let q = text.lowercased()
+
+        // urgences & orientation spécialiste (prioritaire sur tout)
+        if let t = Triage.answer(q) { say(t); return }
+
+        // date, jour, heure
+        if q.contains("quel jour") || q.contains("quelle date") || q.contains("la date") || q.contains("quelle heure") || q.contains("l'heure") {
+            let f = DateFormatter(); f.locale = Locale(identifier: "fr_FR")
+            f.dateFormat = q.contains("heure") ? "HH:mm" : "EEEE d MMMM yyyy"
+            let v = f.string(from: Date())
+            say(q.contains("heure") ? "Il est \(v)." : "Nous sommes \(v).")
+            return
+        }
+
+        // météo
+        if q.contains("météo") || q.contains("meteo") || q.contains("temps qu'il fait") || q.contains("il pleut") || q.contains("température dehors") || q.contains("beau dehors") {
+            say("Je regarde le ciel pour toi…")
+            WeatherService.shared.current { [weak self] t in self?.say(t) }
+            return
+        }
+
+        // médicaments : base ANSM embarquée (15 857 spécialités)
+        for trigger in ["c'est quoi le ", "c'est quoi la ", "c'est quoi l'", "info sur ", "infos sur ", "information sur ", "médicament ", "medicament ", "effets du ", "effets de la ", "effets d'", "à quoi sert "] {
+            if let r = q.range(of: trigger) {
+                let term = String(q[r.upperBound...]).trimmingCharacters(in: CharacterSet(charactersIn: " ?!."))
+                if term.count >= 3 {
+                    let hits = DrugDB.search(term)
+                    if let first = hits.first {
+                        say(DrugDB.describe(first))
+                        if hits.count > 1 {
+                            let others = hits.dropFirst().prefix(3).map { $0.name.components(separatedBy: ",").first ?? $0.name }
+                            say("J'ai aussi trouvé : " + others.joined(separator: " · ") + ".")
+                        }
+                        return
+                    }
+                }
+            }
+        }
+        // ses propres traitements par leur nom
+        if let med = store.meds.first(where: { q.contains($0.name.lowercased()) && $0.name.count >= 3 }) {
+            if let hit = DrugDB.search(med.name).first {
+                var extra = "C'est dans ton traitement (\(med.slots.map(\.time).joined(separator: ", "))). "
+                if let n = med.sideEffects?.count, n > 0 { extra += "Tu as noté \(n) effet(s) secondaire(s) dessus. " }
+                say(extra + DrugDB.describe(hit))
+                return
+            }
+        }
+
+        // conseils ciblés par thème
+        if q.contains("conseil") || q.contains("astuce") || q.contains("aide-moi") || q.contains("aide moi") {
+            let bank: [String]
+            if q.contains("sommeil") || q.contains("dormir") { bank = TipBank.sommeil }
+            else if q.contains("stress") || q.contains("angoisse") || q.contains("anxiété") { bank = TipBank.stress }
+            else if q.contains("manger") || q.contains("alimentation") || q.contains("nutrition") { bank = TipBank.alimentation }
+            else if q.contains("sport") || q.contains("bouger") || q.contains("activité") { bank = TipBank.activite }
+            else if q.contains("moral") || q.contains("humeur") || q.contains("bonheur") { bank = TipBank.moral }
+            else {
+                let h = Calendar.current.component(.hour, from: Date())
+                bank = h >= 19 ? TipBank.sommeil : [TipBank.moral, TipBank.stress, TipBank.activite, TipBank.alimentation].randomElement()!
+            }
+            say(TipBank.random(bank))
+            return
+        }
+
         func avg(_ days: Int) -> Double? {
             let cut = Dates.dayKey(Calendar.current.date(byAdding: .day, value: -days, to: Date())!)
             let sel = store.entries.filter { $0.date >= cut }.map(\.mood)
@@ -1377,7 +1684,7 @@ final class BilanBot: ObservableObject {
         } else if q.contains("merci") {
             say("Avec plaisir \(firstName.isEmpty ? "" : firstName + " ")💚 Je suis là quand tu veux.")
         } else {
-            say("Je suis un assistant local tout simple : je connais tes humeurs, ton sommeil, tes médicaments, ton eau et tes consommations. Essaie « quelle est ma moyenne d'humeur ? », « combien j'ai dormi ? », « mes médicaments » ou « donne-moi un conseil ». Et « bilan » pour démarrer un bilan !")
+            say("Je peux : faire ton bilan (dis « bilan »), analyser tes données (« ma moyenne d'humeur ? », « combien j'ai dormi ? »), te renseigner sur 15 857 médicaments (« c'est quoi le Doliprane ? »), t'orienter vers le bon spécialiste (« qui consulter pour mes migraines ? »), te donner la météo, la date, et des conseils sommeil/stress/alimentation/sport/moral. Essaie !")
         }
     }
 
