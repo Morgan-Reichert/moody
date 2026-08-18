@@ -64,7 +64,11 @@ export function ShareDoctorModal({ onClose }: { onClose: () => void }) {
       const dataUrl = await QRCode.toDataURL(url, { width: 320, margin: 1, color: { dark: "#16211b", light: "#ffffff" } });
       setQr(dataUrl); setUrl(url); setStep("qr");
     } catch (e: any) {
-      setErr(e?.message === "not_configured" ? "Le partage médecin n'est pas encore activé (connexion à configurer)." : "Erreur lors de la création du partage.");
+      setErr(
+        e?.message === "not_configured" ? "Le partage médecin n'est pas encore activé (connexion à configurer)."
+        : e?.message === "no_public_url" ? "Le lien public n'est pas encore configuré (hébergement de la page de consultation à finaliser)."
+        : "Erreur lors de la création du partage.",
+      );
     } finally { setLoading(false); }
   };
 

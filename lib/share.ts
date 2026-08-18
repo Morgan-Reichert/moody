@@ -1,5 +1,17 @@
 import { supabase } from "./supabase";
 
+// Public URL where the /consult page is hosted (a doctor opens this from the QR).
+// On the native app window.location.origin is "capacitor://localhost" — unusable — so a
+// real, public https base is REQUIRED. Set NEXT_PUBLIC_CONSULT_BASE_URL at build time.
+const PUBLIC_BASE = (process.env.NEXT_PUBLIC_CONSULT_BASE_URL || "https://moody.clinic").replace(/\/+$/, "");
+function consultBaseUrl(): string {
+  if (PUBLIC_BASE) return PUBLIC_BASE;
+  const o = typeof window !== "undefined" ? window.location.origin : "";
+  // Never hand out a localhost / private / capacitor URL — a doctor can't reach it.
+  if (!o || /^(capacitor|file):|^https?:\/\/(localhost|127\.|10\.|192\.168\.|0\.0\.0\.0)/.test(o)) return "";
+  return o;
+}
+
 export interface SharePayload {
   patientName?: string;
   photo?: string;                 // small data URL
@@ -31,6 +43,8 @@ export async function createShare(
   opts: { doctorName?: string; guestAllowed: boolean; ttlHours?: number },
 ): Promise<{ token: string; url: string }> {
   if (!supabase) throw new Error("not_configured");
+  const base = consultBaseUrl();
+  if (!base) throw new Error("no_public_url");
   const token = randToken();
   const pdf_urls: string[] = [];
   for (let i = 0; i < pdfs.length; i++) {
@@ -44,7 +58,7 @@ export async function createShare(
     token, expires_at, doctor_name: opts.doctorName ?? null, guest_allowed: opts.guestAllowed, payload, pdf_urls,
   });
   if (error) throw error;
-  return { token, url: `${window.location.origin}/consult/?t=${token}` };
+  return { token, url: `${base}/consult/?t=${token}` };
 }
 
 export async function consumeShare(token: string): Promise<ConsumeResult> {

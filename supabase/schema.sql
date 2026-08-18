@@ -73,3 +73,23 @@ create policy "share pdfs are public" on storage.objects for select
 
 -- Optional cleanup helper (run manually or via a scheduled job) to purge old shares:
 -- delete from public.shares where expires_at < now() - interval '7 days';
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 4) BACKUPS  (encrypted personal cloud backup — the restore code IS the key)
+-- ─────────────────────────────────────────────────────────────────────────────
+-- The whole payload is AES-GCM encrypted on the device with a key derived from a
+-- secret restore code. The row id is sha256(code), so the server never sees the
+-- code and stores only ciphertext it cannot read.
+create table if not exists public.backups (
+  id          text primary key,
+  iv          text not null,
+  cipher      text not null,
+  updated_at  timestamptz default now()
+);
+alter table public.backups enable row level security;
+drop policy if exists "backup insert" on public.backups;
+create policy "backup insert" on public.backups for insert to anon with check (true);
+drop policy if exists "backup update" on public.backups;
+create policy "backup update" on public.backups for update to anon using (true) with check (true);
+drop policy if exists "backup read" on public.backups;
+create policy "backup read" on public.backups for select to anon using (true);

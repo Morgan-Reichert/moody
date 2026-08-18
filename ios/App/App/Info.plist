@@ -45,5 +45,32 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Moody utilise l'appareil photo pour scanner les QR codes de partage et vos ordonnances.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Moody utilise votre position uniquement pour afficher la météo du jour sur votre tableau de bord.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Moody accède à vos photos pour importer vos ordonnances et documents médicaux.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Moody enregistre vos rapports et documents dans votre photothèque.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Moody utilise Face ID pour déverrouiller l'accès à vos données de santé.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Moody lit votre sommeil, votre activité et votre fréquence cardiaque au repos depuis Apple Santé (renseignés par Garmin, Coros, Apple Watch…) pour les relier à votre humeur.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Moody n'écrit rien dans Apple Santé ; l'accès en lecture seule suffit.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>tech.stariax.moodyapp</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>moody</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

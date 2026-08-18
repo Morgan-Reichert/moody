@@ -29,7 +29,16 @@ export function getCachedWeather(): Weather | null {
   try { const v = localStorage.getItem(CACHE); return v ? JSON.parse(v) : null; } catch { return null; }
 }
 
-function getPosition(): Promise<GeolocationPosition> {
+async function getPosition(): Promise<{ coords: { latitude: number; longitude: number } }> {
+  // On native iOS/Android, WKWebView disables navigator.geolocation — use the Capacitor plugin.
+  let native = false;
+  try { const { Capacitor } = await import("@capacitor/core"); native = Capacitor.isNativePlatform(); } catch { /* */ }
+  if (native) {
+    const { Geolocation } = await import("@capacitor/geolocation");
+    try { await Geolocation.requestPermissions(); } catch { /* */ }
+    const p = await Geolocation.getCurrentPosition({ enableHighAccuracy: false, timeout: 8000, maximumAge: 15 * 60 * 1000 });
+    return { coords: { latitude: p.coords.latitude, longitude: p.coords.longitude } };
+  }
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) return reject(new Error("no geoloc"));
     navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, maximumAge: 15 * 60 * 1000 });

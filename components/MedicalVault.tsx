@@ -13,6 +13,7 @@ import { MedAutocomplete } from "@/components/MedAutocomplete";
 import { DocScanner } from "@/components/DocScanner";
 import { ShareDoctorModal } from "@/components/ShareDoctorModal";
 import { Portal } from "@/components/Portal";
+import { hSelect } from "@/lib/haptics";
 import {
   X, Plus, Trash2, User, Stethoscope, FileText, CalendarClock, ChevronDown,
   Phone, Mail, MapPin, FolderOpen, Upload, HeartPulse, Bell, ScanText, AlertTriangle, QrCode,
@@ -41,12 +42,28 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
   const doctors = getDoctors();
   const appts = getAppointments();
 
+  // Pull-down-to-dismiss (drag from the header/handle area)
+  const [dragY, setDragY] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const startY = useRef(0);
+  const onDragStart = (e: React.TouchEvent) => { startY.current = e.touches[0].clientY; setDragging(true); };
+  const onDragMove = (e: React.TouchEvent) => { const dy = e.touches[0].clientY - startY.current; setDragY(dy > 0 ? dy : dy * 0.2); };
+  const onDragEnd = () => { setDragging(false); if (dragY > 110) onClose(); else setDragY(0); };
+
   return (
     <Portal>
       <div className="fixed inset-0 z-[60] flex flex-col justify-end" role="dialog" aria-modal="true">
-        <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
-        <div className="relative bg-cream rounded-t-4xl h-[94vh] flex flex-col animate-sheetUp">
-          <div className="px-5 pt-3 pb-2 shrink-0">
+        <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" style={{ opacity: dragging ? Math.max(0.35, 1 - dragY / 500) : 1 }} onClick={onClose} />
+        <div
+          className="relative rounded-t-4xl h-[88vh] flex flex-col animate-sheetUp bg-cream/75 backdrop-blur-2xl border-t border-white/40 shadow-[0_-12px_44px_-12px_rgba(16,40,28,.35)]"
+          style={dragging || dragY ? { transform: `translateY(${dragY}px)`, transition: dragging ? "none" : "transform .32s cubic-bezier(.22,.61,.36,1)" } : undefined}
+        >
+          <div
+            className="px-5 pt-3 pb-2 shrink-0 touch-none cursor-grab active:cursor-grabbing"
+            onTouchStart={onDragStart}
+            onTouchMove={onDragMove}
+            onTouchEnd={onDragEnd}
+          >
             <div className="mx-auto h-1.5 w-10 rounded-full bg-black/10 mb-3" />
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-display text-xl font-semibold text-ink flex items-center gap-2"><HeartPulse className="h-5 w-5 text-brand-600" /> Espace santé</h2>
@@ -57,7 +74,7 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
             </div>
             <div className="flex gap-1.5 bg-white rounded-2xl p-1 shadow-card">
               {([["fiche", "Fiche", User], ["medecins", "Médecins", Stethoscope], ["documents", "Docs", FileText], ["rdv", "RDV", CalendarClock]] as const).map(([k, label, Icon]) => (
-                <button key={k} onClick={() => setTab(k)} className={`flex-1 flex flex-col items-center gap-0.5 rounded-xl py-2 transition ${tab === k ? "bg-brand-500 text-white shadow-glow" : "text-ink-mute"}`}>
+                <button key={k} onClick={() => { hSelect(); setTab(k); }} className={`flex-1 flex flex-col items-center gap-0.5 rounded-xl py-2 transition ${tab === k ? "bg-brand-500 text-white shadow-glow" : "text-ink-mute"}`}>
                   <Icon className="h-[18px] w-[18px]" /><span className="text-[11px] font-bold">{label}</span>
                 </button>
               ))}
@@ -65,10 +82,12 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="flex-1 overflow-y-auto overscroll-none px-5 pb-8 pt-2">
-            {tab === "fiche" && <FicheTab />}
-            {tab === "medecins" && <MedecinsTab doctors={doctors} />}
-            {tab === "documents" && <DocumentsTab doctors={doctors} />}
-            {tab === "rdv" && <RdvTab doctors={doctors} appts={appts} />}
+            <div key={tab} className="animate-tab">
+              {tab === "fiche" && <FicheTab />}
+              {tab === "medecins" && <MedecinsTab doctors={doctors} />}
+              {tab === "documents" && <DocumentsTab doctors={doctors} />}
+              {tab === "rdv" && <RdvTab doctors={doctors} appts={appts} />}
+            </div>
           </div>
         </div>
       </div>
@@ -79,7 +98,7 @@ export function MedicalVault({ onClose }: { onClose: () => void }) {
 
 function Field({ label, defVal, onSave, placeholder, type = "text", area }: { label: string; defVal?: string; onSave: (v: string) => void; placeholder?: string; type?: string; area?: boolean }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">{label}</span>
       {area ? (
         <textarea defaultValue={defVal} onBlur={(e) => onSave(e.target.value)} placeholder={placeholder} rows={2}

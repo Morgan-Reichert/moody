@@ -1,6 +1,7 @@
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
-import { getSettings, getMeds, getAppointments, getDoctors } from "./storage";
+import { getSettings, getMeds, getAppointments, getDoctors, brushSlots } from "./storage";
+import { randomEveningTip } from "./tips";
 
 export function isNative(): boolean {
   try { return Capacitor.isNativePlatform(); } catch { return false; }
@@ -40,6 +41,22 @@ export async function syncNative(): Promise<void> {
       notifs.push({ id: idFor(`mood-${slot.time}-${d}`), title: "Comment te sens-tu ?", body: "C'est l'heure de noter ton humeur.", channelId: "moody-mood", schedule: { on: { weekday: d + 1, hour: h, minute: m }, repeats: true, allowWhileIdle: true } });
     }
   }
+  if (settings.modules.includes("brushing")) {
+    for (const slot of brushSlots()) {
+      const [h, m] = slot.time.split(":").map(Number);
+      for (const d of (slot.days.length ? slot.days : everyday)) {
+        notifs.push({ id: idFor(`brush-${slot.time}-${d}`), title: "Brossage des dents", body: "C'est l'heure de te brosser les dents.", channelId: "moody-mood", schedule: { on: { weekday: d + 1, hour: h, minute: m }, repeats: true, allowWhileIdle: true } });
+      }
+    }
+  }
+
+  if (settings.bedtimeEnabled) {
+    const [h, m] = (settings.bedtimeTime || "22:00").split(":").map(Number);
+    for (const d of everyday) {
+      notifs.push({ id: idFor(`bedtime-${d}`), title: "On ralentit ? 🌙", body: randomEveningTip(new Date()), channelId: "moody-mood", schedule: { on: { weekday: d + 1, hour: h, minute: m }, repeats: true, allowWhileIdle: true } });
+    }
+  }
+
   const loud = !!settings.loudAlarm;
   for (const med of meds) {
     for (const slot of med.slots) {

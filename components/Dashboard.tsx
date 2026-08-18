@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import {
-  useStore, getTodayEntries, average, streak, dailySeries, moodLabel,
+  useStore, getTodayEntries, average, streak, moodLabel,
   getSettings, getMeds, todayISO, setMedTaken, upcomingAppointments,
 } from "@/lib/storage";
 import { todayMedStatus, fmtDuration } from "@/lib/reminders";
@@ -10,7 +10,7 @@ import { MoodChart } from "@/components/MoodChart";
 import { RemindersSettings } from "@/components/RemindersSettings";
 import { ReportSheet } from "@/components/ReportSheet";
 import { MedInfoModal } from "@/components/MedInfoModal";
-import { WaterCard, AddictionsSection, NextApptCard } from "@/components/DashboardCards";
+import { WaterCard, AddictionsSection, NextApptCard, BrushingCard, MenstrualCard, SexualCard, InsightsCard, GratitudeCard, AdherenceCard, TipsCard, HealthCard } from "@/components/DashboardCards";
 import { WeatherWidget } from "@/components/WeatherWidget";
 import { SortableList, SortItem } from "@/components/SortableList";
 import { BreathingModal } from "@/components/BreathingModal";
@@ -19,6 +19,7 @@ import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
   Check, Clock, AlertTriangle, FileText, CheckCircle2, Info, Wind, HeartHandshake,
 } from "lucide-react";
+import { hTap } from "@/lib/haptics";
 
 function Ring({ value }: { value: number | null }) {
   const pct = value != null ? Math.max(4, (value / 10) * 100) : 0;
@@ -32,7 +33,7 @@ function Ring({ value }: { value: number | null }) {
   );
 }
 
-export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood: () => void }) {
+export function Dashboard({ mounted, onLogMood, onOpenVault }: { mounted: boolean; onLogMood: () => void; onOpenVault?: () => void }) {
   useStore();
   const [showSettings, setShowSettings] = useState(false);
   const [showReport, setShowReport] = useState(false);
@@ -42,7 +43,6 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   const today = mounted ? getTodayEntries() : [];
   const avg7 = mounted ? average(7) : null;
   const strk = mounted ? streak() : 0;
-  const series = mounted ? dailySeries(14) : [];
   const meds = mounted ? getMeds() : [];
   const settings = mounted ? getSettings() : null;
 
@@ -94,11 +94,33 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
         </section>
       ),
     },
+    {
+      key: "quick",
+      node: (
+        <section className="rounded-4xl p-5 bg-peach/55 shadow-soft">
+          <h2 className="font-display text-[16px] font-semibold text-ink mb-3">Raccourcis</h2>
+          <div className="grid grid-cols-2 gap-2.5">
+            <QuickTile icon={<PlusCircle className="h-6 w-6 text-brand-600" />} title="Noter humeur" sub="En 10 secondes" onClick={onLogMood} />
+            <QuickTile icon={<HeartPulse className="h-6 w-6 text-brand-600" />} title="Espace santé" sub="Ton carnet" onClick={() => onOpenVault?.()} />
+            <QuickTile icon={<FileText className="h-6 w-6 text-brand-600" />} title="Rapport" sub="PDF médecin" onClick={() => setShowReport(true)} />
+            <QuickTile icon={<Wind className="h-6 w-6 text-brand-600" />} title="Respirer" sub="1 min de calme" onClick={() => setShowBreathe(true)} />
+          </div>
+        </section>
+      ),
+    },
   ];
   const nextAppt = mounted ? upcomingAppointments()[0] : undefined;
   if (nextAppt) cards.push({ key: "appt", node: <NextApptCard appt={nextAppt} /> });
   if (mounted && meds.length > 0) cards.push({ key: "meds", node: <MedStatusCard onManage={() => setShowSettings(true)} /> });
+  if (mounted && meds.length > 0 && settings?.modules.includes("adherence")) cards.push({ key: "adherence", node: <AdherenceCard /> });
   if (mounted && settings?.modules.includes("water")) cards.push({ key: "water", node: <WaterCard /> });
+  if (mounted && settings?.modules.includes("brushing")) cards.push({ key: "brushing", node: <BrushingCard /> });
+  if (mounted && settings?.modules.includes("menstrual")) cards.push({ key: "menstrual", node: <MenstrualCard /> });
+  if (mounted && settings?.modules.includes("sexual")) cards.push({ key: "sexual", node: <SexualCard /> });
+  if (mounted && settings?.modules.includes("health")) cards.push({ key: "health", node: <HealthCard /> });
+  if (mounted && settings?.modules.includes("tips")) cards.push({ key: "tips", node: <TipsCard /> });
+  if (mounted && settings?.modules.includes("gratitude")) cards.push({ key: "gratitude", node: <GratitudeCard /> });
+  if (mounted && settings?.modules.includes("insights")) cards.push({ key: "insights", node: <InsightsCard /> });
   if (mounted && settings?.modules.includes("addiction")) cards.push({ key: "addiction", node: <AddictionsSection onManage={() => setShowSettings(true)} /> });
   if (settings && settings.moodSlots.length > 0) cards.push({
     key: "reminder",
@@ -118,7 +140,7 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
           <h2 className="font-display text-[16px] font-semibold text-ink">Ton humeur — 14 jours</h2>
           <button onClick={() => setShowReport(true)} className="rounded-full bg-cream px-3 py-1.5 text-[12px] font-bold text-ink-soft active:scale-95">Rapport</button>
         </div>
-        <MoodChart data={series} />
+        <MoodChart />
       </section>
     ),
   });
@@ -141,7 +163,7 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   });
 
   return (
-    <div className="min-h-full pb-6">
+    <div className="min-h-full pb-[calc(104px_+_env(safe-area-inset-bottom))]">
       {/* Sticky top bar — opaque at the very top, fading translucent downward */}
       <header className="sticky top-0 z-30 pt-safe px-5 pb-4 bg-gradient-to-b from-cream via-cream/90 to-transparent backdrop-blur-[6px]">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
@@ -191,6 +213,16 @@ function Stat({ icon, value, label, tint = 0 }: { icon: React.ReactNode; value: 
       <span className="font-display text-[22px] font-semibold text-ink leading-none">{value}</span>
       <span className="text-[11px] text-ink-mute font-semibold leading-tight">{label}</span>
     </div>
+  );
+}
+
+function QuickTile({ icon, title, sub, onClick }: { icon: React.ReactNode; title: string; sub: string; onClick: () => void }) {
+  return (
+    <button onClick={() => { hTap(); onClick(); }} className="rounded-2xl bg-white shadow-card p-4 flex flex-col items-start gap-1.5 active:scale-[.98] transition-transform text-left">
+      {icon}
+      <span className="font-bold text-ink text-[14px]">{title}</span>
+      <span className="text-[11.5px] text-ink-mute">{sub}</span>
+    </button>
   );
 }
 

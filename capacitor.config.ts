@@ -6,7 +6,8 @@ const config: CapacitorConfig = {
   webDir: "out",
   backgroundColor: "#eef2ec",
   ios: {
-    contentInset: "always",
+    contentInset: "never",
+    scrollEnabled: false,
     backgroundColor: "#eef2ec",
   },
   android: {
@@ -19,7 +20,8 @@ const config: CapacitorConfig = {
       sound: "alarm.wav",
     },
     SplashScreen: {
-      launchShowDuration: 900,
+      launchShowDuration: 500,
+      launchAutoHide: true,
       backgroundColor: "#eef2ec",
       showSpinner: false,
       androidScaleType: "CENTER_CROP",

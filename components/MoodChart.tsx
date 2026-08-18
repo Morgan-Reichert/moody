@@ -1,14 +1,38 @@
 "use client";
 
-import { Area, AreaChart, ResponsiveContainer, YAxis, Tooltip } from "recharts";
-import { Sprout } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Area, AreaChart, ResponsiveContainer, YAxis, XAxis, Tooltip, ReferenceLine, ReferenceDot } from "recharts";
+import { Sprout, TrendingUp, TrendingDown, Minus, X } from "lucide-react";
+import { useStore, dailySeries, getEntries, moodLabel, ENERGY_LABELS, APPETITE_LABELS, MoodEntry } from "@/lib/storage";
+import { Portal } from "@/components/Portal";
 
-export function MoodChart({ data }: { data: { date: string; value: number | null }[] }) {
-  const pts = data.map((d) => ({
+const RANGES = [7, 14, 30, 90] as const;
+
+function moodColor(v: number): string {
+  if (v >= 7) return "#1aad55";      // green
+  if (v >= 5) return "#d8a72f";      // amber
+  return "#d0492c";                  // red
+}
+function avg(a: number[]): number | null { return a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : null; }
+
+export function MoodChart() {
+  const v = useStore();
+  const [range, setRange] = useState<(typeof RANGES)[number]>(14);
+  const [mounted, setMounted] = useState(false);
+  const [day, setDay] = useState<string | null>(null);
+  useEffect(() => setMounted(true), []);
+
+  const series = mounted ? dailySeries(range) : [];
+  const pts = series.map((d) => ({
+    date: d.date,
     label: new Date(d.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" }),
     value: d.value,
   }));
-  const has = pts.some((p) => p.value != null);
+  const real = pts.filter((p) => p.value != null) as { date: string; label: string; value: number }[];
+  const has = real.length > 0;
+  // Start the curve at the first logged day so long ranges (30/90 j) have no empty gap on the left.
+  const firstIdx = pts.findIndex((p) => p.value != null);
+  const chartPts = firstIdx > 0 ? pts.slice(firstIdx) : pts;
 
   if (!has) {
     return (

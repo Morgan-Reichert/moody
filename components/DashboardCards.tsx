@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useStore, getWaterToday, addWater, resetWaterToday, WATER_GOAL_CL,
   getAddictions, addictionStat, logConsumption, undoLastConsumption,
   nextMilestone, encouragement, getDoctors, Appointment,
+  getBrushToday, addBrush, resetBrushToday, brushStreak, BRUSH_GOAL,
+  menstrualStatus, logPeriodStart, endCurrentPeriod, sexStats, addSexLog,
+  getGratitude, addGratitude, removeGratitude, gratitudeStreak,
 } from "@/lib/storage";
+import { moodInsights } from "@/lib/insights";
+import { adherenceStats } from "@/lib/adherence";
+import { tipOfDay } from "@/lib/tips";
+import { getHealthSnapshot, syncHealth } from "@/lib/health";
+import { hTap } from "@/lib/haptics";
 import {
   GlassWater, Droplets, RotateCcw, Trophy, ShieldCheck, Undo2, Plus, CalendarClock, MapPin,
+  Sparkles, Droplet, Heart, Lightbulb, TrendingUp, TrendingDown, Sun, Moon, X, Pill, CheckCircle2,
+  Activity, Footprints, HeartPulse,
 } from "lucide-react";
 
 function relativeWhen(iso: string): string {
@@ -149,6 +159,296 @@ function AddictionCard({ id }: { id: string }) {
         )}
       </div>
       {st.todayCount > 0 && <p className="text-[12px] text-white/70 mt-2">{st.todayCount} consommation{st.todayCount > 1 ? "s" : ""} aujourd'hui · total {st.totalCount}</p>}
+    </section>
+  );
+}
+
+function relativeAgo(iso: string): string {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 864e5);
+  if (d <= 0) return "aujourd'hui";
+  if (d === 1) return "hier";
+  if (d < 30) return `il y a ${d} j`;
+  const mo = Math.floor(d / 30);
+  return `il y a ${mo} mois`;
+}
+
+// ── Brushing ─────────────────────────────────────────────────────────────────
+export function BrushingCard() {
+  useStore();
+  const c = getBrushToday();
+  const pct = Math.min(100, Math.round((c / BRUSH_GOAL) * 100));
+  const strk = brushStreak();
+  return (
+    <section className="card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Sparkles className="h-[18px] w-[18px] text-brand-600" /> Brossage des dents</h2>
+        <button onClick={resetBrushToday} className="grid place-items-center h-8 w-8 rounded-lg text-ink-mute active:scale-90" aria-label="Réinitialiser"><RotateCcw className="h-4 w-4" /></button>
+      </div>
+      <div className="flex items-end justify-between mb-1.5">
+        <span className="font-display text-3xl font-semibold text-ink tabular-nums">{c}/{BRUSH_GOAL}</span>
+        <span className="text-[13px] text-ink-mute mb-1">{strk > 0 ? `série ${strk} j` : "objectif du jour"}</span>
+      </div>
+      <div className="h-2.5 rounded-full bg-brand-50 overflow-hidden mb-4">
+        <div className="h-full rounded-full bg-brand-400 transition-all" style={{ width: `${pct}%` }} />
+      </div>
+      <button onClick={() => { hTap(); addBrush(1); }} className="w-full flex items-center justify-center gap-2 rounded-2xl py-3 bg-brand-500 text-white font-bold text-sm active:scale-[.98]"><Plus className="h-4 w-4" /> J'ai brossé mes dents</button>
+    </section>
+  );
+}
+
+// ── Menstrual cycle ──────────────────────────────────────────────────────────
+export function MenstrualCard() {
+  useStore();
+  const s = menstrualStatus();
+  const rose = "#e0588a";
+  return (
+    <section className="rounded-4xl p-5 shadow-soft" style={{ background: "#fbe3ec" }}>
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Droplet className="h-[18px] w-[18px]" style={{ color: rose }} /> Cycle menstruel</h2>
+        {s.hasData && <span className="text-[12px] font-bold rounded-full px-2.5 py-1 bg-white/70" style={{ color: rose }}>~{s.avgCycle} j</span>}
+      </div>
+      {!s.hasData ? (
+        <>
+          <p className="text-[13.5px] text-ink-soft mb-3">Enregistre le 1ᵉʳ jour de tes règles pour suivre ton cycle et prédire les prochaines.</p>
+          <button onClick={() => { hTap(); logPeriodStart(); }} className="w-full rounded-2xl py-3 text-white font-bold text-sm active:scale-[.98]" style={{ background: rose }}>J'ai mes règles aujourd'hui</button>
+        </>
+      ) : s.onPeriod ? (
+        <>
+          <div className="flex items-end gap-2">
+            <span className="font-display text-4xl font-semibold text-ink tabular-nums">J{s.periodDay}</span>
+            <span className="text-ink-soft mb-1.5">Règles en cours</span>
+          </div>
+          <button onClick={() => { hTap(); endCurrentPeriod(); }} className="mt-3 w-full rounded-2xl py-3 bg-white font-bold text-sm active:scale-[.98]" style={{ color: rose }}>Mes règles sont terminées</button>
+        </>
+      ) : (
+        <>
+          <div className="flex items-end gap-2">
+            <span className="font-display text-4xl font-semibold text-ink tabular-nums">J{s.cycleDay}</span>
+            <span className="text-ink-soft mb-1.5">du cycle</span>
+          </div>
+          <p className="text-[13.5px] mt-1 font-semibold" style={{ color: rose }}>
+            {s.nextInDays != null && s.nextInDays > 0 ? `Prochaines règles dans ~${s.nextInDays} j`
+              : s.nextInDays === 0 ? "Règles prévues aujourd'hui"
+              : `Règles en retard de ${-(s.nextInDays ?? 0)} j`}
+          </p>
+          <button onClick={() => { hTap(); logPeriodStart(); }} className="mt-3 w-full rounded-2xl py-3 text-white font-bold text-sm active:scale-[.98]" style={{ background: rose }}>J'ai mes règles aujourd'hui</button>
+        </>
+      )}
+    </section>
+  );
+}
+
+// ── Sexual activity ──────────────────────────────────────────────────────────
+export function SexualCard() {
+  useStore();
+  const [open, setOpen] = useState(false);
+  const s = sexStats();
+  const purple = "#9b6dd6";
+  return (
+    <section className="rounded-4xl p-5 shadow-soft bg-lilac">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Heart className="h-[18px] w-[18px]" style={{ color: purple }} /> Vie sexuelle</h2>
+        <span className="text-[12px] font-bold text-brand-700 bg-white/70 rounded-full px-2.5 py-1">ce mois : {s.monthCount}</span>
+      </div>
+      <p className="text-[13.5px] text-ink-soft">Dernier : {s.last ? relativeAgo(s.last) : "aucun rapport"}{s.protectedRate != null ? ` · ${s.protectedRate}% protégés` : ""}</p>
+      {open ? (
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button onClick={() => { hTap(); addSexLog({ protected: true }); setOpen(false); }} className="rounded-2xl py-3 bg-white font-bold text-sm text-ink active:scale-[.98]">Protégé</button>
+          <button onClick={() => { hTap(); addSexLog({ protected: false }); setOpen(false); }} className="rounded-2xl py-3 bg-white font-bold text-sm text-ink active:scale-[.98]">Non protégé</button>
+        </div>
+      ) : (
+        <button onClick={() => setOpen(true)} className="mt-3 w-full flex items-center justify-center gap-2 rounded-2xl py-3 text-white font-bold text-sm active:scale-[.98]" style={{ background: purple }}><Plus className="h-4 w-4" /> Ajouter un rapport</button>
+      )}
+    </section>
+  );
+}
+
+// ── Connected health (Apple Health) ──────────────────────────────────────────
+function fmtSleep(v: number): string { const h = Math.floor(v); const m = Math.round((v - h) * 60); return m ? `${h}h${String(m).padStart(2, "0")}` : `${h}h`; }
+
+export function HealthCard() {
+  const [snap, setSnap] = useState(getHealthSnapshot());
+  useEffect(() => {
+    let alive = true;
+    const on = () => { if (alive) setSnap(getHealthSnapshot()); };
+    window.addEventListener("moody:health", on);
+    syncHealth().then((s) => { if (alive && s) setSnap(s); });
+    return () => { alive = false; window.removeEventListener("moody:health", on); };
+  }, []);
+
+  const s = snap;
+  const empty = !s || (s.sleepHours == null && s.steps == null && s.restingHR == null && s.activeKcal == null);
+  return (
+    <section className="card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><HeartPulse className="h-[18px] w-[18px] text-[#d0492c]" /> Santé connectée</h2>
+        {s?.updated && !empty && <span className="text-[11px] text-ink-mute">maj {relativeAgo(s.updated)}</span>}
+      </div>
+      {empty ? (
+        <p className="text-[13px] text-ink-mute">Autorise <b>Apple Santé</b> (dans Réglages → Santé connectée) pour voir ton sommeil, ton activité et ta FC au repos. Garmin et Coros y écrivent déjà leurs données.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="rounded-2xl bg-lilac/60 p-3 flex flex-col gap-1">
+              <Moon className="h-[18px] w-[18px]" style={{ color: "#6b4fb0" }} />
+              <span className="font-display text-lg font-semibold text-ink leading-none tabular-nums">{s!.sleepHours != null ? fmtSleep(s!.sleepHours) : "—"}</span>
+              <span className="text-[10.5px] text-ink-mute font-semibold">Sommeil</span>
+            </div>
+            <div className="rounded-2xl bg-mint p-3 flex flex-col gap-1">
+              <Footprints className="h-[18px] w-[18px] text-brand-600" />
+              <span className="font-display text-lg font-semibold text-ink leading-none tabular-nums">{s!.steps != null ? s!.steps.toLocaleString("fr-FR") : "—"}</span>
+              <span className="text-[10.5px] text-ink-mute font-semibold">Pas</span>
+            </div>
+            <div className="rounded-2xl bg-[#fbe1da] p-3 flex flex-col gap-1">
+              <HeartPulse className="h-[18px] w-[18px] text-[#d0492c]" />
+              <span className="font-display text-lg font-semibold text-ink leading-none tabular-nums">{s!.restingHR != null ? s!.restingHR : "—"}</span>
+              <span className="text-[10.5px] text-ink-mute font-semibold">FC repos</span>
+            </div>
+          </div>
+          {(s!.exerciseMin != null || s!.activeKcal != null) && (
+            <p className="text-[12px] text-ink-mute mt-2.5 flex items-center gap-1.5">
+              <Activity className="h-4 w-4 text-brand-600" />
+              {s!.exerciseMin != null ? `${s!.exerciseMin} min d'activité` : ""}{s!.exerciseMin != null && s!.activeKcal != null ? " · " : ""}{s!.activeKcal != null ? `${s!.activeKcal} kcal` : ""}
+            </p>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+// ── Daily wellbeing tip ──────────────────────────────────────────────────────
+export function TipsCard() {
+  useStore();
+  const t = tipOfDay();
+  const evening = t.evening;
+  return (
+    <section className="rounded-4xl p-5 shadow-soft" style={{ background: evening ? "#e7e3f5" : "#f6ecc9" }}>
+      <div className="flex items-center gap-2 mb-2">
+        {evening ? <Moon className="h-[18px] w-[18px]" style={{ color: "#6b4fb0" }} /> : <Sun className="h-[18px] w-[18px]" style={{ color: "#a9821f" }} />}
+        <h2 className="font-display text-[16px] font-semibold text-ink">{evening ? "Conseil du soir" : "Conseil du jour"}</h2>
+      </div>
+      <p className="text-[15px] text-ink-soft leading-relaxed">{t.text}</p>
+    </section>
+  );
+}
+
+// ── Mood insights / correlations ─────────────────────────────────────────────
+export function InsightsCard() {
+  useStore();
+  const insights = moodInsights().slice(0, 3);
+  return (
+    <section className="rounded-4xl p-5 bg-mint shadow-soft">
+      <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2 mb-3"><Lightbulb className="h-[18px] w-[18px] text-brand-600" /> Ce qui influence ton humeur</h2>
+      {insights.length === 0 ? (
+        <p className="text-[13.5px] text-ink-soft">Continue à noter ton humeur et tes activités quelques jours — Moody détectera ce qui te fait du bien.</p>
+      ) : (
+        <ul className="space-y-2.5">
+          {insights.map((i) => (
+            <li key={i.key} className="flex items-start gap-3 rounded-2xl bg-white/70 px-3.5 py-3">
+              <span className={`grid place-items-center h-8 w-8 rounded-xl shrink-0 ${i.direction === "positive" ? "bg-brand-100 text-brand-700" : "bg-[#fbe1da] text-[#c0402a]"}`}>
+                {i.direction === "positive" ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              </span>
+              <div className="min-w-0">
+                <p className="text-[13.5px] font-semibold text-ink leading-snug">{i.text}</p>
+                <p className="text-[11.5px] text-ink-mute mt-0.5">écart ~{i.delta} pt · sur {i.sample} jours</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// ── Medication adherence ─────────────────────────────────────────────────────
+export function AdherenceCard() {
+  useStore();
+  const [range, setRange] = useState<7 | 30>(7);
+  const s = adherenceStats(range);
+  if (s.scheduled === 0) {
+    return (
+      <section className="card p-4">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2 mb-1"><Pill className="h-[18px] w-[18px] text-[#c8622f]" /> Observance</h2>
+        <p className="text-[13px] text-ink-mute">Ajoute des médicaments avec des horaires — ton taux de prises apparaîtra ici.</p>
+      </section>
+    );
+  }
+  const color = s.pct >= 90 ? "#1aad55" : s.pct >= 70 ? "#c8912f" : "#d0492c";
+  return (
+    <section className="card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Pill className="h-[18px] w-[18px] text-[#c8622f]" /> Observance</h2>
+        <div className="flex bg-black/[0.04] rounded-full p-0.5">
+          {([7, 30] as const).map((r) => (
+            <button key={r} onClick={() => { hTap(); setRange(r); }}
+              className={`px-3 py-1 rounded-full text-[12px] font-bold transition ${range === r ? "bg-white shadow-card text-ink" : "text-ink-mute"}`}>{r} j</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex items-end gap-2 mb-1">
+        <span className="font-display text-4xl font-semibold tabular-nums" style={{ color }}>{s.pct}%</span>
+        <span className="text-[13px] text-ink-mute mb-1.5">de prises respectées</span>
+      </div>
+      <div className="h-2.5 rounded-full bg-black/[0.06] overflow-hidden mb-2">
+        <div className="h-full rounded-full transition-all" style={{ width: `${s.pct}%`, background: color }} />
+      </div>
+      <p className="text-[12.5px] text-ink-mute mb-3 flex items-center gap-1.5">
+        <CheckCircle2 className="h-4 w-4 text-brand-500" /> {s.taken}/{s.scheduled} prises · {s.perfectDays} jour{s.perfectDays > 1 ? "s" : ""} parfait{s.perfectDays > 1 ? "s" : ""}
+      </p>
+
+      {s.perMed.length > 1 && (
+        <div className="space-y-2.5 pt-1 border-t border-black/5">
+          {s.perMed.map((m) => (
+            <div key={m.medId} className="pt-1">
+              <div className="flex items-center justify-between text-[13px] mb-1">
+                <span className="font-semibold text-ink truncate mr-2">{m.name}</span>
+                <span className="tabular-nums font-bold" style={{ color: m.pct >= 90 ? "#1aad55" : m.pct >= 70 ? "#c8912f" : "#d0492c" }}>{m.pct}%</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-black/[0.06] overflow-hidden">
+                <div className="h-full rounded-full" style={{ width: `${m.pct}%`, background: m.pct >= 90 ? "#1aad55" : m.pct >= 70 ? "#c8912f" : "#d0492c" }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+// ── Gratitude journal ────────────────────────────────────────────────────────
+export function GratitudeCard() {
+  useStore();
+  const [text, setText] = useState("");
+  const items = getGratitude();
+  const strk = gratitudeStreak();
+  const add = () => { if (!text.trim()) return; hTap(); addGratitude(text); setText(""); };
+  return (
+    <section className="rounded-4xl p-5 shadow-soft" style={{ background: "#fdeede" }}>
+      <div className="flex items-center justify-between mb-1">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Sun className="h-[18px] w-[18px] text-[#e08a2f]" /> Gratitude du jour</h2>
+        {strk > 0 && <span className="text-[12px] font-bold text-[#c8622f] bg-white/70 rounded-full px-2.5 py-1">série {strk} j</span>}
+      </div>
+      <p className="text-[12.5px] text-ink-mute mb-3">Note jusqu'à 3 choses positives d'aujourd'hui.</p>
+      {items.length > 0 && (
+        <ul className="space-y-2 mb-3">
+          {items.map((it, i) => (
+            <li key={i} className="flex items-center gap-2 rounded-2xl bg-white/70 px-3.5 py-2.5">
+              <Heart className="h-3.5 w-3.5 text-[#e08a2f] shrink-0 fill-[#f6c98a]" />
+              <span className="flex-1 min-w-0 text-[14px] text-ink">{it}</span>
+              <button onClick={() => { hTap(); removeGratitude(i); }} className="grid place-items-center h-6 w-6 rounded-lg text-ink-mute active:scale-90" aria-label="Retirer"><X className="h-4 w-4" /></button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {items.length < 3 && (
+        <div className="flex items-center gap-2">
+          <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }}
+            placeholder="Une chose positive…" className="flex-1 min-w-0 bg-white rounded-2xl px-3.5 py-2.5 text-ink outline-none text-[14px]" />
+          <button onClick={add} className="grid place-items-center h-11 w-11 rounded-2xl text-white shrink-0 active:scale-95" style={{ background: "#e08a2f" }} aria-label="Ajouter"><Plus className="h-5 w-5" /></button>
+        </div>
+      )}
     </section>
   );
 }

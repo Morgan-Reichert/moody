@@ -6,7 +6,9 @@ import {
   useStore, getSettings, saveSettings, getMeds, saveMed, deleteMed, toggleModule,
   getAddictions, saveAddiction, deleteAddiction, Addiction,
   Medication, ReminderSettings, Slot, ALL_DAYS, DAY_LABELS, MODULES,
+  DEFAULT_BRUSH_SLOTS, ModuleKey,
 } from "@/lib/storage";
+import { requestHealthAuth, syncHealth } from "@/lib/health";
 import { requestNotifPermission } from "@/lib/reminders";
 import { setPin, disableSecurity, biometricsAvailable, registerFace } from "@/lib/security";
 import { exportData, importData } from "@/lib/backup";
@@ -15,11 +17,12 @@ import { BarcodeScanner } from "@/components/BarcodeScanner";
 import { MedicalVault } from "@/components/MedicalVault";
 import { MedAutocomplete } from "@/components/MedAutocomplete";
 import { MedInfoModal } from "@/components/MedInfoModal";
+import { CloudBackupCard } from "@/components/CloudBackupCard";
 import { Portal } from "@/components/Portal";
 import {
   X, Plus, Trash2, Bell, Volume2, ScanLine, Smile, Pill, Check, ChevronDown, Dumbbell, Droplets, SlidersHorizontal, ShieldCheck,
   UserRound, Lock, ScanFace, CloudSun, Delete, HeartPulse, ChevronRight, ScanText, Loader2, Info,
-  Download, Upload, HeartHandshake, Database,
+  Download, Upload, HeartHandshake, Database, Sparkles, Droplet, Heart, Lightbulb, Sun, Moon,
 } from "lucide-react";
 
 function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[]) => void }) {
@@ -75,10 +78,17 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
   const meds = getMeds();
   const patch = (p: Partial<ReminderSettings>) => saveSettings(p);
 
+  const onToggleModule = (key: ModuleKey) => {
+    const next = toggleModule(key);
+    if (key === "health" && next.modules.includes("health")) {
+      requestHealthAuth().then((ok) => { if (ok) syncHealth(); });
+    }
+  };
+
   const enableNotifs = async () => {
     const ok = await requestNotifPermission();
     patch({ notifications: ok });
-    if (!ok) alert("Notifications refusées. Active-les dans les réglages de ton navigateur/téléphone.");
+    if (!ok) alert("Notifications refusées. Autorise-les dans Réglages › Moody › Notifications.");
   };
 
   return (
@@ -153,13 +163,58 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
               <div className="card divide-y divide-black/5">
                 {MODULES.map((mod) => (
                   <Toggle key={mod.key}
-                    icon={mod.key === "sport" ? <Dumbbell className="h-5 w-5" /> : <Droplets className="h-5 w-5" />}
+                    icon={
+                      mod.key === "sport" ? <Dumbbell className="h-5 w-5" />
+                      : mod.key === "brushing" ? <Sparkles className="h-5 w-5" />
+                      : mod.key === "menstrual" ? <Droplet className="h-5 w-5" />
+                      : mod.key === "sexual" ? <Heart className="h-5 w-5" />
+                      : mod.key === "insights" ? <Lightbulb className="h-5 w-5" />
+                      : mod.key === "gratitude" ? <Sun className="h-5 w-5" />
+                      : mod.key === "adherence" ? <Pill className="h-5 w-5" />
+                      : mod.key === "tips" ? <Sun className="h-5 w-5" />
+                      : mod.key === "health" ? <HeartPulse className="h-5 w-5" />
+                      : <Droplets className="h-5 w-5" />
+                    }
                     title={mod.name} sub={mod.desc}
                     on={settings.modules.includes(mod.key)}
-                    onToggle={() => toggleModule(mod.key)} />
+                    onToggle={() => onToggleModule(mod.key)} />
                 ))}
               </div>
               <p className="text-[12px] text-ink-mute mt-2 px-1">D'autres suivis (alimentation détaillée, objectifs…) arrivent — dis-moi tes besoins.</p>
+            </section>
+
+            {/* Brushing reminder times */}
+            {settings.modules.includes("brushing") && (
+              <section>
+                <SectionTitle icon={<Sparkles className="h-4 w-4" />} title="Rappels de brossage" hint="Aux heures (et jours) qui te vont" />
+                <div className="card p-4 space-y-2.5">
+                  {(settings.brushSlots ?? DEFAULT_BRUSH_SLOTS).map((s, i) => (
+                    <SlotRow key={i} slot={s}
+                      onChange={(ns) => patch({ brushSlots: (settings.brushSlots ?? DEFAULT_BRUSH_SLOTS).map((x, j) => (j === i ? ns : x)) })}
+                      onDelete={() => patch({ brushSlots: (settings.brushSlots ?? DEFAULT_BRUSH_SLOTS).filter((_, j) => j !== i) })} />
+                  ))}
+                  <button onClick={() => patch({ brushSlots: [...(settings.brushSlots ?? DEFAULT_BRUSH_SLOTS), { time: "13:00", days: ALL_DAYS }] })}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-brand-50 text-brand-700 font-bold text-sm active:scale-[.98]">
+                    <Plus className="h-4 w-4" /> Ajouter un horaire
+                  </button>
+                </div>
+              </section>
+            )}
+
+            {/* Bedtime wind-down reminder */}
+            <section>
+              <SectionTitle icon={<Moon className="h-4 w-4" />} title="Rappel du soir" hint="Une notification douce pour ralentir avant de dormir" />
+              <div className="card divide-y divide-black/5">
+                <Toggle icon={<Moon className="h-5 w-5" />} title="Activer le rappel du soir" sub="Un conseil coucher à l'heure de ton choix"
+                  on={!!settings.bedtimeEnabled} onToggle={() => patch({ bedtimeEnabled: !settings.bedtimeEnabled })} />
+                {settings.bedtimeEnabled && (
+                  <div className="p-4 flex items-center justify-between">
+                    <span className="text-[14px] font-semibold text-ink">Heure</span>
+                    <input type="time" value={settings.bedtimeTime || "22:00"} onChange={(e) => patch({ bedtimeTime: e.target.value })}
+                      className="bg-brand-50 rounded-xl px-3 py-2 font-display font-semibold text-ink outline-none appearance-none" />
+                  </div>
+                )}
+              </div>
             </section>
 
             {/* Addictions management */}
@@ -194,7 +249,7 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
                 </span>
                 <div className="flex-1 text-left">
                   <p className="font-bold text-ink text-[15px]">{settings.notifications ? "Notifications activées" : "Activer les notifications"}</p>
-                  <p className="text-[12.5px] text-ink-mute">Une PWA ne peut pas sonner fort quand elle est fermée (surtout iPhone).</p>
+                  <p className="text-[12.5px] text-ink-mute">Rappels de prise, humeur et rendez-vous, même quand l'app est fermée.</p>
                 </div>
               </button>
             </section>
@@ -220,6 +275,9 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
               {importMsg && <p className="text-sm text-brand-700 font-semibold mt-2 px-1">{importMsg}</p>}
               <p className="text-[12px] text-ink-mute mt-2 px-1">Les documents scannés et rapports PDF ne sont pas inclus.</p>
             </section>
+
+            {/* Encrypted cloud backup */}
+            <CloudBackupCard />
 
             {/* Help */}
             <section>
