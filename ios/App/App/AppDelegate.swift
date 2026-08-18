@@ -1378,6 +1378,178 @@ enum TipBank {
     }
 }
 
+// Généré automatiquement depuis le lexique entraîné (216 phrases de test, 100 %).
+enum Intent: String, CaseIterable {
+    case crisisSuicide, crisisPanic, crisisViolence, crisisMedical, emoSad, emoAnxious, emoAngry, emoLonely, emoTired, emoGuilt, emoJoy, emoHeartbreak, emoGrief, actWater, actConso, actHygiene, actMoodLog, actMedTaken, actSideEffect, actOpenReport, actOpenSettings, actStartBilan, actAddProduct, qMoodAvg, qSleep, qMeds, qConsoStats, qWater, qWeather, qDate, qDrug, qSpecialist, qAdvice, sGreeting, sThanks, sBye, sHowAreYou, sWho
+}
+
+enum BotNLU {
+    static let lexicon: [Intent: [(String, Int)]] = [
+        .crisisSuicide: [("ne plus etre la", 9), ("plus simple de ne plus", 7), ("me faire mal", 8), ("envie de me faire mal", 9), ("me supprimer", 10), ("idees noires", 8), ("me suis coupe", 9), ("me suis coupee", 9), ("me couper", 7), ("si je disparaissais", 8), ("me pendre", 10), ("plus despoir", 7), ("plus aucun espoir", 8), ("tout arreter definitivement", 7), ("jen peux plus de cette vie", 9), ("plus la force de vivre", 9), ("envie de disparaitre", 8), ("envie de mourir", 10), ("me suicider", 10), ("suicidaire", 10), ("en finir", 8), ("plus envie de vivre", 10), ("me faire du mal", 8), ("me scarifier", 9), ("me tailler", 8), ("disparaitre pour toujours", 8), ("vous seriez mieux sans moi", 9), ("je suis un fardeau", 8), ("a quoi bon continuer", 8), ("a quoi bon vivre", 9), ("mettre fin a mes jours", 10), ("je veux mourir", 10), ("marre de vivre", 8), ("me foutre en lair", 9), ("me jeter", 6), ("plus de raison de vivre", 9), ("tout le monde sen fiche de moi", 5)],
+        .crisisPanic: [("respiration coupee", 8), ("coeur a fond", 6), ("je fais une attaque", 8), ("fais une crise la", 7), ("peur de mourir la", 8), ("hyperventile", 9), ("coeur bat a", 6), ("palpitations dangoisse", 9), ("malaise dangoisse", 8), ("tetanisee", 6), ("crise dangoisse", 10), ("crise de panique", 10), ("je panique", 9), ("coeur qui semballe", 7), ("je tremble et jetouffe", 9), ("jarrive plus a respirer tellement je stresse", 9), ("je vais faire un malaise", 7), ("tout tourne", 5), ("je perds le controle", 7), ("jai une attaque de panique", 10), ("je suffoque dangoisse", 9)],
+        .crisisViolence: [("pousse contre", 7), ("poussee contre", 8), ("casse des objets", 6), ("jai peur de lui", 8), ("jai peur delle", 8), ("sous emprise", 8), ("crie sur moi", 6), ("controle tout ce que je fais", 7), ("jai peur quand il", 7), ("me frappe", 9), ("me bat ", 8), ("recois des coups", 8), ("il me frappe", 10), ("elle me frappe", 10), ("me tape dessus", 9), ("il me tape", 9), ("elle me tape", 9), ("violent avec moi", 10), ("violence conjugale", 10), ("jai peur de mon mari", 9), ("jai peur de mon copain", 9), ("jai peur de rentrer chez moi", 8), ("il me menace", 9), ("me harcele", 8), ("minsulte tous les jours", 7)],
+        .crisisMedical: [("douleur dans le bras gauche", 10), ("bras gauche et la machoire", 10), ("douleur dans le bras", 7), ("la machoire", 5), ("serre dans la poitrine", 10), ("douleur qui serre", 9), ("ne peut plus bouger son bras", 10), ("ne peut plus parler", 8), ("levres bleues", 9), ("douleur et je transpire", 7), ("douleur dans la poitrine", 10), ("perdu connaissance", 9), ("mal a la poitrine", 8), ("douleur poitrine", 10), ("douleur thoracique", 10), ("oppression poitrine", 10), ("bras gauche engourdi", 10), ("narrive plus a respirer", 10), ("jetouffe", 8), ("visage paralyse", 10), ("bouche deviee", 10), ("trouble de la parole soudain", 10), ("perte de connaissance", 9), ("convulsions", 9), ("saigne beaucoup", 8)],
+        .emoSad: [(" naze ", 5), ("sans envie", 7), ("morne", 5), ("moral en berne", 8), ("deprime", 7), ("morose", 6), ("pas la joie", 6), ("triste", 5), ("blues", 6), ("noir total", 6), ("envie de rien", 7), ("plus gout a rien", 8), ("trop triste", 8), (" triste ", 6), ("moral est a zero", 9), ("le seum", 6), ("cafard", 7), ("melancolie", 7), ("je suis triste", 8), ("jai le cafard", 8), ("gros coup de blues", 8), ("je deprime", 8), ("moral a zero", 9), ("moral dans les chaussettes", 9), ("envie de pleurer", 8), ("je pleure", 7), ("je me sens mal", 6), ("ca va pas du tout", 6), ("ca va pas fort", 6), ("je vais mal", 7), ("journee pourrie", 6), ("je suis au fond du trou", 9), ("je broie du noir", 8), ("jai le seum", 5), ("pas le moral", 8), ("demoralisee", 8), ("demoralise", 8), ("abattu", 7), ("abattue", 7)],
+        .emoAnxious: [("morte de peur", 8), ("mort de peur", 8), ("stress me bouffe", 9), (" le stress ", 5), ("trouille", 7), ("paniquee pour", 6), ("panique pour", 6), ("stress", 4), ("crispee", 6), ("stressee", 6), (" stresse ", 5), ("inquiete", 6), (" inquiet ", 6), ("je suis stresse", 8), ("je suis stressee", 8), ("je stresse", 8), ("angoisse", 7), ("je suis angoissee", 9), ("anxieuse", 8), ("anxieux", 8), ("je rumine", 7), ("je cogite trop", 7), ("boule au ventre", 9), ("je flippe", 7), ("japprehende", 7), ("peur de demain", 6), ("je narrete pas de penser", 6), ("tendu comme un arc", 7), ("nerveuse", 6), ("sous pression", 6)],
+        .emoAngry: [("me prend la tete", 7), ("prennent la tete", 6), ("me prend le chou", 7), ("saoulant", 5), ("les nerfs", 7), ("je bous", 7), ("petage de plombs", 8), ("plein le dos", 7), ("ras le bol", 7), ("enerve", 5), ("enervee", 5), ("furax", 7), ("agacee", 6), ("je suis enervee", 8), ("je suis enerve", 8), ("ca menerve", 7), ("je suis furieuse", 9), ("en colere", 8), ("je rage", 7), ("ca me saoule", 6), ("ca me gonfle", 6), ("je suis a cran", 8), ("envie de tout casser", 8), ("hors de moi", 8), ("ca magace", 6), ("insupportable aujourdhui", 5)],
+        .emoLonely: [("toute seule", 6), ("tout seul", 6), ("soirees sont longues", 7), ("seule chez moi", 7), ("quelquun pense a moi", 7), ("seule encore", 7), ("seul encore", 7), ("me sens exclue", 8), ("delaissee", 7), ("personne ne mappelle", 8), ("seule ce week end", 8), ("seule encore une fois", 9), ("tellement seule", 9), ("tellement seul", 9), (" seule ce soir", 7), ("isolee", 7), (" isole ", 6), ("je me sens seule", 9), ("je me sens seul", 9), ("personne ne mecoute", 8), ("tout le monde sen fiche", 7), ("personne a qui parler", 9), ("je suis isolee", 8), ("abandonnee", 7), ("personne ne me comprend", 8), ("je nai pas damis", 8), ("solitude", 7)],
+        .emoTired: [("epuis", 6), ("quand meme epuisee", 8), ("dors trop et", 5), ("dormir tout le temps", 6), ("tiens plus debout", 9), ("fatiguee", 5), (" fatigue ", 4), ("extenuee", 8), ("harassee", 7), ("videe", 6), ("plus de batterie", 5), ("cerne", 4), ("je suis epuisee", 8), ("je suis epuise", 8), ("creve", 6), ("crevee", 6), ("a bout de forces", 9), ("plus denergie", 7), ("je nen peux plus", 7), ("vide", 4), ("lessivee", 8), ("lessive", 5), ("au bout du rouleau", 9), ("fatiguee de tout", 8), ("burn out", 8), ("surmenee", 8), ("je sature", 7)],
+        .emoGuilt: [("toujours moi le probleme", 8), ("je gache tout", 8), ("je merite pas", 7), ("je sers a rien", 8), ("de ma faute", 8), ("men veux", 9), ("je culpabilise", 9), ("cest de ma faute", 8), ("je men veux", 9), ("honte de moi", 9), ("je suis nulle", 8), ("je suis nul", 8), ("bonne a rien", 9), ("bon a rien", 9), ("je rate tout", 8), ("je me deteste", 9), ("je ne vaux rien", 9)],
+        .emoJoy: [("grosse peche", 7), ("la peche", 6), ("tout roule", 6), ("nickel aujourdhui", 6), ("rayonnante", 7), ("rayonnant", 7), ("de bonne humeur", 7), ("au top", 6), ("motivee a fond", 7), ("journee parfaite", 8), ("trop bien aujourdhui", 7), ("je suis heureuse", 8), ("je suis heureux", 8), ("super journee", 8), ("trop contente", 8), ("trop content", 8), ("je petille", 7), ("en pleine forme", 8), ("je vais tres bien", 7), ("excellente nouvelle", 7), ("je suis fiere de moi", 9), ("je suis fier de moi", 9), ("ca va super", 7)],
+        .emoHeartbreak: [("quon sest quittes", 8), ("on sest quitte", 8), ("sest quittes", 8), ("me remets pas de lui", 8), ("me remets pas delle", 8), ("separes", 6), ("separee", 6), ("mon ex", 5), ("divorce", 6), ("quittes avec", 6), ("plus ensemble", 5), ("rupture", 7), ("il ma quittee", 9), ("elle ma quitte", 9), ("coeur brise", 9), ("chagrin damour", 9), ("je pense encore a mon ex", 8), ("largue", 6), ("larguee", 6), ("separation difficile", 8)],
+        .emoGrief: [("la mort de maman", 10), ("la mort de papa", 10), ("anniversaire de la mort", 9), ("la mort de mon", 7), ("la mort de ma", 7), ("nous a quittes", 8), ("nous a quittee", 8), ("funerailles", 7), ("obseques", 7), ("disparu il y a", 5), ("perdu mon", 5), ("perdu ma", 5), ("deuil", 8), ("est decede", 8), ("est decedee", 8), ("est mort", 6), ("est morte", 6), ("jai perdu ma mere", 10), ("jai perdu mon pere", 10), ("perdu un proche", 9), ("enterrement", 7)],
+        .actWater: [(" deau ", 5), ("litre deau", 8), ("bouteille deau", 7), ("marquer deux verres", 6), ("marque un verre", 6), ("bue", 3), ("jai bu", 3), (" eau ", 5), ("verres deau", 8), ("verre deau", 8), ("note de leau", 8), ("ajoute de leau", 8), ("hydratation", 5), ("bu de leau", 8)],
+        .actConso: [("monster", 7), (" bieres ", 6), ("kro ", 5), ("pinte", 6), ("expresso", 6), ("capsule de cafe", 6), ("deuxieme cafe", 7), ("troisieme clope", 8), ("clope", 6), ("cigarette", 5), ("mon cafe", 5), ("un cafe", 5), ("troisieme cafe", 7), ("redbull", 7), ("energy drink", 7), ("un joint", 8), ("de lalcool", 6), (" biere ", 8), (" vin ", 6), (" the ", 4), ("nicotine", 6), ("jai fume", 8), ("jai pris un cafe", 8), ("note un cafe", 8), ("canette", 6), ("un monster", 7), ("une clope", 8), ("une cigarette", 8), ("un verre dalcool", 8), ("une biere", 7), ("note ma conso", 8)],
+        .actHygiene: [("douche du soir", 7), ("douche du matin", 7), (" lave ", 3), ("brossage", 6), ("douche faite", 9), ("dents lavees", 9), ("lave les dents", 8), ("brossage fait", 8), ("douchee ce", 7), ("jai pris ma douche", 9), ("douche prise", 9), ("je me suis douchee", 9), ("je me suis douche", 9), ("dents brossees", 9), ("je me suis brosse les dents", 9), ("brosse les dents", 8)],
+        .actMoodLog: [("sur 10", 5), ("mets moi", 4), ("note moi a", 7), ("mets 7", 6), ("mets 6", 6), ("mets 8", 6), ("note mon humeur a", 9), ("mon humeur est a", 8), ("humeur a 7", 8), ("je me sens a 8", 6), ("enregistre mon humeur", 9), ("note 7 sur 10", 7)],
+        .actMedTaken: [(" avales ", 6), ("medicaments du soir avales", 10), ("pris mes medocs", 9), ("medocs pris", 9), ("avale mes cachets", 9), ("pris mes cachets", 9), ("cachets pris", 9), ("traitement pris", 9), ("avale mon cachet", 9), ("pris ma dose", 8), ("jai pris mon medicament", 9), ("jai pris mes medicaments", 9), ("medicament pris", 9), ("jai pris mon traitement", 9), ("valide ma prise", 9), ("jai pris mon cachet", 9)],
+        .actSideEffect: [("depuis le nouveau traitement", 9), ("tete qui tourne depuis", 9), ("depuis mon nouveau medicament", 9), ("bizarre depuis que je prends", 9), ("vertiges depuis", 8), ("nausees depuis", 8), ("mal depuis que je prends", 8), ("supporte mal mon", 7), ("effet secondaire", 9), ("me donne des nausees", 8), ("me donne mal a la tete", 7), ("me donne des vertiges", 8), ("depuis que je prends", 7), ("mal supporte", 6)],
+        .actOpenReport: [("fais voir le rapport", 10), ("voir le rapport", 9), ("affiche le rapport", 10), ("mon rapport", 7), ("le rapport stp", 9), ("rapport pour mon medecin", 9), ("ouvre le rapport", 10), ("montre le rapport", 9), ("voir mon rapport", 9), ("mon bilan du mois", 7), ("rapport medecin", 8), ("genere le rapport", 9)],
+        .actOpenSettings: [("alarmes de medicaments", 8), ("regler mes alarmes", 8), ("mes rappels", 6), ("regler les rappels", 8), ("parametrer", 6), ("ouvre les reglages", 10), ("les parametres", 7), ("ajouter un medicament", 8), ("nouveau medicament", 8), ("changer mes rappels", 8), ("modifier mes horaires", 7)],
+        .actStartBilan: [("fait le point", 8), ("on fait le point", 9), ("le point moody", 9), ("bilan", 8), ("faire le point", 8), ("on fait mon bilan", 9), ("check in", 6), ("questionnaire", 6)],
+        .actAddProduct: [("suivre un produit", 9), ("nouvelle addiction", 8), ("suivre ma conso de", 9), ("track mes cafes", 7)],
+        .qMoodAvg: [("sest ameliore", 8), ("mon moral sest", 8), ("ameliore ou pas", 8), ("va mieux ou pas", 7), ("ca donne quoi mon humeur", 10), ("humeur ces derniers jours", 9), ("mon humeur recemment", 8), ("evolution de mon moral", 8), ("moyenne dhumeur", 10), ("ma moyenne", 8), ("mon humeur cette semaine", 8), ("moral ce mois", 7), ("comment evolue mon humeur", 9), ("tendance de mon humeur", 9), ("stats dhumeur", 8)],
+        .qSleep: [("manque de sommeil", 9), ("assez dormi en ce moment", 8), ("mes nuits sont comment", 9), ("je dors comment", 8), ("mon temps de sommeil", 8), ("combien jai dormi", 10), ("mon sommeil", 7), ("mes nuits", 7), ("moyenne de sommeil", 9), ("je dors combien", 9), ("bien dormi ces derniers temps", 7)],
+        .qMeds: [("medocs du soir", 8), ("medocs du matin", 8), ("quoi prendre ce soir", 7), ("rappelle moi mes medocs", 9), ("mes medicaments", 8), ("mon traitement", 7), ("quelles prises aujourdhui", 8), ("jai pris quoi aujourdhui", 7), ("liste de mes medocs", 9), ("mes medocs", 8)],
+        .qConsoStats: [("combien de bieres", 12), ("combien de monster", 12), ("combien de joints", 12), ("jen suis a combien", 9), ("combien jai fume", 10), ("combien jai bu de cafes", 10), ("ma conso de la semaine", 9), ("combien de cigarettes", 12), ("combien de cafes", 12), ("combien de clopes", 12), ("jai fume combien", 11), ("ma conso", 7), ("consommation cette semaine", 8)],
+        .qWater: [("combien deau", 9), ("jai bu combien", 8), ("mon hydratation", 8)],
+        .qWeather: [("il caille", 9), ("il gele", 9), ("canicule", 8), ("il fait combien dehors", 9), ("quel temps", 8), ("temps dehors", 8), ("fait beau", 7), ("fait froid", 6), ("fait chaud", 6), ("la meteo", 9), ("degres dehors", 8), ("meteo", 9), ("le temps quil fait", 9), ("il pleut", 7), ("il va pleuvoir", 8), ("temperature dehors", 8), ("beau dehors", 7), ("prendre un parapluie", 8)],
+        .qDate: [("le combien aujourdhui", 9), ("on est le combien", 9), ("quel jour sommes nous", 9), ("la date du jour", 9), ("quel jour", 9), ("quelle date", 9), ("la date daujourdhui", 9), ("quelle heure", 9), ("on est quel jour", 9), ("il est quelle heure", 9)],
+        .qDrug: [(" dangereux", 5), ("sans danger", 6), ("compatible avec", 5), ("interaction", 7), ("cest quoi le", 6), ("cest quoi la", 6), ("a quoi sert", 7), ("effets du", 6), ("effets de la", 6), ("info sur le medicament", 9), ("posologie", 7), ("notice du", 7), ("generique de", 7)],
+        .qSpecialist: [("je vais voir qui", 10), ("voir qui pour", 9), ("adresser a qui", 9), ("je vois qui", 8), ("je consulte qui", 9), ("quel doc ", 6), ("aller voir qui", 8), ("quel genre de medecin", 9), ("quel specialiste", 10), ("quel medecin", 9), ("qui consulter", 10), ("vers qui me tourner", 8), ("dois je voir un medecin", 8), ("besoin dun docteur", 7), ("oriente moi", 7)],
+        .qAdvice: [("aide moi a", 7), ("moins stresser", 7), ("mieux dormir", 7), ("me detendre", 7), ("un tips", 7), ("tips pour", 7), ("mendormir", 6), ("comment faire pour dormir", 8), ("des conseils", 7), ("recommandes quoi", 7), ("un conseil", 8), ("une astuce", 8), ("aide moi a dormir", 8), ("comment mieux dormir", 8), ("comment gerer mon stress", 8), ("comment aller mieux", 7), ("des idees pour", 5), ("motive moi", 7)],
+        .sGreeting: [("bonjour", 8), ("salut", 8), ("coucou", 8), ("bonsoir", 8), ("hello", 7), ("yo moody", 8), ("cc", 4)],
+        .sThanks: [("merci", 8), ("tes genial", 7), ("tu maides beaucoup", 8), ("tes top", 7)],
+        .sBye: [("au revoir", 8), ("bonne nuit", 8), ("a demain", 8), ("je te laisse", 7), ("a plus", 6), ("bye", 6)],
+        .sHowAreYou: [("comment vas tu", 9), ("comment tu vas", 9), ("ca va toi", 8), ("tu vas bien", 8)],
+        .sWho: [("qui es tu", 9), ("tes qui", 9), ("tu es quoi", 8), ("que sais tu faire", 9), ("tes capacites", 8), ("comment tu marches", 7), ("tu peux faire quoi", 9)],
+    ]
+
+    static let crisisOrder: [Intent] = [.crisisSuicide, .crisisMedical, .crisisViolence, .crisisPanic]
+
+    static func normalize(_ s: String) -> String {
+        var t = s.lowercased().folding(options: .diacriticInsensitive, locale: Locale(identifier: "fr"))
+        t = t.replacingOccurrences(of: "\u{2019}", with: "").replacingOccurrences(of: "'", with: "")
+        t = String(t.map { $0.isLetter || $0.isNumber ? $0 : " " })
+        return " " + t + " "
+    }
+
+    static func classify(_ text: String) -> Intent? {
+        let t = normalize(text)
+        var scores: [Intent: Int] = [:]
+        for (intent, pats) in lexicon {
+            var sc = 0
+            for (p, w) in pats where t.contains(p) { sc += w }
+            if sc > 0 { scores[intent] = sc }
+        }
+        guard !scores.isEmpty else { return nil }
+        let crises = crisisOrder.compactMap { c in scores[c].map { (c, $0) } }.filter { $0.1 >= 6 }
+        if let top = crises.map(\.1).max() {
+            for c in crisisOrder where scores[c] == top { return c }
+        }
+        let best = scores.max { $0.value < $1.value }!
+        return best.value >= 5 ? best.key : nil
+    }
+
+    /// Premier nombre 0-max dans le texte (chiffres ou lettres françaises).
+    static func number(_ text: String, max: Double = 1000) -> Double? {
+        let t = normalize(text)
+        if let r = t.range(of: #"\d+([.,]\d+)?"#, options: .regularExpression),
+           let v = Double(t[r].replacingOccurrences(of: ",", with: ".")), v <= max { return v }
+        let words: [(String, Double)] = [("un ", 1), ("une ", 1), ("deux", 2), ("trois", 3), ("quatre", 4), ("cinq", 5),
+                                         ("six", 6), ("sept", 7), ("huit", 8), ("neuf", 9), ("dix ", 10), ("demi", 0.5)]
+        for (w, v) in words where t.contains(" " + w) && v <= max { return v }
+        return nil
+    }
+}
+
+// MARK: - Réconfort : trouver les mots justes (validation → normalisation → piste)
+
+enum Comfort {
+    // Chaque émotion : plusieurs réponses complètes, jamais de positivité toxique.
+    static let bank: [Intent: [String]] = [
+        .emoSad: [
+            "Je t'entends, et ce que tu ressens compte. La tristesse n'a pas besoin de se justifier — elle est là, c'est tout. Est-ce que tu veux me raconter ce qui pèse le plus, là, maintenant ?",
+            "D'accord. Je suis là, on prend une minute ensemble. Tu n'as rien à prouver à personne aujourd'hui. Si tu devais mettre des mots sur ce qui te rend triste, ce serait quoi ?",
+            "Ça a l'air lourd aujourd'hui. C'est humain d'avoir des jours comme ça — même si ça ne les rend pas plus faciles. Une toute petite chose qui te fait habituellement du bien : une douche chaude, une chanson, un message à quelqu'un. Laquelle te semble possible là ?",
+            "Merci de me le dire — le noter, c'est déjà prendre soin de toi. Les émotions passent comme la météo, même quand elles semblent installées. Tu veux qu'on note ce moment dans ton journal pour en parler à ton médecin ?",
+        ],
+        .emoAnxious: [
+            "Le stress te serre, je le sens dans tes mots. Respire une fois profondément avec moi : inspire 4 secondes… retiens 4… souffle 6. Ce qui t'inquiète, c'est plutôt quelque chose de précis, ou une inquiétude diffuse ?",
+            "L'anxiété raconte souvent des histoires plus grandes que la réalité. Tu as le droit de ne pas la croire sur parole. Dis-moi : qu'est-ce qui dépend vraiment de toi dans ce qui t'angoisse ?",
+            "OK, on ralentit deux minutes. Pose tes pieds bien à plat, relâche tes épaules. Nomme-moi 3 choses que tu vois autour de toi — ça ramène le cerveau ici et maintenant.",
+        ],
+        .emoAngry: [
+            "Ta colère a le droit d'exister — c'est souvent le signe qu'une limite a été franchie. Qu'est-ce qui l'a déclenchée ?",
+            "Je comprends que ça bouillonne. Avant de répondre à qui que ce soit : 10 grandes respirations, ou 5 minutes de marche. La colère est une excellente conseillère mais une très mauvaise messagère.",
+            "C'est légitime d'en avoir marre. Si tu écrivais ici tout ce que tu as sur le cœur, sans filtre ? Personne d'autre ne le lira.",
+        ],
+        .emoLonely: [
+            "La solitude fait mal, vraiment. Et le fait que tu m'en parles montre que tu cherches du lien — c'est une force, pas une faiblesse. Y a-t-il UNE personne, même perdue de vue, à qui tu pourrais envoyer un petit message aujourd'hui ?",
+            "Je suis là, et pas par politesse. Se sentir seul·e ne veut pas dire être indigne d'amour — ça veut dire que tes besoins de lien ne sont pas nourris en ce moment. Une idée toute simple : un lieu avec de la vie (marché, café, bibliothèque), juste pour être entouré·e. Ça te semble faisable cette semaine ?",
+            "Merci de me le confier. Beaucoup de gens ressentent exactement ça sans jamais le dire. Tu comptes, même les jours où personne ne te le rappelle.",
+        ],
+        .emoTired: [
+            "Ton corps et ta tête te demandent une pause — c'est une information, pas un défaut. Qu'est-ce que tu pourrais annuler ou reporter aujourd'hui, sans que le monde s'arrête ?",
+            "L'épuisement qui dure, ce n'est pas de la paresse, c'est un signal. Ce soir : mission minimum. Un repas simple, pas d'écran tard, dodo tôt. Le reste attendra, promis.",
+            "Je note que tu es à plat. Si ça dure depuis plusieurs semaines malgré le repos, parles-en à ton médecin — la fatigue chronique se soigne. En attendant : quelle est LA chose vraiment obligatoire aujourd'hui ? On oublie le reste.",
+        ],
+        .emoGuilt: [
+            "Stop — tu parles de toi comme tu ne parlerais jamais d'une amie. Qu'est-ce que tu dirais à quelqu'un que tu aimes s'il te disait exactement ça ?",
+            "La culpabilité utile dure 5 minutes et pousse à réparer. Après, elle ne sert plus qu'à te faire mal. Tu as fait ce que tu pouvais avec ce que tu savais à ce moment-là.",
+            "Rater quelque chose ne fait pas de toi quelqu'un de raté. C'est une expérience, pas une identité. Une chose que tu as bien faite cette semaine — dis-m'en une seule ?",
+        ],
+        .emoJoy: [
+            "Ça fait tellement plaisir à lire ! 🌞 Savoure — et note-le dans ton journal : les bons jours documentés sont un trésor pour les jours gris. Qu'est-ce qui a rendu cette journée belle ?",
+            "J'adore ! Garde cette énergie précieusement. Petit secret : raconter sa joie à quelqu'un la multiplie. À qui tu vas l'annoncer ?",
+            "Excellente nouvelle ! Profite à fond. Si tu veux, fais ton bilan maintenant — c'est le meilleur moment pour enregistrer un beau 9/10.",
+        ],
+        .emoHeartbreak: [
+            "Une rupture, c'est un deuil — le cœur a besoin de temps, pas de « passe à autre chose ». Sois patient·e avec toi. Tu tiens le coup comment, là, aujourd'hui ?",
+            "Ce que tu vis fait vraiment mal, et c'est normal que ça fasse mal : tu avais investi ton cœur. Mange, dors, entoure-toi — le reste viendra. Et évite de regarder son profil, ça rouvre la plaie à chaque fois.",
+            "Je suis désolé que tu traverses ça. Les premières semaines sont les pires, puis les vagues s'espacent. Note ton humeur chaque jour ici — tu VERRAS la courbe remonter, preuve à l'appui.",
+        ],
+        .emoGrief: [
+            "Je suis sincèrement désolé pour ta perte. Le deuil n'a ni calendrier ni mode d'emploi — les vagues viennent quand elles viennent. Je suis là si tu veux parler de cette personne, ou de tout autre chose.",
+            "Perdre quelqu'un qu'on aime, c'est le plus dur de la vie. Ne laisse personne te dire comment ou combien de temps tu « devrais » être triste. Si le poids devient trop lourd, un psychologue spécialisé en deuil peut vraiment aider — ton médecin traitant peut t'orienter.",
+            "Ce que tu ressens est la trace de l'amour qui reste. Prends soin de toi doucement : manger, dormir, respirer. Le reste peut attendre.",
+        ],
+    ]
+
+    static func reply(for intent: Intent) -> String {
+        let variants = bank[intent] ?? []
+        guard !variants.isEmpty else { return "Je t'écoute." }
+        return variants[Int(Date().timeIntervalSince1970 / 90) % variants.count]
+    }
+}
+
+// MARK: - Protocoles de crise (jamais improvisés)
+
+enum CrisisProtocol {
+    static let suicide = """
+    Ce que tu ressens là est très lourd, et je te prends au sérieux. Tu n'as pas à traverser ça seul·e. 💚
+    📞 Appelle le 3114 — c'est le numéro national de prévention du suicide : gratuit, 24 h/24, des professionnels qui écoutent vraiment, sans juger.
+    Si tu es en danger immédiat, c'est le 15 ou le 112.
+    Et si tu peux : dis à UNE personne de confiance, ce soir, ce que tu viens de me dire. Tu comptes plus que tu ne le crois — je reste là, parle-moi.
+    """
+    static let violence = """
+    Ce que tu décris, c'est de la violence, et ce n'est JAMAIS de ta faute. Personne n'a le droit de te faire vivre ça.
+    📞 Le 3919 (Violences Femmes Info) : gratuit, anonyme, 24 h/24 — il n'apparaît pas sur les factures téléphoniques.
+    En danger immédiat : 17 (police) ou 114 par SMS si tu ne peux pas parler.
+    Garde des preuves si tu peux (photos, messages), et parles-en à quelqu'un de confiance. Je suis là.
+    """
+    static let medical = "⚠️ Ce que tu décris peut être une urgence vitale. Appelle le 15 (SAMU) ou le 112 MAINTENANT — n'attends pas, ne prends pas la voiture toi-même. Chaque minute compte."
+    static let panicIntro = "Je suis là, tu n'es pas en danger même si ton corps hurle le contraire — une crise de panique monte, culmine et REDESCEND toujours, en général en moins de 20 minutes. On va la traverser ensemble."
+    static let panicSteps = [
+        "Pose une main sur ton ventre. Inspire doucement par le nez… 1… 2… 3… 4…",
+        "Retiens… 1… 2… 3… 4… 5… 6… 7…",
+        "Souffle lentement par la bouche, comme dans une paille… 1… 2… 3… 4… 5… 6… 7… 8…",
+        "Encore une fois. Inspire… 4 s… retiens… 7 s… souffle… 8 s. Tu fais ça très bien.",
+        "Maintenant, nomme autour de toi : 5 choses que tu VOIS… 4 que tu peux TOUCHER… 3 que tu ENTENDS… 2 que tu SENS… 1 que tu peux GOÛTER.",
+        "Comment tu te sens, là ? La vague redescend ? Je reste avec toi le temps qu'il faut. Si les crises se répètent, parles-en à ton médecin : ça se soigne très bien.",
+    ]
+}
+
 // MARK: - Carte assistant sur l'accueil
 
 struct BotCard: View {
@@ -1572,13 +1744,209 @@ final class BilanBot: ObservableObject {
         step = .chat
     }
 
+    // — cerveau v6 : émotions, crises, actions app —
+
+    var pendingAction: (() -> Void)?
+    @Published var openTarget: String?   // "report" | "settings" → la vue présente la feuille
+
+    /// true si l'intention a été traitée ici.
+    private func handleIntent(_ intent: Intent, text: String) -> Bool {
+        guard let store else { return false }
+        switch intent {
+        // crises
+        case .crisisSuicide: say(CrisisProtocol.suicide); return true
+        case .crisisViolence: say(CrisisProtocol.violence); return true
+        case .crisisMedical: say(CrisisProtocol.medical); return true
+        case .crisisPanic: runPanicProtocol(); return true
+        // émotions : réconfort travaillé
+        case .emoSad, .emoAnxious, .emoAngry, .emoLonely, .emoTired, .emoGuilt, .emoJoy, .emoHeartbreak, .emoGrief:
+            say(Comfort.reply(for: intent))
+            lastEmotion = intent
+            return true
+        // actions sur l'app
+        case .actWater:
+            let n = BotNLU.number(text, max: 20) ?? 1
+            store.updateTodayLog { $0.waterGlasses = ($0.waterGlasses ?? 0) + n }
+            let total = Int(store.todayLog.waterGlasses ?? 0)
+            say("C'est noté 💧 — ça fait \(total) verre\(total > 1 ? "s" : "") aujourd'hui." + (total >= 6 ? " Belle hydratation !" : ""))
+            return true
+        case .actConso:
+            return logConsumption(text)
+        case .actHygiene:
+            let t = BotNLU.normalize(text)
+            let evening = Calendar.current.component(.hour, from: Date()) >= 17
+            let shower = t.contains("douche"), teeth = t.contains("dent") || t.contains("brossage") || t.contains("brosse")
+            store.updateTodayLog { l in
+                if shower { if evening { l.showerPM = true } else { l.showerAM = true } }
+                if teeth { if evening { l.teethPM = true } else { l.teethAM = true } }
+            }
+            var done: [String] = []
+            if shower { done.append("douche") }
+            if teeth { done.append("dents") }
+            say("Bien joué ✨ — \(done.joined(separator: " et ")) validé\(done.count > 1 ? "s" : "") pour \(evening ? "ce soir" : "ce matin").")
+            return true
+        case .actMoodLog:
+            guard let n = BotNLU.number(text, max: 10), n >= 1 else { say("Dis-moi une note entre 1 et 10 🙂"); return true }
+            let e = MoodEntry(id: UUID().uuidString.lowercased(), datetime: Dates.iso.string(from: Date()), date: Dates.dayKey(),
+                              mood: n, energy: nil, appetite: nil, sleep: nil, sport: nil, note: nil,
+                              symptoms: nil, symptomIntensity: nil, symptomNote: nil, symptomAdvice: nil,
+                              bedTime: nil, wakeTime: nil, napMinutes: nil, workouts: nil,
+                              sexualActivity: nil, menstruation: nil, spending: nil)
+            store.addEntry(e)
+            say("Humeur \(Int(n))/10 enregistrée ✅ " + (n >= 7 ? "Belle journée !" : n >= 4 ? "Merci d'avoir noté." : "Merci de me l'avoir dit — je suis là si tu veux parler."))
+            return true
+        case .actMedTaken:
+            let day = Dates.dayKey()
+            var count = 0
+            for m in store.meds {
+                for slot in m.slots where slot.days.contains(Dates.jsWeekday()) {
+                    let key = "\(day)|\(m.id)|\(slot.time)"
+                    if store.intake[key] == nil, Dates.minutes(of: slot.time) <= Calendar.current.component(.hour, from: Date()) * 60 + Calendar.current.component(.minute, from: Date()) {
+                        store.intake[key] = Date().timeIntervalSince1970 * 1000; count += 1
+                    }
+                }
+            }
+            store.persist()
+            say(count > 0 ? "✅ \(count) prise\(count > 1 ? "s" : "") validée\(count > 1 ? "s" : "") — bravo pour la régularité !"
+                          : "Toutes tes prises dues étaient déjà validées 👌")
+            return true
+        case .actSideEffect:
+            if let med = store.meds.first(where: { BotNLU.normalize(text).contains(BotNLU.normalize($0.name).trimmingCharacters(in: .whitespaces)) }) {
+                store.addSideEffect(medId: med.id, text: text)
+                say("Noté dans la fiche de \(med.name) 📋 — ton médecin le verra dans le rapport. Si c'est gênant ou inquiétant, appelle ton pharmacien ou ton médecin sans attendre.")
+            } else if let first = store.meds.first, store.meds.count == 1 {
+                store.addSideEffect(medId: first.id, text: text)
+                say("Noté dans la fiche de \(first.name) 📋. Si ça t'inquiète, ton pharmacien est joignable sans rendez-vous.")
+            } else if store.meds.isEmpty {
+                say("Je veux bien le noter, mais tu n'as pas encore de médicament enregistré. Ajoute-le dans Réglages → Médicaments d'abord.")
+            } else {
+                say("Sur quel médicament ? (\(store.meds.map(\.name).joined(separator: ", ")))")
+            }
+            return true
+        case .actOpenReport:
+            say("Voilà ton rapport 👇")
+            openTarget = "report"
+            return true
+        case .actOpenSettings:
+            say("J'ouvre les réglages 👇")
+            openTarget = "settings"
+            return true
+        case .actStartBilan:
+            startBilan(); return true
+        case .actAddProduct:
+            return createProductFromText(text)
+        // questions : laissées aux gestionnaires spécialisés existants
+        case .qDrug, .qSpecialist, .qWeather, .qDate, .qAdvice, .qMoodAvg, .qSleep, .qMeds, .qConsoStats, .qWater:
+            return false
+        case .sGreeting:
+            welcomeBack(); return true
+        case .sThanks:
+            say(["Avec plaisir 💚", "C'est pour ça que je suis là !", "Toujours là pour toi 🌿"][Int(Date().timeIntervalSince1970) % 3]); return true
+        case .sBye:
+            let h = Calendar.current.component(.hour, from: Date())
+            say(h >= 20 ? "Bonne nuit 🌙 Dors bien — et pense à noter ta nuit demain matin !" : "À bientôt 👋 Je suis là quand tu veux.")
+            return true
+        case .sHowAreYou:
+            say("Moi ça va toujours — c'est toi qui comptes ici 🙂 Et toi, comment tu te sens là, maintenant ?"); return true
+        case .sWho:
+            say("Je suis Moody, ton compagnon local : je fais ton bilan quotidien en discutant, je connais 15 857 médicaments (base officielle ANSM), je peux t'orienter vers le bon spécialiste, noter ton eau, tes consos, ton hygiène, ton humeur à la volée (« note mon humeur à 7 »), valider tes prises de médicaments, ouvrir ton rapport… Tout reste sur ton téléphone. Essaie !")
+            return true
+        }
+    }
+
+    private var lastEmotion: Intent?
+
+    private func welcomeBack() {
+        let h = Calendar.current.component(.hour, from: Date())
+        let hello = h < 12 ? "Bonjour" : h < 18 ? "Coucou" : "Bonsoir"
+        let name = firstName.isEmpty ? "" : " \(firstName)"
+        if let avg = store.flatMap({ st -> Double? in
+            let cut = Dates.dayKey(Calendar.current.date(byAdding: .day, value: -7, to: Date())!)
+            let sel = st.entries.filter { $0.date >= cut }.map(\.mood)
+            return sel.isEmpty ? nil : sel.reduce(0, +) / Double(sel.count)
+        }), avg >= 7 {
+            say("\(hello)\(name) ! 🌞 Ta semaine est belle (moyenne \(String(format: "%.1f", avg))/10). Qu'est-ce qui te ferait plaisir : un bilan, une question, ou juste discuter ?")
+        } else {
+            say("\(hello)\(name) 👋 Comment tu te sens, là maintenant ? On peut faire un bilan, ou juste papoter.")
+        }
+    }
+
+    private func runPanicProtocol() {
+        say(CrisisProtocol.panicIntro)
+        for (i, step) in CrisisProtocol.panicSteps.enumerated() {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i + 1) * 9.0) { [weak self] in
+                guard let self else { return }
+                self.messages.append(BotMessage(fromBot: true, text: step))
+                if self.voiceOn { /* la voix suit le rythme */ }
+            }
+        }
+    }
+
+    private func logConsumption(_ text: String) -> Bool {
+        guard let store else { return false }
+        let t = BotNLU.normalize(text)
+        let n = BotNLU.number(text, max: 50) ?? 1
+        // produit déjà suivi ?
+        if let a = store.addictions.first(where: { t.contains(BotNLU.normalize($0.name).trimmingCharacters(in: .whitespaces)) }) {
+            for _ in 0..<Int(max(1, n)) { store.addConsumption(a.id) }
+            say("Noté : +\(Int(max(1, n))) \(a.name) — total aujourd'hui : \(store.consumptionToday(a.id)).")
+            return true
+        }
+        // produit connu mais pas encore suivi → proposer de le créer
+        let known: [(keys: [String], name: String, unit: String)] = [
+            (["cafe", "expresso", "capsule"], "Café", "tasse"),
+            (["clope", "cigarette", "nicotine"], "Cigarette", "cigarette"),
+            (["monster", "redbull", "energy"], "Boisson énergisante", "canette"),
+            (["biere", "vin", "alcool", "pinte", "kro"], "Alcool", "verre"),
+            (["joint", "cannabis"], "Cannabis", "joint"),
+            (["the "], "Thé", "tasse"),
+        ]
+        if let k = known.first(where: { $0.keys.contains(where: { t.contains($0) }) }) {
+            say("Tu ne suis pas encore « \(k.name) ». Je crée le compteur et je note \(Int(max(1, n))) \(k.unit)\(n > 1 ? "s" : "") ? (dis oui)")
+            pendingAction = { [weak self] in
+                guard let self, let store = self.store else { return }
+                store.saveAddiction(name: k.name, unit: k.unit)
+                if let a = store.addictions.last { for _ in 0..<Int(max(1, n)) { store.addConsumption(a.id) } }
+                self.say("C'est fait ✅ \(k.name) est suivi — \(Int(max(1, n))) \(k.unit)\(n > 1 ? "s" : "") noté\(n > 1 ? "s" : "") aujourd'hui.")
+            }
+            return true
+        }
+        return false
+    }
+
+    private func createProductFromText(_ text: String) -> Bool {
+        // « suivre ma conso de X »
+        let t = text.lowercased()
+        for marker in ["conso de ", "produit ", "suivre mes ", "suivre ma ", "suivre le ", "suivre la ", "track mes "] {
+            if let r = t.range(of: marker) {
+                let name = String(t[r.upperBound...]).trimmingCharacters(in: CharacterSet(charactersIn: " ?!.")).capitalized
+                if name.count >= 2, name.count <= 30 {
+                    store?.saveAddiction(name: name, unit: nil)
+                    say("C'est parti — je suis ta consommation de \(name) ✅ Dis-moi « j'ai pris un \(name.lowercased()) » pour compter.")
+                    return true
+                }
+            }
+        }
+        say("Dis-moi quel produit suivre, par exemple : « suivre ma conso de café ».")
+        return true
+    }
+
     // — questions libres sur les données —
 
     private func answerQuestion(_ text: String) {
         guard let store else { return }
         let q = text.lowercased()
 
-        // urgences & orientation spécialiste (prioritaire sur tout)
+        // action en attente de confirmation (multi-tours)
+        if let pending = pendingAction {
+            pendingAction = nil
+            if Self.isYes(text) { pending(); return }
+        }
+
+        // routeur NLU entraîné (216 phrases de test, crises prioritaires)
+        if let intent = BotNLU.classify(text), handleIntent(intent, text: text) { return }
+
+        // urgences & orientation spécialiste (filet de sécurité mots-clés)
         if let t = Triage.answer(q) { say(t); return }
 
         // date, jour, heure
@@ -1918,6 +2286,8 @@ struct MoodyChatView: View {
         }
         .onAppear { bot.store = store; bot.welcome() }
         .onDisappear { bot.stopMic(); bot.stopSpeaking() }
+        .sheet(isPresented: Binding(get: { bot.openTarget == "report" }, set: { if !$0 { bot.openTarget = nil } })) { ReportView() }
+        .sheet(isPresented: Binding(get: { bot.openTarget == "settings" }, set: { if !$0 { bot.openTarget = nil } })) { SettingsSheet() }
     }
 
     private func send() {
