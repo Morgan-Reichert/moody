@@ -130,7 +130,7 @@ export function ReportSheet({ onClose }: { onClose: () => void }) {
                 <p className="text-sm text-ink-mute py-8 text-center">Aucun rapport enregistré pour l'instant.</p>
               ) : history.map((m) => (
                 <div key={m.id} className="card p-3.5 flex items-center gap-3">
-                  <span className="grid place-items-center h-11 w-11 rounded-2xl bg-brand-50 text-brand-700 shrink-0"><FileText className="h-5 w-5" /></span>
+                  <span className="grid place-items-center h-11 w-11 rounded-2xl bg-cream text-brand-700 shrink-0"><FileText className="h-5 w-5" /></span>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-ink text-[14.5px]">{m.kind === "therapeute" ? "Thérapeute" : "Perso"} · {m.period} j</p>
                     <p className="text-[12px] text-ink-mute">{frDate(m.createdAt)}</p>

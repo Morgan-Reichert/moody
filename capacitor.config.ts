@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from "@capacitor/cli";
 
 const config: CapacitorConfig = {
-  appId: "tech.stariax.moody",
+  appId: "tech.stariax.moodyapp",
   appName: "Moody",
   webDir: "out",
   backgroundColor: "#eef2ec",

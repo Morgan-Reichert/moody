@@ -83,10 +83,10 @@ function Field({ label, defVal, onSave, placeholder, type = "text", area }: { la
       <span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">{label}</span>
       {area ? (
         <textarea defaultValue={defVal} onBlur={(e) => onSave(e.target.value)} placeholder={placeholder} rows={2}
-          className="mt-1 w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none" />
+          className="mt-1 w-full bg-cream rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none" />
       ) : (
         <input type={type} defaultValue={defVal} onBlur={(e) => onSave(e.target.value)} placeholder={placeholder}
-          className="mt-1 w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none" />
+          className="mt-1 w-full bg-cream rounded-xl px-3.5 py-2.5 text-ink outline-none" />
       )}
     </label>
   );
@@ -112,7 +112,7 @@ function PhotoField() {
   return (
     <div className="flex items-center gap-4">
       <input ref={ref} type="file" accept="image/*" className="hidden" onChange={onPick} />
-      <button onClick={() => ref.current?.click()} className="relative h-20 w-20 rounded-full bg-brand-50 grid place-items-center overflow-hidden shrink-0 active:scale-95">
+      <button onClick={() => ref.current?.click()} className="relative h-20 w-20 rounded-full bg-cream grid place-items-center overflow-hidden shrink-0 active:scale-95">
         {p.photo ? <img src={p.photo} alt="" className="h-full w-full object-cover" /> : <Camera className="h-7 w-7 text-brand-600" />}
       </button>
       <div>
@@ -130,8 +130,8 @@ function TreatmentsEditor() {
   const appMeds = getMeds();
   const save = (l: TreatmentEntry[]) => saveMedicalProfile({ treatmentList: l });
   const row = (name: string, meta: string, right: React.ReactNode, key: string) => (
-    <div key={key} className="rounded-2xl bg-brand-50/60 p-3 flex items-center gap-3">
-      <Pill className="h-4 w-4 text-[#c8622f] shrink-0" />
+    <div key={key} className="rounded-2xl bg-cream/80 p-3 flex items-center gap-3">
+      <Pill className="h-4 w-4 text-[#d4487e] shrink-0" />
       <div className="flex-1 min-w-0"><p className="font-bold text-ink text-[14px] truncate">{name}</p><p className="text-[12px] text-ink-mute">{meta || "—"}</p></div>
       {right}
     </div>
@@ -162,9 +162,9 @@ function ManualTreatmentForm({ onAdd }: { onAdd: (t: TreatmentEntry) => void }) 
     <div className="card p-3 space-y-2">
       <MedAutocomplete value={name} onChange={setName} onPick={(nm) => setName(nm)} placeholder="Chercher un médicament…" />
       <div className="grid grid-cols-3 gap-2">
-        <input value={dose} onChange={(e) => setDose(e.target.value)} placeholder="Dose" className="bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none text-[14px]" />
-        <input value={perDay} onChange={(e) => setPerDay(e.target.value)} placeholder="×/jour" inputMode="numeric" className="bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none text-[14px]" />
-        <input value={timing} onChange={(e) => setTiming(e.target.value)} placeholder="Moment" className="bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none text-[14px]" />
+        <input value={dose} onChange={(e) => setDose(e.target.value)} placeholder="Dose" className="bg-cream rounded-xl px-3 py-2.5 text-ink outline-none text-[14px]" />
+        <input value={perDay} onChange={(e) => setPerDay(e.target.value)} placeholder="×/jour" inputMode="numeric" className="bg-cream rounded-xl px-3 py-2.5 text-ink outline-none text-[14px]" />
+        <input value={timing} onChange={(e) => setTiming(e.target.value)} placeholder="Moment" className="bg-cream rounded-xl px-3 py-2.5 text-ink outline-none text-[14px]" />
       </div>
       <button onClick={add} className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-brand-500 text-white font-bold text-sm active:scale-[.98]"><Plus className="h-4 w-4" /> Ajouter ce traitement</button>
     </div>
@@ -182,7 +182,7 @@ function FicheTab() {
         <div className="grid grid-cols-2 gap-2">
           <Field label="Naissance" defVal={p.birthDate} onSave={s("birthDate")} type="date" />
           <label className="block"><span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">Sexe</span>
-            <select defaultValue={p.sex ?? ""} onChange={(e) => saveMedicalProfile({ sex: e.target.value || undefined })} className="mt-1 w-full bg-brand-50 rounded-xl px-2 py-2.5 text-ink outline-none">
+            <select defaultValue={p.sex ?? ""} onChange={(e) => saveMedicalProfile({ sex: e.target.value || undefined })} className="mt-1 w-full bg-cream rounded-xl px-2 py-2.5 text-ink outline-none">
               <option value="">—</option><option>Femme</option><option>Homme</option><option>Autre</option>
             </select></label>
         </div>
@@ -194,7 +194,7 @@ function FicheTab() {
           <label className="block">
             <span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">Groupe</span>
             <select defaultValue={p.bloodType ?? ""} onChange={(e) => saveMedicalProfile({ bloodType: e.target.value || undefined })}
-              className="mt-1 w-full bg-brand-50 rounded-xl px-2 py-2.5 text-ink outline-none">
+              className="mt-1 w-full bg-cream rounded-xl px-2 py-2.5 text-ink outline-none">
               {BLOOD.map((b) => <option key={b} value={b}>{b || "—"}</option>)}
             </select>
           </label>
@@ -256,22 +256,22 @@ function DoctorCard({ doc }: { doc: Doctor }) {
       <div className="flex items-center gap-3">
         <span className="grid place-items-center h-10 w-10 rounded-2xl bg-lilac text-brand-700 shrink-0"><Stethoscope className="h-5 w-5" /></span>
         <div className="flex-1 min-w-0"><p className="font-bold text-ink truncate">{doc.name || "Nouveau médecin"}</p><p className="text-[12.5px] text-ink-mute truncate">{doc.specialty || "Spécialité ?"}</p></div>
-        <button onClick={() => setOpen((o) => !o)} className="grid place-items-center h-9 w-9 rounded-xl bg-brand-50 text-brand-700 active:scale-95"><ChevronDown className={`h-5 w-5 transition ${open ? "rotate-180" : ""}`} /></button>
+        <button onClick={() => setOpen((o) => !o)} className="grid place-items-center h-9 w-9 rounded-xl bg-cream text-brand-700 active:scale-95"><ChevronDown className={`h-5 w-5 transition ${open ? "rotate-180" : ""}`} /></button>
       </div>
       {open && (
         <div className="mt-4 space-y-3">
-          <input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} placeholder="Nom (Dr …)" className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 font-semibold text-ink outline-none" />
+          <input value={name} onChange={(e) => setName(e.target.value)} onBlur={() => commit()} placeholder="Nom (Dr …)" className="w-full bg-cream rounded-xl px-3.5 py-2.5 font-semibold text-ink outline-none" />
           <SpecialtyPicker value={doc.specialty} onChange={(v) => saveDoctor({ ...doc, specialty: v })} />
           <div className="grid grid-cols-2 gap-2">
-            <input defaultValue={doc.phone} onBlur={(e) => saveDoctor({ ...doc, phone: e.target.value.trim() || undefined })} placeholder="Téléphone" type="tel" className="bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none" />
-            <input defaultValue={doc.email} onBlur={(e) => saveDoctor({ ...doc, email: e.target.value.trim() || undefined })} placeholder="Email" type="email" className="bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none" />
+            <input defaultValue={doc.phone} onBlur={(e) => saveDoctor({ ...doc, phone: e.target.value.trim() || undefined })} placeholder="Téléphone" type="tel" className="bg-cream rounded-xl px-3 py-2.5 text-ink outline-none" />
+            <input defaultValue={doc.email} onBlur={(e) => saveDoctor({ ...doc, email: e.target.value.trim() || undefined })} placeholder="Email" type="email" className="bg-cream rounded-xl px-3 py-2.5 text-ink outline-none" />
           </div>
-          <input defaultValue={doc.address} onBlur={(e) => saveDoctor({ ...doc, address: e.target.value.trim() || undefined })} placeholder="Adresse du cabinet" className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none" />
-          <textarea defaultValue={doc.notes} onBlur={(e) => saveDoctor({ ...doc, notes: e.target.value.trim() || undefined })} placeholder="Notes" rows={2} className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none" />
+          <input defaultValue={doc.address} onBlur={(e) => saveDoctor({ ...doc, address: e.target.value.trim() || undefined })} placeholder="Adresse du cabinet" className="w-full bg-cream rounded-xl px-3.5 py-2.5 text-ink outline-none" />
+          <textarea defaultValue={doc.notes} onBlur={(e) => saveDoctor({ ...doc, notes: e.target.value.trim() || undefined })} placeholder="Notes" rows={2} className="w-full bg-cream rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none" />
           <div className="flex gap-2">
-            {doc.phone && <a href={`tel:${doc.phone}`} className="flex-1 grid place-items-center rounded-xl py-2.5 bg-brand-50 text-brand-700"><Phone className="h-5 w-5" /></a>}
-            {doc.email && <a href={`mailto:${doc.email}`} className="flex-1 grid place-items-center rounded-xl py-2.5 bg-brand-50 text-brand-700"><Mail className="h-5 w-5" /></a>}
-            {doc.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(doc.address)}`} target="_blank" rel="noreferrer" className="flex-1 grid place-items-center rounded-xl py-2.5 bg-brand-50 text-brand-700"><MapPin className="h-5 w-5" /></a>}
+            {doc.phone && <a href={`tel:${doc.phone}`} className="flex-1 grid place-items-center rounded-xl py-2.5 bg-cream text-brand-700"><Phone className="h-5 w-5" /></a>}
+            {doc.email && <a href={`mailto:${doc.email}`} className="flex-1 grid place-items-center rounded-xl py-2.5 bg-cream text-brand-700"><Mail className="h-5 w-5" /></a>}
+            {doc.address && <a href={`https://maps.google.com/?q=${encodeURIComponent(doc.address)}`} target="_blank" rel="noreferrer" className="flex-1 grid place-items-center rounded-xl py-2.5 bg-cream text-brand-700"><MapPin className="h-5 w-5" /></a>}
             <button onClick={() => deleteDoctor(doc.id)} className="grid place-items-center h-11 w-11 rounded-xl bg-white text-red-400 shadow-card active:scale-95"><Trash2 className="h-5 w-5" /></button>
           </div>
         </div>
@@ -308,10 +308,10 @@ function DocumentsTab({ doctors }: { doctors: Doctor[] }) {
       <div className="card p-4 space-y-3">
         <p className="font-display text-[15px] font-semibold text-ink">Ajouter manuellement</p>
         <div className="grid grid-cols-4 gap-1.5">
-          {DOC_TYPES.map((t) => <button key={t.key} onClick={() => setDtype(t.key)} className={`rounded-xl py-2 text-[12px] font-bold transition ${dtype === t.key ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-soft"}`}>{t.label}</button>)}
+          {DOC_TYPES.map((t) => <button key={t.key} onClick={() => setDtype(t.key)} className={`rounded-xl py-2 text-[12px] font-bold transition ${dtype === t.key ? "bg-brand-500 text-white" : "bg-cream text-ink-soft"}`}>{t.label}</button>)}
         </div>
-        <input value={dtitle} onChange={(e) => setDtitle(e.target.value)} placeholder="Titre (optionnel)" className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none" />
-        <select value={ddoc} onChange={(e) => setDdoc(e.target.value)} className="w-full bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none">
+        <input value={dtitle} onChange={(e) => setDtitle(e.target.value)} placeholder="Titre (optionnel)" className="w-full bg-cream rounded-xl px-3.5 py-2.5 text-ink outline-none" />
+        <select value={ddoc} onChange={(e) => setDdoc(e.target.value)} className="w-full bg-cream rounded-xl px-3 py-2.5 text-ink outline-none">
           <option value="">Lier à un médecin (optionnel)</option>
           {doctors.map((d) => <option key={d.id} value={d.id}>{d.name || "Médecin"}{d.specialty ? ` — ${d.specialty}` : ""}</option>)}
         </select>
@@ -324,12 +324,12 @@ function DocumentsTab({ doctors }: { doctors: Doctor[] }) {
           const doc = doctors.find((x) => x.id === d.doctorId);
           return (
             <div key={d.id} className="card p-3.5 flex items-center gap-3">
-              <span className="grid place-items-center h-11 w-11 rounded-2xl bg-peach text-[#c8622f] shrink-0"><FileText className="h-5 w-5" /></span>
+              <span className="grid place-items-center h-11 w-11 rounded-2xl bg-peach text-[#d4487e] shrink-0"><FileText className="h-5 w-5" /></span>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-ink text-[14.5px] truncate">{d.title}</p>
                 <p className="text-[12px] text-ink-mute truncate capitalize">{d.type}{d.date ? ` · ${d.date}` : ""}{doc ? ` · ${doc.name}` : ""}</p>
                 {(() => { const ex = expiryInfo(d.expiryDate); return ex ? (
-                  <span className={`inline-flex items-center gap-1 mt-1 text-[11px] font-bold rounded-full px-2 py-0.5 ${ex.urgent ? "bg-[#fbe1da] text-[#c0402a]" : "bg-brand-50 text-brand-700"}`}>
+                  <span className={`inline-flex items-center gap-1 mt-1 text-[11px] font-bold rounded-full px-2 py-0.5 ${ex.urgent ? "bg-[#fbe1da] text-[#c0402a]" : "bg-cream text-brand-700"}`}>
                     {ex.urgent && <AlertTriangle className="h-3 w-3" />}{ex.label}{d.notifyExpiry && <Bell className="h-3 w-3" />}
                   </span>
                 ) : null; })()}
@@ -347,7 +347,7 @@ function DocumentsTab({ doctors }: { doctors: Doctor[] }) {
 function RdvTab({ doctors, appts }: { doctors: Doctor[]; appts: Appointment[] }) {
   return (
     <div className="space-y-3">
-      <div className="flex items-start gap-2.5 rounded-2xl bg-brand-50 px-4 py-3">
+      <div className="flex items-start gap-2.5 rounded-2xl bg-cream px-4 py-3">
         <Bell className="h-5 w-5 text-brand-600 shrink-0 mt-0.5" />
         <p className="text-[12.5px] text-brand-700 font-semibold">Tu seras notifié 24 h, 12 h, 1 h et 15 min avant chaque rendez-vous (quand l'app est ouverte/active).</p>
       </div>
@@ -368,13 +368,13 @@ function AppointmentCard({ appt, doctors }: { appt: Appointment; doctors: Doctor
       </div>
       <input type="datetime-local" defaultValue={localValue}
         onChange={(e) => { if (e.target.value) saveAppointment({ ...appt, datetime: new Date(e.target.value).toISOString() }); }}
-        className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 font-display font-semibold text-ink outline-none" />
-      <select value={appt.doctorId ?? ""} onChange={(e) => saveAppointment({ ...appt, doctorId: e.target.value || undefined })} className="w-full bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none">
+        className="w-full bg-cream rounded-xl px-3.5 py-2.5 font-display font-semibold text-ink outline-none" />
+      <select value={appt.doctorId ?? ""} onChange={(e) => saveAppointment({ ...appt, doctorId: e.target.value || undefined })} className="w-full bg-cream rounded-xl px-3 py-2.5 text-ink outline-none">
         <option value="">Médecin (optionnel)</option>
         {doctors.map((d) => <option key={d.id} value={d.id}>{d.name || "Médecin"}{d.specialty ? ` — ${d.specialty}` : ""}</option>)}
       </select>
-      <input defaultValue={appt.address} onBlur={(e) => saveAppointment({ ...appt, address: e.target.value.trim() || undefined })} placeholder="Adresse du rendez-vous" className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none" />
-      <textarea defaultValue={appt.notes} onBlur={(e) => saveAppointment({ ...appt, notes: e.target.value.trim() || undefined })} placeholder="Notes (motif, à apporter…)" rows={2} className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none" />
+      <input defaultValue={appt.address} onBlur={(e) => saveAppointment({ ...appt, address: e.target.value.trim() || undefined })} placeholder="Adresse du rendez-vous" className="w-full bg-cream rounded-xl px-3.5 py-2.5 text-ink outline-none" />
+      <textarea defaultValue={appt.notes} onBlur={(e) => saveAppointment({ ...appt, notes: e.target.value.trim() || undefined })} placeholder="Notes (motif, à apporter…)" rows={2} className="w-full bg-cream rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none" />
     </div>
   );
 }

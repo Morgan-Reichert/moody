@@ -4,7 +4,7 @@ import { useRef } from "react";
 
 export function DragSlider({
   value, min, max, step, onChange, showDots = false,
-  thumbAbove, thumbBelow, trackClass = "bg-brand-50", fillClass = "bg-brand-500",
+  thumbAbove, thumbBelow, trackClass = "bg-cream", fillClass = "bg-brand-500",
 }: {
   value: number | null;
   min: number; max: number; step: number;

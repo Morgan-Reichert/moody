@@ -3,9 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --bg: #eef2ec;
-  --bg-2: #e6efe6;
-  --ink: #16211b;
+  --bg: #f2f3f6;
+  --bg-2: #ecedf1;
+  --ink: #141519;
 }
 
 /* ---- app frame : behaves like a native app, not a scrolling web page ---- */
@@ -63,8 +63,11 @@ html, body {
 
 @layer components {
   .card {
-    @apply bg-surface rounded-3xl shadow-card;
+    @apply bg-surface rounded-3xl shadow-card border border-black/[0.045];
   }
+  /* jauge segmentée façon "lessons left" */
+  .seg { @apply h-2 flex-1 rounded-full bg-black/[0.07]; }
+  .seg-on { @apply bg-accent; }
   .chip {
     @apply bg-white/70 backdrop-blur rounded-2xl border border-white/60;
   }

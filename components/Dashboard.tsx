@@ -17,14 +17,14 @@ import { BreathingModal } from "@/components/BreathingModal";
 import { HelpModal } from "@/components/HelpModal";
 import {
   Flame, Sparkles, TrendingUp, Pill, Smile, ChevronRight, Settings2,
-  Check, Clock, AlertTriangle, FileText, CheckCircle2, Heart, Info, Wind, HeartHandshake,
+  Check, Clock, AlertTriangle, FileText, CheckCircle2, Info, Wind, HeartHandshake,
 } from "lucide-react";
 
 function Ring({ value }: { value: number | null }) {
   const pct = value != null ? Math.max(4, (value / 10) * 100) : 0;
   return (
     <div className="relative h-[86px] w-[86px] rounded-full grid place-items-center shrink-0"
-      style={{ background: `conic-gradient(#1aad55 ${pct}%, rgba(18,138,67,.12) 0)` }}>
+      style={{ background: `conic-gradient(#55be3c ${pct}%, rgba(85,190,60,.16) 0)` }}>
       <div className="absolute inset-[7px] rounded-full bg-white grid place-items-center">
         <span className="font-display text-[26px] leading-none text-ink font-semibold">{value != null ? value.toFixed(1) : "—"}</span>
       </div>
@@ -57,21 +57,29 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
     {
       key: "mood",
       node: (
-        <section className="rounded-4xl p-5 bg-mint flex items-center gap-4 shadow-soft">
-          <Ring value={todayAvg} />
-          <div className="min-w-0">
-            <p className="text-[11px] font-bold tracking-widest uppercase text-brand-700/70">Ton humeur du jour</p>
-            {todayAvg != null ? (
-              <>
-                <p className="font-display text-xl font-semibold text-ink mt-0.5">{moodLabel(todayAvg)}</p>
-                <p className="text-[13px] text-ink-soft mt-0.5">{today.length} saisie{today.length > 1 ? "s" : ""} aujourd'hui</p>
-              </>
-            ) : (
-              <>
-                <p className="font-display text-xl font-semibold text-ink mt-0.5">Pas encore noté</p>
-                <button onClick={onLogMood} className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-brand-700">Noter maintenant <ChevronRight className="h-4 w-4" /></button>
-              </>
-            )}
+        <section className="rounded-4xl p-4 bg-mint shadow-soft flex items-stretch gap-3">
+          <div className="flex flex-col justify-between min-w-0 py-1.5 pl-1.5">
+            <div>
+              <p className="font-display text-[30px] font-semibold text-brand-800 leading-none capitalize">{now.toLocaleDateString("fr-FR", { day: "numeric", month: "short" })}</p>
+              <p className="text-[13px] font-bold text-brand-700/80 capitalize mt-1.5">{now.toLocaleDateString("fr-FR", { weekday: "long" })}</p>
+            </div>
+            <p className="text-[10.5px] font-bold tracking-widest uppercase text-brand-700/60">Humeur du jour</p>
+          </div>
+          <div className="ml-auto rounded-3xl bg-white p-3 flex items-center gap-3 shadow-card">
+            <Ring value={todayAvg} />
+            <div className="pr-1.5">
+              {todayAvg != null ? (
+                <>
+                  <p className="font-display text-[15px] font-semibold text-ink leading-tight">{moodLabel(todayAvg)}</p>
+                  <p className="text-[12px] text-ink-mute mt-0.5">{today.length} saisie{today.length > 1 ? "s" : ""}</p>
+                </>
+              ) : (
+                <>
+                  <p className="font-display text-[15px] font-semibold text-ink leading-tight">Pas noté</p>
+                  <button onClick={onLogMood} className="mt-1.5 rounded-full bg-ink text-white text-[12px] font-bold px-3 py-1.5 active:scale-95">Noter</button>
+                </>
+              )}
+            </div>
           </div>
         </section>
       ),
@@ -80,9 +88,9 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
       key: "stats",
       node: (
         <section className="grid grid-cols-3 gap-3">
-          <Stat icon={<TrendingUp className="h-[18px] w-[18px]" />} value={avg7 != null ? avg7.toFixed(1) : "—"} label="Moy. 7 j" />
-          <Stat icon={<Flame className="h-[18px] w-[18px]" />} value={String(strk)} label={strk > 1 ? "jours de série" : "jour de série"} />
-          <Stat icon={<Sparkles className="h-[18px] w-[18px]" />} value={String(today.length)} label="aujourd'hui" />
+          <Stat tint={0} icon={<TrendingUp className="h-4 w-4" />} value={avg7 != null ? avg7.toFixed(1) : "—"} label="Moy. 7 j" />
+          <Stat tint={1} icon={<Flame className="h-4 w-4" />} value={String(strk)} label={strk > 1 ? "jours de série" : "jour de série"} />
+          <Stat tint={2} icon={<Sparkles className="h-4 w-4" />} value={String(today.length)} label="aujourd'hui" />
         </section>
       ),
     },
@@ -96,7 +104,7 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
     key: "reminder",
     node: (
       <button onClick={onLogMood} className="card w-full p-3.5 flex items-center gap-3.5 text-left">
-        <span className="grid place-items-center h-11 w-11 rounded-2xl bg-brand-500 text-white shrink-0"><Smile className="h-[22px] w-[22px]" /></span>
+        <span className="grid place-items-center h-11 w-11 rounded-full bg-mint text-brand-700 shrink-0"><Smile className="h-[22px] w-[22px]" /></span>
         <div className="flex-1"><p className="font-bold text-ink text-[15px]">Rappels humeur</p><p className="text-[12.5px] text-ink-mute">{settings.moodSlots.map((s) => s.time).join(" · ")}</p></div>
         <ChevronRight className="h-5 w-5 text-ink-mute" />
       </button>
@@ -108,7 +116,7 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
       <section className="card p-4">
         <div className="flex items-center justify-between px-1 mb-1">
           <h2 className="font-display text-[16px] font-semibold text-ink">Ton humeur — 14 jours</h2>
-          <button onClick={() => setShowReport(true)} className="text-[12.5px] font-bold text-brand-700">Rapport</button>
+          <button onClick={() => setShowReport(true)} className="rounded-full bg-cream px-3 py-1.5 text-[12px] font-bold text-ink-soft active:scale-95">Rapport</button>
         </div>
         <MoodChart data={series} />
       </section>
@@ -117,19 +125,16 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   cards.push({
     key: "wellbeing",
     node: (
-      <section className="rounded-4xl p-5 bg-lilac shadow-soft">
-        <h2 className="font-display text-[16px] font-semibold text-ink mb-3">Prends soin de toi</h2>
-        <div className="grid grid-cols-2 gap-2.5">
-          <button onClick={() => setShowBreathe(true)} className="rounded-2xl bg-white shadow-card p-4 flex flex-col items-start gap-1.5 active:scale-[.98]">
-            <Wind className="h-6 w-6 text-brand-600" />
-            <span className="font-bold text-ink text-[14px]">Respirer</span>
-            <span className="text-[11.5px] text-ink-mute">1 min de calme</span>
-          </button>
-          <button onClick={() => setShowHelp(true)} className="rounded-2xl bg-white shadow-card p-4 flex flex-col items-start gap-1.5 active:scale-[.98]">
-            <HeartHandshake className="h-6 w-6 text-brand-600" />
-            <span className="font-bold text-ink text-[14px]">Besoin d'aide</span>
-            <span className="text-[11.5px] text-ink-mute">Lignes d'écoute</span>
-          </button>
+      <section className="grid grid-cols-2 gap-3">
+        <div className="rounded-4xl p-4 bg-peach flex flex-col items-start gap-2 shadow-soft">
+          <span className="grid place-items-center h-10 w-10 rounded-full bg-white text-[#d4487e]"><Wind className="h-5 w-5" /></span>
+          <p className="font-display text-[15px] font-semibold text-ink leading-tight">On respire<br />un moment ?</p>
+          <button onClick={() => setShowBreathe(true)} className="mt-auto rounded-full bg-ink text-white text-[12.5px] font-bold px-4 py-2 shadow-glow active:scale-95">Respirer</button>
+        </div>
+        <div className="rounded-4xl p-4 bg-lilac flex flex-col items-start gap-2 shadow-soft">
+          <span className="grid place-items-center h-10 w-10 rounded-full bg-white text-accent-deep"><HeartHandshake className="h-5 w-5" /></span>
+          <p className="font-display text-[15px] font-semibold text-ink leading-tight">Besoin<br />d'écoute ?</p>
+          <button onClick={() => setShowHelp(true)} className="mt-auto rounded-full bg-white text-ink text-[12.5px] font-bold px-4 py-2 shadow-card active:scale-95">Voir les lignes</button>
         </div>
       </section>
     ),
@@ -138,15 +143,17 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   return (
     <div className="min-h-full pb-6">
       {/* Sticky top bar — opaque at the very top, fading translucent downward */}
-      <header className="sticky top-0 z-30 pt-safe px-5 pb-5 bg-gradient-to-b from-cream via-cream/90 to-transparent backdrop-blur-[6px]">
+      <header className="sticky top-0 z-30 pt-safe px-5 pb-4 bg-gradient-to-b from-cream via-cream/90 to-transparent backdrop-blur-[6px]">
         <div className="max-w-md mx-auto flex items-center justify-between gap-3">
-          <img src="./brand/moody-wordmark-tight.png" alt="Moody" className="h-14 w-auto max-w-[58%]" />
+          <span className="grid place-items-center h-11 w-11 rounded-full bg-white shadow-card border border-black/[0.045] overflow-hidden">
+            <img src="./brand/moody-icon.png" alt="Moody" className="h-8 w-8 object-contain" />
+          </span>
           <div className="flex items-center gap-2">
-            <button onClick={() => setShowReport(true)} className="grid place-items-center h-11 w-11 rounded-2xl bg-white shadow-card text-ink-soft active:scale-95 transition" aria-label="Rapport">
-              <FileText className="h-5 w-5" strokeWidth={2.2} />
+            <button onClick={() => setShowReport(true)} className="grid place-items-center h-11 w-11 rounded-full bg-white shadow-card border border-black/[0.045] text-ink active:scale-95 transition" aria-label="Rapport">
+              <FileText className="h-[19px] w-[19px]" strokeWidth={2.1} />
             </button>
-            <button onClick={() => setShowSettings(true)} className="grid place-items-center h-11 w-11 rounded-2xl bg-white shadow-card text-ink-soft active:scale-95 transition" aria-label="Réglages">
-              <Settings2 className="h-5 w-5" strokeWidth={2.2} />
+            <button onClick={() => setShowSettings(true)} className="grid place-items-center h-11 w-11 rounded-full bg-white shadow-card border border-black/[0.045] text-ink active:scale-95 transition" aria-label="Réglages">
+              <Settings2 className="h-[19px] w-[19px]" strokeWidth={2.1} />
             </button>
           </div>
         </div>
@@ -156,7 +163,6 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
         <div className="max-w-md mx-auto stagger">
         <div className="mt-4 mb-4 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-sm text-ink-mute capitalize">{dateLabel}</p>
             <h1 className="font-display text-[27px] font-semibold text-ink leading-tight">{hello}{settings?.name ? `, ${settings.name}` : ""}.</h1>
             {settings?.mantra && <p className="text-[13px] text-brand-700 font-semibold mt-1 leading-snug">{settings.mantra}</p>}
           </div>
@@ -165,14 +171,6 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
 
         {/* Reorderable cards — long-press to rearrange */}
         <SortableList items={cards} />
-
-        {/* Signature */}
-        <div className="mt-6 flex items-center justify-center gap-1.5 text-[11.5px] text-ink-mute/80">
-          <span>Édité par</span>
-          <img src="./brand/stariax-wordmark.png" alt="Stariax" className="h-3.5 w-auto opacity-70" />
-          <span>· fait avec</span>
-          <Heart className="h-3 w-3 fill-brand-400 text-brand-400" />
-        </div>
         </div>
       </div>
 
@@ -184,11 +182,13 @@ export function Dashboard({ mounted, onLogMood }: { mounted: boolean; onLogMood:
   );
 }
 
-function Stat({ icon, value, label }: { icon: React.ReactNode; value: string; label: string }) {
+const STAT_TINTS = ["bg-lilac text-accent-deep", "bg-peach text-[#d4487e]", "bg-butter text-[#b07f14]"];
+function Stat({ icon, value, label, tint = 0 }: { icon: React.ReactNode; value: string; label: string; tint?: number }) {
+  const cls = STAT_TINTS[tint % STAT_TINTS.length];
   return (
-    <div className="card p-3.5 flex flex-col gap-1.5">
-      <span className="text-brand-600">{icon}</span>
-      <span className="font-display text-xl font-semibold text-ink leading-none">{value}</span>
+    <div className="card p-3.5 flex flex-col gap-2">
+      <span className={`grid place-items-center h-8 w-8 rounded-full ${cls}`}>{icon}</span>
+      <span className="font-display text-[22px] font-semibold text-ink leading-none">{value}</span>
       <span className="text-[11px] text-ink-mute font-semibold leading-tight">{label}</span>
     </div>
   );
@@ -207,7 +207,7 @@ function MedStatusCard({ onManage }: { onManage: () => void }) {
   if (s.total === 0) {
     return (
       <button onClick={onManage} className="card w-full p-4 mt-3 flex items-center gap-3.5 text-left">
-        <span className="grid place-items-center h-11 w-11 rounded-2xl bg-peach text-[#c8622f] shrink-0"><Pill className="h-[22px] w-[22px]" /></span>
+        <span className="grid place-items-center h-11 w-11 rounded-full bg-peach text-[#d4487e] shrink-0"><Pill className="h-[22px] w-[22px]" /></span>
         <div className="flex-1"><p className="font-bold text-ink text-[15px]">Médicaments</p><p className="text-[12.5px] text-ink-mute">Aucune prise prévue aujourd'hui · configurer</p></div>
         <ChevronRight className="h-5 w-5 text-ink-mute" />
       </button>
@@ -216,9 +216,18 @@ function MedStatusCard({ onManage }: { onManage: () => void }) {
 
   return (
     <section className="card p-4 mt-3">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2"><Pill className="h-[18px] w-[18px] text-[#c8622f]" /> Médicaments du jour</h2>
-        <span className="text-[12.5px] font-bold text-ink-mute tabular-nums">{s.takenCount}/{s.total}</span>
+      <div className="flex items-center justify-between mb-2.5">
+        <h2 className="font-display text-[16px] font-semibold text-ink flex items-center gap-2">
+          <span className="grid place-items-center h-8 w-8 rounded-full bg-peach text-[#d4487e]"><Pill className="h-4 w-4" /></span>
+          Médicaments du jour
+        </h2>
+        <span className="rounded-full bg-cream px-2.5 py-1 text-[12px] font-bold text-ink-soft tabular-nums">{s.takenCount}/{s.total}</span>
+      </div>
+
+      {/* jauge segmentée façon "lessons left" */}
+      <div className="flex items-center gap-1.5 mb-3">
+        {s.doses.map((d, i) => <span key={i} className={`seg ${d.taken ? "seg-on" : ""}`} />)}
+        <span className="ml-1.5 text-[11.5px] font-bold text-ink-mute whitespace-nowrap">{s.total - s.takenCount > 0 ? `${s.total - s.takenCount} restante${s.total - s.takenCount > 1 ? "s" : ""}` : "terminé"}</span>
       </div>
 
       {/* status banner */}
@@ -228,16 +237,16 @@ function MedStatusCard({ onManage }: { onManage: () => void }) {
           <p className="text-[14px] font-bold text-brand-700">Tout est pris pour aujourd'hui</p>
         </div>
       ) : s.overdue ? (
-        <div className="flex items-center gap-2.5 rounded-2xl bg-[#fbe1da] px-4 py-3 mb-3">
-          <AlertTriangle className="h-5 w-5 text-[#d0492c]" />
-          <p className="text-[14px] font-bold text-[#c0402a]">
+        <div className="flex items-center gap-2.5 rounded-2xl bg-[#ffe3e3] px-4 py-3 mb-3">
+          <AlertTriangle className="h-5 w-5 text-[#e04444]" />
+          <p className="text-[14px] font-bold text-[#d43c3c]">
             {s.overdue.dose.name} en retard de <span className="tabular-nums">{fmtDuration(s.overdue.msLate)}</span>
           </p>
         </div>
       ) : s.next ? (
-        <div className="flex items-center gap-2.5 rounded-2xl bg-brand-50 px-4 py-3 mb-3">
-          <Clock className="h-5 w-5 text-brand-600" />
-          <p className="text-[14px] font-bold text-brand-700">
+        <div className="flex items-center gap-2.5 rounded-2xl bg-accent-soft px-4 py-3 mb-3">
+          <Clock className="h-5 w-5 text-accent-deep" />
+          <p className="text-[14px] font-bold text-accent-deep">
             Prochaine prise ({s.next.dose.name}) dans <span className="tabular-nums">{fmtDuration(s.next.msUntil)}</span>
           </p>
         </div>
@@ -248,14 +257,14 @@ function MedStatusCard({ onManage }: { onManage: () => void }) {
         {s.doses.map((d) => (
           <div key={d.medId + d.time} className="flex items-center gap-2 py-2.5">
             <button onClick={() => setMedTaken(date, d.medId, d.time, !d.taken)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
-              <span className="font-display font-semibold text-ink tabular-nums w-12">{d.time}</span>
+              <span className="rounded-full bg-cream px-2.5 py-1.5 text-[12.5px] font-display font-semibold text-ink tabular-nums">{d.time}</span>
               <span className="flex-1 min-w-0">
                 <span className="font-bold text-ink text-[15px] block truncate">{d.name}</span>
                 {d.dose && <span className="text-[12px] text-ink-mute">{d.dose}</span>}
               </span>
             </button>
-            <button onClick={() => setInfo({ name: d.name, h: meds.find((m) => m.id === d.medId)?.highlights, medId: d.medId })} className="grid place-items-center h-8 w-8 rounded-lg text-brand-600 active:scale-90" aria-label="Infos médicament"><Info className="h-[18px] w-[18px]" /></button>
-            <button onClick={() => setMedTaken(date, d.medId, d.time, !d.taken)} className={`grid place-items-center h-7 w-7 rounded-lg border-2 transition shrink-0 ${d.taken ? "bg-brand-500 border-brand-500 text-white" : "border-black/15 text-transparent"}`}>
+            <button onClick={() => setInfo({ name: d.name, h: meds.find((m) => m.id === d.medId)?.highlights, medId: d.medId })} className="grid place-items-center h-8 w-8 rounded-full text-accent active:scale-90" aria-label="Infos médicament"><Info className="h-[18px] w-[18px]" /></button>
+            <button onClick={() => setMedTaken(date, d.medId, d.time, !d.taken)} className={`grid place-items-center h-7 w-7 rounded-full border-2 transition shrink-0 ${d.taken ? "bg-ink border-ink text-white" : "border-black/15 text-transparent"}`}>
               <Check className="h-4 w-4" strokeWidth={3} />
             </button>
           </div>

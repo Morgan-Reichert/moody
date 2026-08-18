@@ -87,7 +87,7 @@ export function MoodScreen() {
 
         {/* Preview */}
         <section className="rounded-4xl p-5 bg-lilac flex items-center gap-4 shadow-soft mt-3">
-          <span className="grid place-items-center h-[72px] w-[72px] rounded-full bg-white text-brand-600 shrink-0">
+          <span className="grid place-items-center h-[72px] w-[72px] rounded-3xl bg-white text-accent-deep shrink-0 shadow-card">
             <Face className="h-9 w-9" strokeWidth={2} />
           </span>
           <div>
@@ -104,7 +104,7 @@ export function MoodScreen() {
               const on = mood === n;
               return (
                 <button key={n} onClick={() => { setMood(n); vibrate(15); }}
-                  className={`aspect-square rounded-2xl grid place-items-center font-display font-semibold text-[17px] transition-all active:scale-90 ${on ? "bg-brand-500 text-white shadow-glow scale-105" : "bg-brand-50 text-ink-soft"}`}>
+                  className={`aspect-square rounded-2xl grid place-items-center font-display font-semibold text-[17px] transition-all active:scale-90 ${on ? "bg-ink text-white shadow-glow scale-105" : "bg-cream text-ink-soft"}`}>
                   {n}
                 </button>
               );
@@ -113,8 +113,8 @@ export function MoodScreen() {
         </section>
 
         {mood != null && mood <= 3 && (
-          <button onClick={() => setShowHelp(true)} className="w-full mt-3 rounded-3xl p-4 bg-lilac flex items-center gap-3 text-left active:scale-[.99]">
-            <span className="grid place-items-center h-11 w-11 rounded-2xl bg-white text-brand-600 shrink-0"><HeartHandshake className="h-[22px] w-[22px]" /></span>
+          <button onClick={() => setShowHelp(true)} className="w-full mt-3 rounded-3xl p-4 bg-lilac flex items-center gap-3 text-left active:scale-[.99] shadow-soft">
+            <span className="grid place-items-center h-11 w-11 rounded-full bg-white text-accent-deep shrink-0"><HeartHandshake className="h-[22px] w-[22px]" /></span>
             <div className="flex-1"><p className="font-bold text-ink text-[14.5px]">Moment difficile ?</p><p className="text-[12.5px] text-ink-soft">Des lignes d'écoute sont là pour toi, gratuitement.</p></div>
             <ChevronRight className="h-5 w-5 text-ink-mute" />
           </button>
@@ -146,7 +146,7 @@ export function MoodScreen() {
               const on = appetite === o.v;
               return (
                 <button key={o.v} onClick={() => { setAppetite(o.v); vibrate(15); }}
-                  className={`rounded-2xl py-3 flex flex-col items-center justify-center gap-1.5 h-[76px] transition-all active:scale-95 ${on ? "bg-brand-500 text-white shadow-glow" : "bg-brand-50 text-ink-soft"}`}>
+                  className={`rounded-2xl py-3 flex flex-col items-center justify-center gap-1.5 h-[76px] transition-all active:scale-95 ${on ? "bg-ink text-white shadow-glow" : "bg-cream text-ink-soft"}`}>
                   {o.icon}
                   <span className="text-[11px] font-bold">{o.label}</span>
                 </button>
@@ -185,7 +185,7 @@ export function MoodScreen() {
             <div className="flex flex-wrap gap-2">
               {[0, 15, 30, 45, 60, 90].map((m) => (
                 <button key={m} onClick={() => setSport(m)}
-                  className={`px-3.5 h-10 rounded-xl font-display font-semibold text-sm transition active:scale-95 ${sport === m ? "bg-ink text-white" : "bg-brand-50 text-ink-soft"}`}>
+                  className={`px-3.5 h-10 rounded-xl font-display font-semibold text-sm transition active:scale-95 ${sport === m ? "bg-ink text-white" : "bg-cream text-ink-soft"}`}>
                   {m === 0 ? "Aucun" : `${m}m`}
                 </button>
               ))}
@@ -199,8 +199,8 @@ export function MoodScreen() {
             <span className="text-[11px] font-bold tracking-widest uppercase text-ink-soft">Santé du jour</span></div>
           <p className="text-[14px] font-semibold text-ink mb-2.5">Te sens-tu malade ou as-tu un symptôme ?</p>
           <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => { setSick(false); setSymptoms([]); setAdvice(""); }} className={`rounded-xl py-2.5 font-bold text-sm transition active:scale-95 ${sick === false ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-soft"}`}>Je vais bien</button>
-            <button onClick={() => setSick(true)} className={`rounded-xl py-2.5 font-bold text-sm transition active:scale-95 ${sick === true ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-soft"}`}>J'ai un symptôme</button>
+            <button onClick={() => { setSick(false); setSymptoms([]); setAdvice(""); }} className={`rounded-xl py-2.5 font-bold text-sm transition active:scale-95 ${sick === false ? "bg-ink text-white" : "bg-cream text-ink-soft"}`}>Je vais bien</button>
+            <button onClick={() => setSick(true)} className={`rounded-xl py-2.5 font-bold text-sm transition active:scale-95 ${sick === true ? "bg-ink text-white" : "bg-cream text-ink-soft"}`}>J'ai un symptôme</button>
           </div>
 
           {sick && (
@@ -208,16 +208,16 @@ export function MoodScreen() {
               <div className="flex flex-wrap gap-1.5">
                 {COMMON_SYMPTOMS.map((sym) => {
                   const on = symptoms.includes(sym);
-                  return <button key={sym} onClick={() => toggleSymptom(sym)} className={`rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition active:scale-95 ${on ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-soft"}`}>{sym}</button>;
+                  return <button key={sym} onClick={() => toggleSymptom(sym)} className={`rounded-full px-3 py-1.5 text-[12.5px] font-semibold transition active:scale-95 ${on ? "bg-ink text-white" : "bg-cream text-ink-soft"}`}>{sym}</button>;
                 })}
               </div>
               <div>
                 <p className="text-[11px] font-bold tracking-widest uppercase text-ink-mute mb-1.5">Intensité</p>
                 <div className="flex gap-1.5">
-                  {["Léger", "Modéré", "Fort"].map((l, i) => <button key={l} onClick={() => setSIntensity(i + 1)} className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition active:scale-95 ${sIntensity === i + 1 ? "bg-ink text-white" : "bg-brand-50 text-ink-soft"}`}>{l}</button>)}
+                  {["Léger", "Modéré", "Fort"].map((l, i) => <button key={l} onClick={() => setSIntensity(i + 1)} className={`flex-1 rounded-xl py-2 text-[13px] font-bold transition active:scale-95 ${sIntensity === i + 1 ? "bg-ink text-white" : "bg-cream text-ink-soft"}`}>{l}</button>)}
                 </div>
               </div>
-              <textarea value={sNote} onChange={(e) => setSNote(e.target.value)} placeholder="Précise si tu veux (depuis quand, localisation…)" rows={2} className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none placeholder:text-ink-mute" />
+              <textarea value={sNote} onChange={(e) => setSNote(e.target.value)} placeholder="Précise si tu veux (depuis quand, localisation…)" rows={2} className="w-full bg-cream rounded-xl px-3.5 py-2.5 text-ink outline-none resize-none placeholder:text-ink-mute" />
               <button onClick={askAdvice} disabled={adviceLoading || symptoms.length === 0} className="w-full rounded-2xl py-3 bg-white shadow-card text-brand-700 font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[.98]">
                 {adviceLoading ? <><Loader2 className="h-4 w-4 animate-spin" /> Analyse…</> : <><Sparkles className="h-4 w-4" /> Obtenir un conseil</>}
               </button>
@@ -238,7 +238,7 @@ export function MoodScreen() {
           className="w-full mt-3 p-4 rounded-3xl bg-white shadow-card text-[15px] text-ink placeholder:text-ink-mute resize-none outline-none focus:ring-2 focus:ring-brand-300" />
 
         <button onClick={save} disabled={mood == null}
-          className="w-full mt-4 rounded-3xl py-4 font-display text-[17px] font-semibold text-white flex items-center justify-center gap-2 transition active:scale-[.99] disabled:opacity-40 disabled:shadow-none bg-brand-500 shadow-glow">
+          className="w-full mt-4 rounded-full py-4 font-display text-[17px] font-semibold text-white flex items-center justify-center gap-2 transition active:scale-[.99] disabled:opacity-40 disabled:shadow-none bg-ink shadow-glow">
           <Save className="h-5 w-5" /> Enregistrer
         </button>
 

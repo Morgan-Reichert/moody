@@ -5,10 +5,10 @@ import { Home, SmilePlus, Plus, HeartPulse } from "lucide-react";
 export function BottomNav({ tab, onTab, onHealth }: { tab: number; onTab: (i: number) => void; onHealth: () => void }) {
   return (
     <div className="pb-safe px-5 pt-1.5 shrink-0">
-      <nav className="mx-auto w-fit flex items-center gap-1.5 rounded-full bg-ink/95 backdrop-blur px-1.5 py-1.5 shadow-pill">
+      <nav className="mx-auto w-fit flex items-center gap-1 rounded-full bg-white/80 backdrop-blur-xl border border-white/70 px-1.5 py-1.5 shadow-pill">
         <button onClick={() => onTab(0)} aria-label="Accueil"
-          className={`grid place-items-center h-11 w-11 rounded-full transition-colors ${tab === 0 ? "bg-white/15 text-white" : "text-white/55"}`}>
-          <Home className="h-[22px] w-[22px]" strokeWidth={2.3} />
+          className={`grid place-items-center h-11 w-11 rounded-full transition-all ${tab === 0 ? "bg-ink text-white shadow-glow" : "text-ink-mute"}`}>
+          <Home className="h-[21px] w-[21px]" strokeWidth={2.3} />
         </button>
 
         <button onClick={() => onTab(1)} aria-label="Noter mon humeur"
@@ -17,13 +17,13 @@ export function BottomNav({ tab, onTab, onHealth }: { tab: number; onTab: (i: nu
         </button>
 
         <button onClick={() => onTab(1)} aria-label="Humeur"
-          className={`grid place-items-center h-11 w-11 rounded-full transition-colors ${tab === 1 ? "bg-white/15 text-white" : "text-white/55"}`}>
-          <SmilePlus className="h-[22px] w-[22px]" strokeWidth={2.3} />
+          className={`grid place-items-center h-11 w-11 rounded-full transition-all ${tab === 1 ? "bg-ink text-white shadow-glow" : "text-ink-mute"}`}>
+          <SmilePlus className="h-[21px] w-[21px]" strokeWidth={2.3} />
         </button>
 
         <button onClick={onHealth} aria-label="Espace santé"
-          className="grid place-items-center h-11 w-11 rounded-full text-white/55 transition-colors">
-          <HeartPulse className="h-[22px] w-[22px]" strokeWidth={2.3} />
+          className="grid place-items-center h-11 w-11 rounded-full text-ink-mute transition-colors">
+          <HeartPulse className="h-[21px] w-[21px]" strokeWidth={2.3} />
         </button>
       </nav>
     </div>

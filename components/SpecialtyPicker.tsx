@@ -18,7 +18,7 @@ export function SpecialtyPicker({ value, onChange }: { value?: string; onChange:
 
   return (
     <>
-      <button onClick={() => { setOpen(true); setQ(""); }} className="w-full flex items-center gap-2 bg-brand-50 rounded-xl px-3.5 py-3 text-left active:scale-[.99]">
+      <button onClick={() => { setOpen(true); setQ(""); }} className="w-full flex items-center gap-2 bg-cream rounded-xl px-3.5 py-3 text-left active:scale-[.99]">
         <Stethoscope className="h-4 w-4 text-brand-600 shrink-0" />
         <span className={`flex-1 font-semibold truncate ${value ? "text-ink" : "text-ink-mute"}`}>{value || "Choisir une spécialité"}</span>
         <ChevronDown className="h-4 w-4 text-ink-mute" />

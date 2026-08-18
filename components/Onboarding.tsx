@@ -65,7 +65,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             <img src="./brand/moody-icon.png" alt="" className="h-24 w-24 rounded-[28px] shadow-card mx-auto mb-6" />
             <h1 className="font-display text-3xl font-semibold text-ink">Bienvenue sur Moody</h1>
             <p className="text-ink-soft mt-3 leading-relaxed max-w-sm mx-auto">Ton compagnon doux pour suivre ton humeur, tes traitements et ton bien-être — au quotidien.</p>
-            <div className="mt-6 inline-flex items-center gap-2 text-[13px] font-semibold text-brand-700 bg-brand-50 rounded-full px-4 py-2"><Lock className="h-4 w-4" /> 100% privé, tout reste sur ton téléphone</div>
+            <div className="mt-6 inline-flex items-center gap-2 text-[13px] font-semibold text-brand-700 bg-cream rounded-full px-4 py-2"><Lock className="h-4 w-4" /> 100% privé, tout reste sur ton téléphone</div>
             <p className="text-[13px] text-ink-mute mt-6 max-w-sm mx-auto">Quelques questions rapides (toutes facultatives) pour personnaliser ton espace.</p>
           </div>
         )}
@@ -107,7 +107,7 @@ export function Onboarding({ onDone }: { onDone: () => void }) {
             {medName.trim() && (
               <label className="flex items-center justify-between bg-white shadow-card rounded-2xl px-4 py-3.5">
                 <span className="font-semibold text-ink">Heure de prise</span>
-                <input type="time" value={medTime} onChange={(e) => setMedTime(e.target.value)} className="bg-brand-50 rounded-xl px-3 py-2 font-display font-semibold text-ink outline-none" />
+                <input type="time" value={medTime} onChange={(e) => setMedTime(e.target.value)} className="bg-cream rounded-xl px-3 py-2 font-display font-semibold text-ink outline-none" />
               </label>
             )}
           </Step>
@@ -174,7 +174,7 @@ function TimeToggle({ on, setOn, label, time, setTime }: { on: boolean; setOn: (
     <div className={`flex items-center gap-3 rounded-2xl px-4 py-3.5 transition ${on ? "bg-white shadow-card" : "bg-black/[0.03]"}`}>
       <button onClick={() => setOn(!on)} className={`grid place-items-center h-8 w-8 rounded-lg border-2 ${on ? "bg-brand-500 border-brand-500 text-white" : "border-black/15 text-transparent"}`}><Check className="h-4 w-4" strokeWidth={3} /></button>
       <span className="flex-1 font-semibold text-ink">{label}</span>
-      <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={!on} className="bg-brand-50 rounded-xl px-3 py-2 font-display font-semibold text-ink outline-none disabled:opacity-40" />
+      <input type="time" value={time} onChange={(e) => setTime(e.target.value)} disabled={!on} className="bg-cream rounded-xl px-3 py-2 font-display font-semibold text-ink outline-none disabled:opacity-40" />
     </div>
   );
 }
@@ -185,5 +185,5 @@ function NumBox({ label, v, set }: { label: string; v: string; set: (s: string) 
   );
 }
 function Bullet({ icon: Icon, text }: { icon: any; text: string }) {
-  return <div className="flex items-center gap-3"><span className="grid place-items-center h-9 w-9 rounded-xl bg-brand-50 text-brand-600 shrink-0"><Icon className="h-5 w-5" /></span><p className="text-[14px] text-ink-soft">{text}</p></div>;
+  return <div className="flex items-center gap-3"><span className="grid place-items-center h-9 w-9 rounded-xl bg-cream text-brand-600 shrink-0"><Icon className="h-5 w-5" /></span><p className="text-[14px] text-ink-soft">{text}</p></div>;
 }

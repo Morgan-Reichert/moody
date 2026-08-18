@@ -29,7 +29,7 @@ export function MedInfoModal({ name, highlights, medId, onClose }: { name: strin
           <div className="sticky top-0 bg-cream/95 backdrop-blur px-5 pt-3 pb-3 z-10">
             <div className="mx-auto h-1.5 w-10 rounded-full bg-black/10 mb-3" />
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-semibold text-ink flex items-center gap-2"><Pill className="h-5 w-5 text-[#c8622f]" /> {name}</h2>
+              <h2 className="font-display text-xl font-semibold text-ink flex items-center gap-2"><Pill className="h-5 w-5 text-[#d4487e]" /> {name}</h2>
               <button onClick={onClose} className="grid place-items-center h-10 w-10 rounded-2xl bg-white shadow-card text-ink-soft active:scale-95"><X className="h-5 w-5" /></button>
             </div>
           </div>
@@ -39,7 +39,7 @@ export function MedInfoModal({ name, highlights, medId, onClose }: { name: strin
             {!h && <p className="text-sm text-ink-mute">Résumé non disponible. Scanne la notice (Réglages → médicament → Scanner la notice) ou consulte la notice officielle ci-dessous.</p>}
 
             {h?.risques?.length ? <InfoBlock icon={<AlertTriangle className="h-[18px] w-[18px]" />} title="Précautions / risques" tint="bg-[#fbe1da]" color="text-[#c0402a]" items={h.risques} /> : null}
-            {h?.effets?.length ? <InfoBlock icon={<Activity className="h-[18px] w-[18px]" />} title="Effets indésirables fréquents" tint="bg-peach" color="text-[#c8622f]" items={h.effets} /> : null}
+            {h?.effets?.length ? <InfoBlock icon={<Activity className="h-[18px] w-[18px]" />} title="Effets indésirables fréquents" tint="bg-peach" color="text-[#d4487e]" items={h.effets} /> : null}
             {h?.conseils?.length ? <InfoBlock icon={<Lightbulb className="h-[18px] w-[18px]" />} title="À savoir" tint="bg-mint" color="text-brand-700" items={h.conseils} /> : null}
 
             {/* Adverse effects the patient experienced (go into the report) */}
@@ -50,7 +50,7 @@ export function MedInfoModal({ name, highlights, medId, onClose }: { name: strin
                 {effects.length > 0 && (
                   <div className="space-y-1.5 mb-3">
                     {effects.map((e, i) => (
-                      <div key={i} className="flex items-center gap-2 rounded-xl bg-brand-50/60 px-3 py-2">
+                      <div key={i} className="flex items-center gap-2 rounded-xl bg-cream/80 px-3 py-2">
                         <span className="flex-1 text-[13.5px] text-ink"><b className="text-ink-mute font-semibold">{e.date}</b> — {e.text}</span>
                         <button onClick={() => removeEffect(i)} className="grid place-items-center h-7 w-7 rounded-lg text-red-400"><Trash2 className="h-4 w-4" /></button>
                       </div>
@@ -58,7 +58,7 @@ export function MedInfoModal({ name, highlights, medId, onClose }: { name: strin
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <input value={txt} onChange={(e) => setTxt(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEffect()} placeholder="Ex : nausées le matin…" className="flex-1 bg-brand-50 rounded-xl px-3.5 py-2.5 text-ink outline-none" />
+                  <input value={txt} onChange={(e) => setTxt(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEffect()} placeholder="Ex : nausées le matin…" className="flex-1 bg-cream rounded-xl px-3.5 py-2.5 text-ink outline-none" />
                   <button onClick={addEffect} className="grid place-items-center h-11 w-11 rounded-xl bg-brand-500 text-white active:scale-95"><Plus className="h-5 w-5" /></button>
                 </div>
               </section>

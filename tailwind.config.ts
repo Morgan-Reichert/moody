@@ -9,31 +9,37 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Moody brand green (from the logo)
+        // Vert Moody, éclairci façon "lime" du moodboard
         brand: {
-          50: "#eafaef",
-          100: "#d0f4dc",
-          200: "#a3e8bd",
-          300: "#6fd897",
-          400: "#3ec574",
-          500: "#1aad55",
-          600: "#128a43",
-          700: "#106e37",
-          800: "#12572e",
-          900: "#0f4727",
+          50: "#f0faea",
+          100: "#e0f6d3",
+          200: "#c4edab",
+          300: "#9ade79",
+          400: "#74d052",
+          500: "#55be3c",
+          600: "#3f9a2c",
+          700: "#357c27",
+          800: "#2c6222",
+          900: "#24501e",
+        },
+        // Bleu vif des jauges & anneaux (progression)
+        accent: {
+          DEFAULT: "#477bff",
+          deep: "#2f5fe0",
+          soft: "#dfe8ff",
         },
         ink: {
-          DEFAULT: "#16211b",
-          soft: "#53625a",
-          mute: "#8a978f",
+          DEFAULT: "#141519",
+          soft: "#5d6169",
+          mute: "#989ca6",
         },
-        cream: "#eef2ec",       // app background base
+        cream: "#f2f3f6",       // fond de page gris perle
         surface: "#ffffff",
-        // soft pastel category tints
-        mint: "#d9f0e0",
-        peach: "#fbe2d3",
-        lilac: "#e7e3f5",
-        butter: "#f6ecc9",
+        // tuiles pastel froides
+        mint: "#daf4c4",        // vert tilleul (héros)
+        peach: "#ffd9e7",       // rose dragée
+        lilac: "#c9d8ff",       // bleu pervenche
+        butter: "#ffeec2",      // jaune sable
       },
       fontFamily: {
         display: ["var(--font-display)", "ui-rounded", "system-ui", "sans-serif"],
@@ -41,14 +47,14 @@ const config: Config = {
       },
       borderRadius: {
         "2xl": "1.25rem",
-        "3xl": "1.75rem",
-        "4xl": "2.25rem",
+        "3xl": "1.65rem",
+        "4xl": "2rem",
       },
       boxShadow: {
-        soft: "0 10px 34px -14px rgba(20,50,35,.18)",
-        card: "0 6px 22px -10px rgba(20,50,35,.16)",
-        pill: "0 12px 30px -8px rgba(16,40,28,.45)",
-        glow: "0 14px 30px -10px rgba(26,173,85,.55)",
+        soft: "0 14px 40px -18px rgba(22,26,40,.14)",
+        card: "0 2px 14px -4px rgba(22,26,40,.07)",
+        pill: "0 12px 32px -10px rgba(20,22,32,.28)",
+        glow: "0 10px 26px -8px rgba(20,21,25,.38)",
       },
       keyframes: {
         rise: { "0%": { opacity: "0", transform: "translateY(14px)" }, "100%": { opacity: "1", transform: "none" } },

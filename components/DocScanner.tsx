@@ -112,7 +112,7 @@ export function DocScanner({ onClose, onSaved }: { onClose: () => void; onSaved:
                 <div>
                   <p className="text-[11px] font-bold tracking-widest uppercase text-ink-mute mb-1.5">Type détecté</p>
                   <div className="grid grid-cols-4 gap-1.5">
-                    {DOC_TYPES.map((t) => <button key={t.key} onClick={() => setType(t.key)} className={`rounded-xl py-2 text-[12px] font-bold transition ${type === t.key ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-soft"}`}>{t.label}</button>)}
+                    {DOC_TYPES.map((t) => <button key={t.key} onClick={() => setType(t.key)} className={`rounded-xl py-2 text-[12px] font-bold transition ${type === t.key ? "bg-brand-500 text-white" : "bg-cream text-ink-soft"}`}>{t.label}</button>)}
                   </div>
                 </div>
 
@@ -120,25 +120,25 @@ export function DocScanner({ onClose, onSaved }: { onClose: () => void; onSaved:
 
                 <div className="grid grid-cols-2 gap-2">
                   <label className="block"><span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">Date</span>
-                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 w-full bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none" /></label>
+                    <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="mt-1 w-full bg-cream rounded-xl px-3 py-2.5 text-ink outline-none" /></label>
                   <label className="block"><span className="text-[11px] font-bold tracking-widest uppercase text-ink-mute">Péremption</span>
-                    <input type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} className="mt-1 w-full bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none" /></label>
+                    <input type="date" value={expiry} onChange={(e) => setExpiry(e.target.value)} className="mt-1 w-full bg-cream rounded-xl px-3 py-2.5 text-ink outline-none" /></label>
                 </div>
 
                 {/* prescriber / doctor */}
                 <div className="card p-4 space-y-3">
                   <div className="flex items-center gap-2 text-brand-700"><Stethoscope className="h-4 w-4" /><span className="text-[11px] font-bold tracking-widest uppercase text-ink-soft">Médecin</span></div>
-                  <input value={prescriber} onChange={(e) => { setPrescriber(e.target.value); setMatched(null); setDoctorId(""); }} placeholder="Nom détecté (Dr …)" className="w-full bg-brand-50 rounded-xl px-3.5 py-2.5 font-semibold text-ink outline-none" />
+                  <input value={prescriber} onChange={(e) => { setPrescriber(e.target.value); setMatched(null); setDoctorId(""); }} placeholder="Nom détecté (Dr …)" className="w-full bg-cream rounded-xl px-3.5 py-2.5 font-semibold text-ink outline-none" />
                   {matched ? (
                     <p className="text-[13px] text-brand-700 font-semibold flex items-center gap-1.5"><Check className="h-4 w-4" /> Relié à {matched.name} ({matched.specialty || "spécialité ?"})</p>
                   ) : (
                     <>
-                      <select value={doctorId} onChange={(e) => { setDoctorId(e.target.value); setCreateDoctor(false); }} className="w-full bg-brand-50 rounded-xl px-3 py-2.5 text-ink outline-none">
+                      <select value={doctorId} onChange={(e) => { setDoctorId(e.target.value); setCreateDoctor(false); }} className="w-full bg-cream rounded-xl px-3 py-2.5 text-ink outline-none">
                         <option value="">Relier à un médecin existant…</option>
                         {getDoctors().map((d) => <option key={d.id} value={d.id}>{d.name || "Médecin"}{d.specialty ? ` — ${d.specialty}` : ""}</option>)}
                       </select>
                       {prescriber.trim() && !doctorId && (
-                        <button onClick={() => setCreateDoctor((c) => !c)} className={`w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 font-bold text-sm transition ${createDoctor ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-700"}`}>
+                        <button onClick={() => setCreateDoctor((c) => !c)} className={`w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 font-bold text-sm transition ${createDoctor ? "bg-brand-500 text-white" : "bg-cream text-brand-700"}`}>
                           <Plus className="h-4 w-4" /> Créer la fiche « {prescriber.trim()} »
                         </button>
                       )}
@@ -148,7 +148,7 @@ export function DocScanner({ onClose, onSaved }: { onClose: () => void; onSaved:
 
                 {expiry && (
                   <button onClick={() => setNotifyExpiry((n) => !n)} className="card w-full p-4 flex items-center gap-3 text-left">
-                    <span className={`grid place-items-center h-10 w-10 rounded-2xl shrink-0 ${notifyExpiry ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-700"}`}><Bell className="h-5 w-5" /></span>
+                    <span className={`grid place-items-center h-10 w-10 rounded-2xl shrink-0 ${notifyExpiry ? "bg-brand-500 text-white" : "bg-cream text-brand-700"}`}><Bell className="h-5 w-5" /></span>
                     <div className="flex-1"><p className="font-bold text-ink text-[15px]">Alerte de péremption</p><p className="text-[12.5px] text-ink-mute">Notifier 30 j, 7 j et 1 j avant l'échéance</p></div>
                     <span className={`relative h-7 w-12 rounded-full transition ${notifyExpiry ? "bg-brand-500" : "bg-black/15"}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${notifyExpiry ? "left-6" : "left-1"}`} /></span>
                   </button>

@@ -106,7 +106,7 @@ export function ShareDoctorModal({ onClose }: { onClose: () => void }) {
                     {doctors.map((d) => <option key={d.id} value={d.id}>{d.name || "Médecin"}{d.specialty ? ` — ${d.specialty}` : ""}</option>)}
                   </select>
                   <button onClick={() => setGuest((g) => !g)} className="mt-2 w-full card p-3.5 flex items-center gap-3 text-left">
-                    <span className={`grid place-items-center h-9 w-9 rounded-xl shrink-0 ${guest ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-700"}`}><UserPlus className="h-5 w-5" /></span>
+                    <span className={`grid place-items-center h-9 w-9 rounded-xl shrink-0 ${guest ? "bg-brand-500 text-white" : "bg-cream text-brand-700"}`}><UserPlus className="h-5 w-5" /></span>
                     <div className="flex-1"><p className="font-bold text-ink text-[14px]">Autoriser un médecin « invité »</p><p className="text-[12px] text-ink-mute">Un médecin non listé pourra ouvrir, mais ne verra que les PDF.</p></div>
                     <span className={`relative h-6 w-11 rounded-full transition ${guest ? "bg-brand-500" : "bg-black/15"}`}><span className={`absolute top-1 h-4 w-4 rounded-full bg-white transition-all ${guest ? "left-6" : "left-1"}`} /></span>
                   </button>

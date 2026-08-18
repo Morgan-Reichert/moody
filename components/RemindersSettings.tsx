@@ -35,7 +35,7 @@ function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[])
         const on = all || days.includes(d);
         return (
           <button key={d} onClick={() => toggle(d)}
-            className={`h-8 w-8 rounded-lg text-[12px] font-bold transition ${on ? "bg-brand-500 text-white" : "bg-brand-50 text-ink-mute"}`}>
+            className={`h-8 w-8 rounded-lg text-[12px] font-bold transition ${on ? "bg-brand-500 text-white" : "bg-cream text-ink-mute"}`}>
             {lbl}
           </button>
         );
@@ -46,7 +46,7 @@ function DayPicker({ days, onChange }: { days: number[]; onChange: (d: number[])
 
 function SlotRow({ slot, onChange, onDelete }: { slot: Slot; onChange: (s: Slot) => void; onDelete: () => void }) {
   return (
-    <div className="rounded-2xl bg-brand-50/60 p-3 space-y-2.5">
+    <div className="rounded-2xl bg-cream/80 p-3 space-y-2.5">
       <div className="flex items-center gap-2">
         <input type="time" value={slot.time} onChange={(e) => onChange({ ...slot, time: e.target.value })}
           className="flex-1 bg-white rounded-xl px-3 py-2.5 font-display font-semibold text-ink outline-none shadow-card" />
@@ -100,9 +100,9 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
               <SectionTitle icon={<UserRound className="h-4 w-4" />} title="Profil & accueil" hint="Personnalise ta page d'accueil" />
               <div className="card p-4 space-y-3">
                 <input defaultValue={settings.name ?? ""} onBlur={(e) => patch({ name: e.target.value.trim() || undefined })}
-                  placeholder="Ton prénom (pour le message d'accueil)" className="w-full bg-brand-50 rounded-xl px-3.5 py-3 font-semibold text-ink outline-none" />
+                  placeholder="Ton prénom (pour le message d'accueil)" className="w-full bg-cream rounded-xl px-3.5 py-3 font-semibold text-ink outline-none" />
                 <input defaultValue={settings.mantra ?? ""} onBlur={(e) => patch({ mantra: e.target.value.trim() || undefined })}
-                  placeholder="Ta phrase du moment (ex : Un jour à la fois)" className="w-full bg-brand-50 rounded-xl px-3.5 py-3 font-semibold text-ink outline-none" />
+                  placeholder="Ta phrase du moment (ex : Un jour à la fois)" className="w-full bg-cream rounded-xl px-3.5 py-3 font-semibold text-ink outline-none" />
               </div>
               <div className="card mt-2">
                 <Toggle icon={<CloudSun className="h-5 w-5" />} title="Météo en direct" sub="Affiche la météo de ta position sur l'accueil" on={!!settings.weather} onToggle={() => patch({ weather: !settings.weather })} />
@@ -129,7 +129,7 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
                     onDelete={() => patch({ moodSlots: settings.moodSlots.filter((_, j) => j !== i) })} />
                 ))}
                 <button onClick={() => patch({ moodSlots: [...settings.moodSlots, { time: "12:00", days: ALL_DAYS }] })}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-brand-50 text-brand-700 font-bold text-sm active:scale-[.98]">
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-cream text-brand-700 font-bold text-sm active:scale-[.98]">
                   <Plus className="h-4 w-4" /> Ajouter un horaire
                 </button>
               </div>
@@ -189,7 +189,7 @@ export function RemindersSettings({ onClose }: { onClose: () => void }) {
             <section>
               <SectionTitle icon={<Bell className="h-4 w-4" />} title="Notifications" hint="Pour être prévenu même hors de l'app (bip court)" />
               <button onClick={enableNotifs} className="w-full card p-4 flex items-center gap-3">
-                <span className={`grid place-items-center h-10 w-10 rounded-2xl shrink-0 ${settings.notifications ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-700"}`}>
+                <span className={`grid place-items-center h-10 w-10 rounded-2xl shrink-0 ${settings.notifications ? "bg-brand-500 text-white" : "bg-cream text-brand-700"}`}>
                   {settings.notifications ? <Check className="h-5 w-5" strokeWidth={3} /> : <Bell className="h-5 w-5" />}
                 </span>
                 <div className="flex-1 text-left">
@@ -257,7 +257,7 @@ function SectionTitle({ icon, title, hint }: { icon: React.ReactNode; title: str
 function Toggle({ icon, title, sub, on, onToggle }: { icon: React.ReactNode; title: string; sub: string; on: boolean; onToggle: () => void }) {
   return (
     <button onClick={onToggle} className="w-full flex items-center gap-3 p-4 text-left">
-      <span className={`grid place-items-center h-10 w-10 rounded-2xl shrink-0 ${on ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-700"}`}>{icon}</span>
+      <span className={`grid place-items-center h-10 w-10 rounded-2xl shrink-0 ${on ? "bg-brand-500 text-white" : "bg-cream text-brand-700"}`}>{icon}</span>
       <div className="flex-1"><p className="font-bold text-ink text-[15px]">{title}</p><p className="text-[12.5px] text-ink-mute">{sub}</p></div>
       <span className={`relative h-7 w-12 rounded-full transition ${on ? "bg-brand-500" : "bg-black/15"}`}>
         <span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${on ? "left-6" : "left-1"}`} />
@@ -303,10 +303,10 @@ function SecurityBlock({ settings, patch }: { settings: ReminderSettings; patch:
         {err && <p className="text-sm text-red-500 mb-3">{err}</p>}
         <div className="grid grid-cols-3 gap-3">
           {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
-            <button key={d} onClick={() => press(d)} className="h-14 w-14 rounded-full bg-brand-50 font-display text-xl font-semibold text-ink active:scale-90">{d}</button>
+            <button key={d} onClick={() => press(d)} className="h-14 w-14 rounded-full bg-cream font-display text-xl font-semibold text-ink active:scale-90">{d}</button>
           ))}
           <span />
-          <button onClick={() => press("0")} className="h-14 w-14 rounded-full bg-brand-50 font-display text-xl font-semibold text-ink active:scale-90">0</button>
+          <button onClick={() => press("0")} className="h-14 w-14 rounded-full bg-cream font-display text-xl font-semibold text-ink active:scale-90">0</button>
           <button onClick={() => setBuf((b) => b.slice(0, -1))} className="h-14 w-14 rounded-full grid place-items-center text-ink-soft active:scale-90"><Delete className="h-5 w-5" /></button>
         </div>
         <button onClick={() => { setSetting(false); setStage("first"); setFirst(""); setBuf(""); setErr(""); }} className="mt-4 text-sm font-semibold text-ink-mute">Annuler</button>
@@ -317,7 +317,7 @@ function SecurityBlock({ settings, patch }: { settings: ReminderSettings; patch:
   return (
     <div className="card divide-y divide-black/5">
       <div className="flex items-center gap-3 p-4">
-        <span className={`grid place-items-center h-10 w-10 rounded-2xl shrink-0 ${settings.pinEnabled ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-700"}`}><Lock className="h-5 w-5" /></span>
+        <span className={`grid place-items-center h-10 w-10 rounded-2xl shrink-0 ${settings.pinEnabled ? "bg-brand-500 text-white" : "bg-cream text-brand-700"}`}><Lock className="h-5 w-5" /></span>
         <div className="flex-1"><p className="font-bold text-ink text-[15px]">Code PIN</p><p className="text-[12.5px] text-ink-mute">{settings.pinEnabled ? "Activé — demandé à l'ouverture" : "4 chiffres pour ouvrir l'app"}</p></div>
         {settings.pinEnabled
           ? <button onClick={() => disableSecurity()} className="rounded-xl px-3.5 py-2 bg-white shadow-card text-red-500 font-bold text-sm active:scale-95">Désactiver</button>
@@ -365,18 +365,18 @@ function MedCard({ med, onSave, onDelete, onScan }: { med: Medication; onSave: (
   return (
     <div className="card p-4">
       <div className="flex items-center gap-3">
-        <span className="grid place-items-center h-10 w-10 rounded-2xl bg-peach text-[#c8622f] shrink-0"><Pill className="h-5 w-5" /></span>
+        <span className="grid place-items-center h-10 w-10 rounded-2xl bg-peach text-[#d4487e] shrink-0"><Pill className="h-5 w-5" /></span>
         <div className="flex-1 min-w-0">
           <p className="font-bold text-ink truncate">{med.name}</p>
           <p className="text-[12.5px] text-ink-mute truncate">{med.slots.map((s) => s.time).join(" · ") || "Pas d'horaire"}{med.barcode ? " · code ✓" : ""}</p>
         </div>
-        <button onClick={() => setOpen((o) => !o)} className="grid place-items-center h-9 w-9 rounded-xl bg-brand-50 text-brand-700 active:scale-95"><ChevronDown className={`h-5 w-5 transition ${open ? "rotate-180" : ""}`} /></button>
+        <button onClick={() => setOpen((o) => !o)} className="grid place-items-center h-9 w-9 rounded-xl bg-cream text-brand-700 active:scale-95"><ChevronDown className={`h-5 w-5 transition ${open ? "rotate-180" : ""}`} /></button>
       </div>
 
       {open && (
         <div className="mt-4 space-y-3">
           <MedAutocomplete value={name} onChange={setName} onBlur={() => commit()} onPick={(nm, h) => { setName(nm); commit({ name: nm, ...(h ? { highlights: h } : {}) }); }} />
-          <input value={dose} onChange={(e) => setDose(e.target.value)} onBlur={() => commit()} placeholder="Dose (ex: 50 mg)" className="w-full bg-brand-50 rounded-xl px-3 py-2.5 font-semibold text-ink outline-none" />
+          <input value={dose} onChange={(e) => setDose(e.target.value)} onBlur={() => commit()} placeholder="Dose (ex: 50 mg)" className="w-full bg-cream rounded-xl px-3 py-2.5 font-semibold text-ink outline-none" />
 
           <div>
             <p className="text-[11px] font-bold tracking-widest uppercase text-ink-mute mb-2">Prises</p>
@@ -387,16 +387,16 @@ function MedCard({ med, onSave, onDelete, onScan }: { med: Medication; onSave: (
                   onDelete={() => onSave({ ...med, slots: med.slots.filter((_, j) => j !== i) })} />
               ))}
               <button onClick={() => onSave({ ...med, slots: [...med.slots, { time: "08:00", days: ALL_DAYS }] })}
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-brand-50 text-brand-700 font-bold text-sm active:scale-[.98]"><Plus className="h-4 w-4" /> Ajouter une prise</button>
+                className="w-full flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-cream text-brand-700 font-bold text-sm active:scale-[.98]"><Plus className="h-4 w-4" /> Ajouter une prise</button>
             </div>
           </div>
 
           <input ref={noticeRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onNotice} />
           <div className="flex gap-2">
-            <button onClick={() => noticeRef.current?.click()} disabled={scanning} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-brand-50 text-brand-700 font-bold text-sm active:scale-[.98] disabled:opacity-60">
+            <button onClick={() => noticeRef.current?.click()} disabled={scanning} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-cream text-brand-700 font-bold text-sm active:scale-[.98] disabled:opacity-60">
               {scanning ? <><Loader2 className="h-4 w-4 animate-spin" /> Lecture…</> : <><ScanText className="h-4 w-4" /> Scanner la notice</>}
             </button>
-            <button onClick={() => setInfo(true)} className="grid place-items-center h-11 w-11 rounded-xl bg-brand-50 text-brand-700 active:scale-95" aria-label="Infos"><Info className="h-5 w-5" /></button>
+            <button onClick={() => setInfo(true)} className="grid place-items-center h-11 w-11 rounded-xl bg-cream text-brand-700 active:scale-95" aria-label="Infos"><Info className="h-5 w-5" /></button>
           </div>
           <div className="flex gap-2 pt-1">
             <button onClick={onScan} className="flex-1 flex items-center justify-center gap-1.5 rounded-xl py-2.5 bg-ink text-white font-bold text-sm active:scale-[.98]"><ScanLine className="h-4 w-4" /> {med.barcode ? "Re-scanner le code" : "Enregistrer le code-barres"}</button>

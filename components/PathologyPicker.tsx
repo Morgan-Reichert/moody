@@ -20,7 +20,7 @@ export function PathologyPicker({ values, onChange }: { values: string[]; onChan
     <>
       <div className="flex flex-wrap gap-1.5">
         {values.map((v) => (
-          <span key={v} className="inline-flex items-center gap-1.5 bg-brand-50 text-ink rounded-full pl-3 pr-1.5 py-1.5 text-[12.5px] font-semibold">
+          <span key={v} className="inline-flex items-center gap-1.5 bg-cream text-ink rounded-full pl-3 pr-1.5 py-1.5 text-[12.5px] font-semibold">
             {v}
             <button onClick={() => toggle(v)} className="grid place-items-center h-5 w-5 rounded-full text-ink-mute"><X className="h-3.5 w-3.5" /></button>
           </span>

@@ -6,6 +6,17 @@
 
 > History: this repo was previously "MindScope" (a mental-health self-assessment app with tests, an educational library, and a local LLM). The full app is archived on the `archive/v1-full` branch and the `v1.0-full-app` tag. `main` was reduced to Moody.
 
+## App iOS native (depuis août 2026)
+
+**L'app iPhone est désormais 100 % SwiftUI** : tout vit dans `ios/App/App/AppDelegate.swift`
+(design pastel, saisie humeur complète, médicaments + notifications natives, alarme forte,
+Swift Charts, rapport + partage QR médecin via Supabase, accueil modulable, migration
+automatique du localStorage WebKit de l'ancienne version Capacitor).
+Bundle `tech.stariax.moodyapp`, équipe `CU75SN7LD9`. Build :
+`xcodebuild -workspace ios/App/App.xcworkspace -scheme App -destination 'generic/platform=iOS' build`
+(toujours le **workspace**, jamais le .xcodeproj). La version web Next.js reste la référence
+du modèle de données (clés `moody_*`) et sert le site + la page `/consult` du QR médecin.
+
 ## Tech stack
 
 - **Next.js 14** App Router, `output: 'export'` (static), `trailingSlash: true`

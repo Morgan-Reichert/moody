@@ -44,12 +44,12 @@ export function LockScreen({ onUnlock }: { onUnlock: () => void }) {
       {/* keypad */}
       <div className="grid grid-cols-3 gap-4">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((d) => (
-          <button key={d} onClick={() => press(d)} className="h-16 w-16 rounded-full bg-white shadow-card font-display text-2xl font-semibold text-ink active:scale-90 active:bg-brand-50 transition">{d}</button>
+          <button key={d} onClick={() => press(d)} className="h-16 w-16 rounded-full bg-white shadow-card font-display text-2xl font-semibold text-ink active:scale-90 active:bg-cream transition">{d}</button>
         ))}
         <button onClick={canFace ? tryFace : undefined} className={`h-16 w-16 rounded-full grid place-items-center ${canFace ? "text-brand-600 active:scale-90" : "opacity-0 pointer-events-none"}`} aria-label="Face ID">
           <ScanFace className="h-7 w-7" />
         </button>
-        <button onClick={() => press("0")} className="h-16 w-16 rounded-full bg-white shadow-card font-display text-2xl font-semibold text-ink active:scale-90 active:bg-brand-50 transition">0</button>
+        <button onClick={() => press("0")} className="h-16 w-16 rounded-full bg-white shadow-card font-display text-2xl font-semibold text-ink active:scale-90 active:bg-cream transition">0</button>
         <button onClick={back} className="h-16 w-16 rounded-full grid place-items-center text-ink-soft active:scale-90" aria-label="Effacer"><Delete className="h-6 w-6" /></button>
       </div>
 
