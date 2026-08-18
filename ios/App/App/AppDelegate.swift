@@ -208,6 +208,9 @@ enum Dates {
 // MARK: - Store
 
 final class Store: ObservableObject {
+    /// Instance unique — le delegate de notifications y accède hors SwiftUI.
+    static let shared = Store()
+
     @Published var entries: [MoodEntry] = []
     @Published var meds: [Medication] = []
     @Published var settings = Settings()
@@ -543,47 +546,239 @@ enum DoctorShare {
 // MARK: - Notifications natives
 
 enum Notifier {
+
+    static let medCategory = "MED_REMINDER"
+    static let moodCategory = "MOOD_REMINDER"
+
+    /// Boutons d'action directement depuis l'écran verrouillé.
+    static func registerCategories() {
+        let take = UNNotificationAction(identifier: "TAKE", title: "J'ai pris", options: [])
+        let snooze = UNNotificationAction(identifier: "SNOOZE", title: "Rappeler dans 10 min", options: [])
+        let med = UNNotificationCategory(identifier: medCategory, actions: [take, snooze],
+                                         intentIdentifiers: [], options: [])
+        let log = UNNotificationAction(identifier: "LOG", title: "Noter mon humeur", options: [.foreground])
+        let mood = UNNotificationCategory(identifier: moodCategory, actions: [log],
+                                          intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([med, mood])
+    }
+
     static func requestPermission(_ done: @escaping (Bool) -> Void) {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { ok, _ in
             DispatchQueue.main.async { done(ok) }
         }
     }
-    /// Replanifie tout : une notification répétitive par créneau.
+
+    /// Lit l'autorisation système, la réconcilie avec le réglage de l'app, puis replanifie.
+    /// Appelé au lancement et à chaque retour au premier plan — c'est ce qui garantit
+    /// que les rappels existent même si l'app n'a pas été rouverte depuis longtemps.
+    static func refresh(store: Store, requestIfNeeded: Bool = true) {
+        let c = UNUserNotificationCenter.current()
+        c.getNotificationSettings { st in
+            switch st.authorizationStatus {
+            case .notDetermined:
+                guard requestIfNeeded else { return }
+                requestPermission { ok in
+                    store.settings.notifications = ok
+                    store.persist()
+                    if ok { reschedule(store: store) }
+                }
+            case .authorized, .provisional, .ephemeral:
+                DispatchQueue.main.async {
+                    if !store.settings.notifications {      // auto-réparation
+                        store.settings.notifications = true
+                        store.persist()
+                    }
+                    reschedule(store: store)
+                }
+            default:                                        // refusé dans iOS
+                DispatchQueue.main.async {
+                    if store.settings.notifications {
+                        store.settings.notifications = false
+                        store.persist()
+                    }
+                    c.removeAllPendingNotificationRequests()
+                }
+            }
+        }
+    }
+
+    /// Prochaine occurrence d'un créneau (en respectant les jours cochés).
+    static func nextOccurrence(time: String, days: [Int], after: Date = Date()) -> Date? {
+        let p = time.split(separator: ":").compactMap { Int($0) }
+        guard p.count == 2 else { return nil }
+        let cal = Calendar.current
+        for offset in 0...7 {
+            guard let base = cal.date(byAdding: .day, value: offset, to: after),
+                  let d = cal.date(bySettingHour: p[0], minute: p[1], second: 0, of: base) else { continue }
+            if d <= after { continue }
+            let wd = cal.component(.weekday, from: d) - 1        // Calendar 1…7 → JS 0…6
+            if days.isEmpty || days.contains(wd) { return d }
+        }
+        return nil
+    }
+
+    /// Replanifie tout : rappels répétitifs + rafale d'alarme sur la prochaine prise.
     static func reschedule(store: Store) {
         let c = UNUserNotificationCenter.current()
         c.removeAllPendingNotificationRequests()
         guard store.settings.notifications else { return }
+        registerCategories()
+
         var count = 0
-        func schedule(id: String, title: String, body: String, time: String, days: [Int], sound: UNNotificationSound) {
-            let p = time.split(separator: ":").compactMap { Int($0) }
-            guard p.count == 2 else { return }
-            let everyDay = days.isEmpty || days.count == 7
-            let targets: [Int?] = everyDay ? [nil] : days.map { Optional($0 + 1) }   // JS 0…6 → Calendar 1…7
-            for wd in targets {
-                guard count < 60 else { return }                                     // limite iOS : 64 en attente
-                var dc = DateComponents(); dc.hour = p[0]; dc.minute = p[1]; dc.weekday = wd
-                let content = UNMutableNotificationContent()
-                content.title = title; content.body = body; content.sound = sound
-                let req = UNNotificationRequest(identifier: "\(id)-\(wd ?? 9)",
-                                                content: content,
-                                                trigger: UNCalendarNotificationTrigger(dateMatching: dc, repeats: true))
-                c.add(req); count += 1
-            }
-        }
+        let limit = 60                                          // iOS n'en garde que 64
         let medSound: UNNotificationSound = store.settings.loudAlarm
             ? UNNotificationSound(named: UNNotificationSoundName("alarm.wav"))
             : .default
+
+        func add(id: String, title: String, body: String, sound: UNNotificationSound,
+                 category: String, userInfo: [String: Any], trigger: UNNotificationTrigger,
+                 timeSensitive: Bool) {
+            guard count < limit else { return }
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = body
+            content.sound = sound
+            content.categoryIdentifier = category
+            content.userInfo = userInfo
+            if timeSensitive, #available(iOS 15.0, *) { content.interruptionLevel = .timeSensitive }
+            c.add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
+            count += 1
+        }
+
+        // — rappels répétitifs (médicaments) —
         for m in store.meds {
-            for s in m.slots {
-                schedule(id: "med-\(m.id)-\(s.time)", title: "Médicament — \(m.name)",
-                         body: m.dose.map { "\(s.time) · \($0)" } ?? "C'est l'heure de ta prise (\(s.time)).",
-                         time: s.time, days: s.days, sound: medSound)
+            for slot in m.slots {
+                let p = slot.time.split(separator: ":").compactMap { Int($0) }
+                guard p.count == 2 else { continue }
+                let everyDay = slot.days.isEmpty || slot.days.count == 7
+                let targets: [Int?] = everyDay ? [nil] : slot.days.map { Optional($0 + 1) }
+                for wd in targets {
+                    var dc = DateComponents(); dc.hour = p[0]; dc.minute = p[1]; dc.weekday = wd
+                    add(id: "med-\(m.id)-\(slot.time)-\(wd ?? 9)",
+                        title: "Médicament — \(m.name)",
+                        body: m.dose.map { "\(slot.time) · \($0)" } ?? "C'est l'heure de ta prise (\(slot.time)).",
+                        sound: medSound, category: medCategory,
+                        userInfo: ["medId": m.id, "time": slot.time],
+                        trigger: UNCalendarNotificationTrigger(dateMatching: dc, repeats: true),
+                        timeSensitive: true)
+                }
             }
         }
-        for s in store.settings.moodSlots {
-            schedule(id: "mood-\(s.time)", title: "Comment te sens-tu ?",
-                     body: "Prends 30 secondes pour noter ton humeur.",
-                     time: s.time, days: s.days, sound: .default)
+
+        // — rappels d'humeur —
+        for slot in store.settings.moodSlots {
+            let p = slot.time.split(separator: ":").compactMap { Int($0) }
+            guard p.count == 2 else { continue }
+            let everyDay = slot.days.isEmpty || slot.days.count == 7
+            let targets: [Int?] = everyDay ? [nil] : slot.days.map { Optional($0 + 1) }
+            for wd in targets {
+                var dc = DateComponents(); dc.hour = p[0]; dc.minute = p[1]; dc.weekday = wd
+                add(id: "mood-\(slot.time)-\(wd ?? 9)",
+                    title: "Comment te sens-tu ?",
+                    body: "Prends 30 secondes pour noter ton humeur.",
+                    sound: .default, category: moodCategory, userInfo: [:],
+                    trigger: UNCalendarNotificationTrigger(dateMatching: dc, repeats: true),
+                    timeSensitive: false)
+            }
+        }
+
+        // — alarme forte : rafale de relances sur les prochaines prises (app fermée) —
+        guard store.settings.loudAlarm else { return }
+        let cal = Calendar.current
+        var upcoming: [(Date, Medication, Slot)] = []
+        for m in store.meds {
+            for slot in m.slots {
+                if let next = nextOccurrence(time: slot.time, days: slot.days) { upcoming.append((next, m, slot)) }
+            }
+        }
+        upcoming.sort { $0.0 < $1.0 }
+        for (date, m, slot) in upcoming.prefix(3) {                 // les 3 prochaines prises
+            for (k, delay) in [1, 3, 6, 10].enumerated() {
+                guard let fire = cal.date(byAdding: .minute, value: delay, to: date) else { continue }
+                let dc = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
+                add(id: "alarm-\(m.id)-\(slot.time)-\(k)",
+                    title: "⏰ \(m.name) — toujours pas validé",
+                    body: "Ta prise de \(slot.time) t'attend. Touche « J'ai pris » quand c'est fait.",
+                    sound: medSound, category: medCategory,
+                    userInfo: ["medId": m.id, "time": slot.time],
+                    trigger: UNCalendarNotificationTrigger(dateMatching: dc, repeats: false),
+                    timeSensitive: true)
+            }
+        }
+    }
+
+    /// Notification de test : 15 s plus tard, pour vérifier app fermée.
+    static func testNotification(loud: Bool) {
+        let content = UNMutableNotificationContent()
+        content.title = "Moody fonctionne 🎉"
+        content.body = loud ? "Voici le son de l'alarme forte. Tes rappels sonneront comme ça."
+                            : "Voici tes notifications. Tes rappels arriveront même app fermée."
+        content.sound = loud ? UNNotificationSound(named: UNNotificationSoundName("alarm.wav")) : .default
+        if #available(iOS 15.0, *) { content.interruptionLevel = .timeSensitive }
+        UNUserNotificationCenter.current().add(
+            UNNotificationRequest(identifier: "test-\(Int(Date().timeIntervalSince1970))",
+                                  content: content,
+                                  trigger: UNTimeIntervalNotificationTrigger(timeInterval: 15, repeats: false)))
+    }
+
+    /// Reporte une prise depuis le bouton « Rappeler dans 10 min ».
+    static func snooze(medId: String, medName: String, time: String, minutes: Double, loud: Bool) {
+        let content = UNMutableNotificationContent()
+        content.title = "Médicament — \(medName)"
+        content.body = "Rappel reporté : ta prise de \(time)."
+        content.sound = loud ? UNNotificationSound(named: UNNotificationSoundName("alarm.wav")) : .default
+        content.categoryIdentifier = medCategory
+        content.userInfo = ["medId": medId, "time": time]
+        if #available(iOS 15.0, *) { content.interruptionLevel = .timeSensitive }
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(60, minutes * 60), repeats: false)
+        UNUserNotificationCenter.current().add(
+            UNNotificationRequest(identifier: "snooze-\(medId)-\(time)-\(Int(Date().timeIntervalSince1970))",
+                                  content: content, trigger: trigger))
+    }
+}
+
+// MARK: - Delegate système : notifications au premier plan + actions
+
+final class MoodyAppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        Notifier.registerCategories()
+        Notifier.refresh(store: .shared)          // demande l'autorisation au 1er lancement
+        return true
+    }
+
+    /// Bannière + son même quand l'app est ouverte.
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .list, .sound, .badge])
+    }
+
+    /// Actions « J'ai pris » / « Rappeler dans 10 min » depuis l'écran verrouillé.
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
+        let info = response.notification.request.content.userInfo
+        let action = response.actionIdentifier
+        DispatchQueue.main.async {
+            let store = Store.shared
+            if let medId = info["medId"] as? String, let time = info["time"] as? String {
+                switch action {
+                case "TAKE":
+                    store.intake["\(Dates.dayKey())|\(medId)|\(time)"] = Date().timeIntervalSince1970 * 1000
+                    store.persist()
+                    // les relances de cette prise n'ont plus lieu d'être
+                    let ids = (0..<4).map { "alarm-\(medId)-\(time)-\($0)" }
+                    center.removePendingNotificationRequests(withIdentifiers: ids)
+                case "SNOOZE":
+                    let name = store.meds.first { $0.id == medId }?.name ?? "ton traitement"
+                    Notifier.snooze(medId: medId, medName: name, time: time,
+                                    minutes: store.settings.snoozeMinutes, loud: store.settings.loudAlarm)
+                default: break
+                }
+            }
+            completionHandler()
         }
     }
 }
@@ -614,7 +809,8 @@ final class AlarmPlayer: ObservableObject {
 
 @main
 struct MoodyApp: App {
-    @StateObject private var store = Store()
+    @UIApplicationDelegateAdaptor(MoodyAppDelegate.self) private var appDelegate
+    @StateObject private var store = Store.shared
     @StateObject private var alarm = AlarmPlayer()
     var body: some Scene {
         WindowGroup {
@@ -632,6 +828,7 @@ struct RootView: View {
     @State private var tab = 0
     @State private var alarmDose: Store.Dose?
     @State private var snoozedUntil: [String: Date] = [:]
+    @Environment(\.scenePhase) private var scenePhase
     private let tick = Timer.publish(every: 20, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -643,6 +840,10 @@ struct RootView: View {
             BottomBar(tab: $tab)
         }
         .onReceive(tick) { _ in checkAlarm() }
+        .onChange(of: scenePhase) { phase in
+            // replanifie à chaque retour dans l'app : les rappels restent toujours frais
+            if phase == .active { Notifier.refresh(store: store, requestIfNeeded: false) }
+        }
         .fullScreenCover(item: $alarmDose) { dose in
             AlarmOverlay(dose: dose,
                          take: { store.setTaken(dose, true); alarm.stop(); alarmDose = nil },
@@ -3781,6 +3982,8 @@ struct SettingsSheet: View {
     @State private var mantra = ""
     @State private var antecedents = ""
     @State private var conditions = ""
+    @State private var notifDenied = false
+    @State private var testSent = false
 
     var body: some View {
         NavigationStack {
@@ -3879,6 +4082,7 @@ struct SettingsSheet: View {
                                                      set: { on in
                                                          if on { Notifier.requestPermission { ok in
                                                              store.settings.notifications = ok; store.saveSettings()
+                                                             if !ok { notifDenied = true }
                                                          } } else { store.settings.notifications = false; store.saveSettings() }
                                                      })) {
                                     VStack(alignment: .leading, spacing: 1) {
@@ -3887,6 +4091,38 @@ struct SettingsSheet: View {
                                     }
                                 }
                                 .tint(Color.brand)
+                                if notifDenied {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .font(.system(size: 12, weight: .bold)).foregroundStyle(Color.rose)
+                                        Text("iOS bloque les notifications de Moody.")
+                                            .font(.system(size: 12, weight: .semibold)).foregroundStyle(Color.inkSoft)
+                                        Spacer()
+                                        Button("Ouvrir iOS") {
+                                            if let u = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(u) }
+                                        }
+                                        .font(.system(size: 12, weight: .bold)).foregroundStyle(Color.accentDeep)
+                                    }
+                                    .padding(10)
+                                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.peachC.opacity(0.5)))
+                                }
+                                Divider()
+                                Button {
+                                    Notifier.testNotification(loud: store.settings.loudAlarm)
+                                    testSent = true
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Image(systemName: testSent ? "checkmark.circle.fill" : "bell.badge.fill")
+                                            .font(.system(size: 13, weight: .bold))
+                                        Text(testSent ? "Envoyée — ferme l'app maintenant"
+                                                      : "Tester dans 15 s (ferme l'app pour vérifier)")
+                                            .font(.system(size: 13, weight: .bold))
+                                    }
+                                    .foregroundStyle(testSent ? Color.brand700 : Color.accentDeep)
+                                    .frame(maxWidth: .infinity, minHeight: 42)
+                                    .background(RoundedRectangle(cornerRadius: 12)
+                                        .fill(testSent ? Color.mint : Color.accentSoft))
+                                }
                             }
                         }
                     }
@@ -3901,6 +4137,9 @@ struct SettingsSheet: View {
         .onAppear {
             name = store.settings.name ?? ""; mantra = store.settings.mantra ?? ""
             antecedents = store.settings.antecedents ?? ""; conditions = store.settings.knownConditions ?? ""
+            UNUserNotificationCenter.current().getNotificationSettings { st in
+                DispatchQueue.main.async { notifDenied = st.authorizationStatus == .denied }
+            }
         }
         .onDisappear {
             store.settings.name = name.isEmpty ? nil : name
