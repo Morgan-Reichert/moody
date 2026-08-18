@@ -72,5 +72,11 @@
 			</array>
 		</dict>
 	</array>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Moody utilise le micro pour que tu puisses lui parler pendant ton bilan.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>La reconnaissance vocale (sur l'appareil) transforme ta voix en texte pour le bilan.</string>
+	<key>ElevenLabsKey</key>
+	<string>sk_a92bc4784ad68239c0ae0fd6be76a68f3e16023df1b56106</string>
 </dict>
 </plist>
