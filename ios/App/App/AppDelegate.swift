@@ -74,6 +74,26 @@ struct MoodEntry: Codable, Identifiable {
     var spending: Double?     // dépenses du jour (€)
 }
 
+/// Journal du jour : hygiène, hydratation, rapports — un enregistrement par date.
+struct DayLog: Codable {
+    var showerAM: Bool?
+    var showerPM: Bool?
+    var teethAM: Bool?
+    var teethPM: Bool?
+    var waterGlasses: Double?
+    var sexCount: Double?
+}
+
+/// Produits suivis (mêmes clés que le module addictions du web).
+struct Addiction: Codable, Identifiable, Hashable {
+    var id: String
+    var name: String          // "Monster", "Café", "Cigarette"…
+    var createdAt: String
+    var goal: Double?
+    var unit: String?         // "canette", "tasse"…
+}
+struct AddictionEvent: Codable { var id: String; var at: String }
+
 struct MedHighlights: Codable, Hashable {
     var molecule: String?
     var classe: String?
@@ -163,6 +183,9 @@ final class Store: ObservableObject {
     @Published var meds: [Medication] = []
     @Published var settings = Settings()
     @Published var intake: [String: Double] = [:]   // "date|medId|time" → ms
+    @Published var dayLogs: [String: DayLog] = [:]        // moody_daylog
+    @Published var addictions: [Addiction] = []           // moody_addictions
+    @Published var addictionLog: [AddictionEvent] = []    // moody_addiction_log
 
     private let ud = UserDefaults.standard
     private let enc: JSONEncoder = { let e = JSONEncoder(); return e }()
@@ -179,6 +202,9 @@ final class Store: ObservableObject {
         meds = decode("moody_meds") ?? []
         settings = decode("moody_settings") ?? Settings()
         intake = decode("moody_intake") ?? [:]
+        dayLogs = decode("moody_daylog") ?? [:]
+        addictions = decode("moody_addictions") ?? []
+        addictionLog = decode("moody_addiction_log") ?? []
         entries.sort { $0.datetime < $1.datetime }
     }
     private func decode<T: Decodable>(_ key: String) -> T? {
@@ -191,6 +217,8 @@ final class Store: ObservableObject {
     func persist() {
         save(entries, "moody_mood"); save(meds, "moody_meds")
         save(settings, "moody_settings"); save(intake, "moody_intake")
+        save(dayLogs, "moody_daylog"); save(addictions, "moody_addictions")
+        save(addictionLog, "moody_addiction_log")
     }
 
     // — migration : lit le localStorage de l'ancienne WebView (SQLite WebKit) —
@@ -320,10 +348,50 @@ final class Store: ObservableObject {
     }
     func saveSettings() { persist(); Notifier.reschedule(store: self) }
 
+    // — intelligence du jour : ce qui est déjà rempli ne se redemande pas —
+    var todayLog: DayLog { dayLogs[Dates.dayKey()] ?? DayLog() }
+    func updateTodayLog(_ mutate: (inout DayLog) -> Void) {
+        var l = todayLog; mutate(&l); dayLogs[Dates.dayKey()] = l; persist()
+    }
+    /// Sommeil déjà consigné aujourd'hui ? (heures + éventuelle valeur)
+    var sleepLoggedToday: Double? { todayEntries.compactMap(\.sleep).last }
+    var menstruLoggedToday: Bool { todayEntries.contains { $0.menstruation != nil } }
+    var napLoggedToday: Double { todayEntries.compactMap(\.napMinutes).reduce(0, +) }
+
+    // — consommations (produits personnalisés) —
+    func consumptionToday(_ addictionId: String) -> Int {
+        let day = Dates.dayKey()
+        return addictionLog.filter { $0.id == addictionId && $0.at.hasPrefix(day) }.count
+    }
+    func consumption(_ addictionId: String, days: Int) -> Int {
+        guard let cut = Calendar.current.date(byAdding: .day, value: -days, to: Date()) else { return 0 }
+        let key = Dates.dayKey(cut)
+        return addictionLog.filter { $0.id == addictionId && String($0.at.prefix(10)) >= key }.count
+    }
+    func addConsumption(_ addictionId: String) {
+        addictionLog.append(AddictionEvent(id: addictionId, at: Dates.iso.string(from: Date()))); persist()
+    }
+    func removeConsumption(_ addictionId: String) {
+        let day = Dates.dayKey()
+        if let i = addictionLog.lastIndex(where: { $0.id == addictionId && $0.at.hasPrefix(day) }) {
+            addictionLog.remove(at: i); persist()
+        }
+    }
+    func saveAddiction(name: String, unit: String?) {
+        addictions.append(Addiction(id: UUID().uuidString.lowercased(), name: name,
+                                    createdAt: Dates.iso.string(from: Date()), goal: nil, unit: unit))
+        persist()
+    }
+    func deleteAddiction(_ id: String) {
+        addictions.removeAll { $0.id == id }
+        addictionLog.removeAll { $0.id == id }
+        persist()
+    }
+
     // — accueil personnalisable —
     static let allCards: [(key: String, name: String)] = [
-        ("mood", "Humeur du jour"), ("stats", "Statistiques"), ("meds", "Médicaments"),
-        ("chart", "Courbe 14 jours"), ("wellbeing", "Bien-être"),
+        ("mood", "Humeur du jour"), ("day", "Ma journée"), ("stats", "Statistiques"),
+        ("meds", "Médicaments"), ("chart", "Courbe 14 jours"), ("wellbeing", "Bien-être"),
     ]
     var cardOrder: [String] {
         let saved = settings.dashOrder ?? []
@@ -626,6 +694,7 @@ struct DashboardView: View {
                 ForEach(store.cardOrder.filter { !store.hiddenCards.contains($0) }, id: \.self) { key in
                     switch key {
                     case "mood": hero
+                    case "day": MyDayCard()
                     case "stats": statsRow
                     case "meds": if !store.meds.isEmpty { MedsCard() }
                     case "chart": chartCard
@@ -835,6 +904,179 @@ struct DashboardView: View {
     }
 }
 
+// MARK: - Ma journée (hygiène, hydratation, consommations — adapté à l'heure)
+
+struct MyDayCard: View {
+    @EnvironmentObject var store: Store
+    @State private var addingProduct = false
+    var body: some View {
+        Card {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Image(systemName: "sun.and.horizon.fill").font(.system(size: 13, weight: .bold)).foregroundStyle(Color(hex: 0xB07F14))
+                        .frame(width: 32, height: 32).background(Circle().fill(Color.butterC))
+                    Text("Ma journée").font(.system(size: 16, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+                    Spacer()
+                    Text(hourHint).font(.system(size: 11, weight: .bold)).foregroundStyle(Color.inkMute)
+                }
+                HygieneChecks()
+                WaterRow()
+                if !store.addictions.isEmpty || true {
+                    Divider()
+                    ConsumptionRows(addingProduct: $addingProduct)
+                }
+            }
+        }
+        .sheet(isPresented: $addingProduct) { AddProductSheet() }
+    }
+    private var hourHint: String {
+        let h = Calendar.current.component(.hour, from: Date())
+        return h < 12 ? "matin" : h < 18 ? "après-midi" : "soir"
+    }
+}
+
+/// Hygiène : ne pose que les questions du moment, garde visibles les oublis.
+struct HygieneChecks: View {
+    @EnvironmentObject var store: Store
+    var body: some View {
+        let h = Calendar.current.component(.hour, from: Date())
+        let log = store.todayLog
+        VStack(spacing: 8) {
+            // le matin (et tant que pas fait) : douche + dents du matin
+            if h < 15 || log.showerAM != true {
+                check("shower.fill", "Douche (matin)", log.showerAM) { v in store.updateTodayLog { $0.showerAM = v } }
+            }
+            if h < 15 || log.teethAM != true {
+                check("mouth.fill", "Dents (matin)", log.teethAM) { v in store.updateTodayLog { $0.teethAM = v } }
+            }
+            // le soir : douche + dents du soir
+            if h >= 17 {
+                check("shower.fill", "Douche (soir)", log.showerPM) { v in store.updateTodayLog { $0.showerPM = v } }
+                check("mouth.fill", "Dents (soir)", log.teethPM) { v in store.updateTodayLog { $0.teethPM = v } }
+            }
+        }
+    }
+    private func check(_ icon: String, _ label: String, _ value: Bool?, set: @escaping (Bool) -> Void) -> some View {
+        HStack {
+            Image(systemName: icon).font(.system(size: 12, weight: .bold)).foregroundStyle(Color.accentDeep).frame(width: 22)
+            Text(label).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Color.inkC)
+            Spacer()
+            HStack(spacing: 6) {
+                ForEach([("Oui", true), ("Pas encore", false)], id: \.0) { t, v in
+                    let on = value == v
+                    Button { set(v) } label: {
+                        Text(t).font(.system(size: 11.5, weight: .bold)).fixedSize()
+                            .foregroundStyle(on ? .white : Color.inkSoft)
+                            .padding(.horizontal, 11).padding(.vertical, 6)
+                            .background(Capsule().fill(on ? (v ? Color.brand : Color.inkC) : Color.cream))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// Hydratation : compteur de verres.
+struct WaterRow: View {
+    @EnvironmentObject var store: Store
+    var body: some View {
+        let glasses = Int(store.todayLog.waterGlasses ?? 0)
+        HStack {
+            Image(systemName: "drop.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(Color.accentBlue).frame(width: 22)
+            Text("Eau bue").font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Color.inkC)
+            Spacer()
+            stepper(count: glasses, unit: glasses > 1 ? "verres" : "verre",
+                    minus: { store.updateTodayLog { $0.waterGlasses = max(0, ($0.waterGlasses ?? 0) - 1) } },
+                    plus: { store.updateTodayLog { $0.waterGlasses = ($0.waterGlasses ?? 0) + 1 } })
+        }
+    }
+}
+
+func stepper(count: Int, unit: String, minus: @escaping () -> Void, plus: @escaping () -> Void) -> some View {
+    HStack(spacing: 8) {
+        Button(action: minus) {
+            Image(systemName: "minus").font(.system(size: 11, weight: .heavy)).foregroundStyle(Color.inkSoft)
+                .frame(width: 26, height: 26).background(Circle().fill(Color.cream))
+        }
+        Text("\(count) \(unit)").font(.system(size: 12.5, weight: .bold, design: .rounded)).foregroundStyle(Color.inkC)
+            .frame(minWidth: 64)
+        Button(action: plus) {
+            Image(systemName: "plus").font(.system(size: 11, weight: .heavy)).foregroundStyle(.white)
+                .frame(width: 26, height: 26).background(Circle().fill(Color.inkC))
+        }
+    }
+}
+
+/// Consommations : un compteur par produit suivi (« 3 canettes de Monster »).
+struct ConsumptionRows: View {
+    @EnvironmentObject var store: Store
+    @Binding var addingProduct: Bool
+    var body: some View {
+        VStack(spacing: 8) {
+            ForEach(store.addictions) { a in
+                let n = store.consumptionToday(a.id)
+                HStack {
+                    Image(systemName: "takeoutbag.and.cup.and.straw.fill")
+                        .font(.system(size: 12, weight: .bold)).foregroundStyle(Color.rose).frame(width: 22)
+                    Text(a.name).font(.system(size: 13.5, weight: .semibold)).foregroundStyle(Color.inkC)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                    Spacer()
+                    stepper(count: n, unit: a.unit ?? "",
+                            minus: { store.removeConsumption(a.id) },
+                            plus: { store.addConsumption(a.id) })
+                }
+            }
+            Button { addingProduct = true } label: {
+                Label("Suivre un produit (café, Monster, tabac…)", systemImage: "plus")
+                    .font(.system(size: 12.5, weight: .bold)).foregroundStyle(Color.brand700)
+                    .frame(maxWidth: .infinity, minHeight: 38)
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.cream))
+            }
+        }
+    }
+}
+
+struct AddProductSheet: View {
+    @EnvironmentObject var store: Store
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var unit = ""
+    var body: some View {
+        NavigationStack {
+            Form {
+                TextField("Produit (ex : Monster, Café, Cigarette…)", text: $name)
+                TextField("Unité (ex : canette, tasse…)", text: $unit)
+                if !store.addictions.isEmpty {
+                    Section("Produits suivis") {
+                        ForEach(store.addictions) { a in
+                            HStack {
+                                Text(a.name)
+                                Spacer()
+                                Button(role: .destructive) { store.deleteAddiction(a.id) } label: { Image(systemName: "trash") }
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Suivre un produit")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) { Button("Fermer") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Ajouter") {
+                        store.saveAddiction(name: name.trimmingCharacters(in: .whitespaces),
+                                            unit: unit.isEmpty ? nil : unit.trimmingCharacters(in: .whitespaces))
+                        name = ""; unit = ""
+                    }
+                    .fontWeight(.bold)
+                    .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+}
+
 // MARK: - Carte médicaments
 
 struct MedsCard: View {
@@ -912,6 +1154,8 @@ struct MoodEntryView: View {
     @State private var sexual: Bool?
     @State private var menstru: Double?
     @State private var spending = ""
+    @State private var addingProduct = false
+    private var hour: Int { Calendar.current.component(.hour, from: Date()) }
 
     var body: some View {
         ScrollView {
@@ -925,11 +1169,21 @@ struct MoodEntryView: View {
 
                 preview
                 scaleGrid
-                energyCard
-                appetiteCard
-                sleepCard
+                // le matin, la nuit passée d'abord ; le soir, l'hygiène du soir remonte
+                if hour < 14 {
+                    sleepCard
+                    Card { VStack(spacing: 10) { sectionHeader("sparkles", "Hygiène & journée"); HygieneChecks(); WaterRow() } }
+                    energyCard
+                    appetiteCard
+                } else {
+                    energyCard
+                    appetiteCard
+                    Card { VStack(spacing: 10) { sectionHeader("sparkles", "Hygiène & journée"); HygieneChecks(); WaterRow() } }
+                    sleepCard
+                }
                 sportCard
                 intimateCard
+                Card { VStack(spacing: 10) { sectionHeader("takeoutbag.and.cup.and.straw.fill", "Consommations"); ConsumptionRows(addingProduct: $addingProduct) } }
                 spendingCard
                 noteCard
                 saveButton
@@ -939,6 +1193,7 @@ struct MoodEntryView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .sheet(isPresented: $addingWorkout) { WorkoutSheet { workouts.append($0) } }
+        .sheet(isPresented: $addingProduct) { AddProductSheet() }
         .overlay(alignment: .bottom) {
             if saved {
                 Label("Humeur enregistrée", systemImage: "checkmark")
@@ -1046,6 +1301,15 @@ struct MoodEntryView: View {
     private var sleepCard: some View {
         Card {
             VStack(spacing: 12) {
+                if let done = store.sleepLoggedToday {
+                    // déjà consigné : on ne redemande pas — reste la sieste
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.brand)
+                        Text(String(format: "Nuit déjà notée · %.1f h", done))
+                            .font(.system(size: 13.5, weight: .bold)).foregroundStyle(Color.inkSoft)
+                        Spacer()
+                    }
+                } else {
                 sectionHeader("moon.fill", "Sommeil", trailing: sleepSummary)
                 Picker("", selection: $useBedWake) {
                     Text("Durée simple").tag(false)
@@ -1067,6 +1331,7 @@ struct MoodEntryView: View {
                 } else {
                     Slider(value: Binding(get: { sleepSimple ?? 7 }, set: { sleepSimple = ($0 * 2).rounded() / 2 }), in: 0...12, step: 0.5)
                         .tint(Color.brand)
+                }
                 }
                 VStack(alignment: .leading, spacing: 6) {
                     Text("SIESTE").font(.system(size: 9.5, weight: .bold)).kerning(1).foregroundStyle(Color.inkMute)
@@ -1137,32 +1402,32 @@ struct MoodEntryView: View {
             VStack(spacing: 12) {
                 sectionHeader("heart.fill", "Santé intime")
                 HStack {
-                    Text("Activité sexuelle").font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.inkC)
+                    Text("Rapports aujourd'hui").font(.system(size: 14, weight: .semibold)).foregroundStyle(Color.inkC)
                     Spacer()
-                    HStack(spacing: 8) {
-                        ForEach([("Oui", true), ("Non", false)], id: \.0) { label, v in
-                            let on = sexual == v
-                            Button { sexual = on ? nil : v } label: {
-                                Text(label).font(.system(size: 12.5, weight: .bold)).fixedSize()
-                                    .foregroundStyle(on ? .white : Color.inkSoft)
-                                    .padding(.horizontal, 16).padding(.vertical, 8)
-                                    .background(Capsule().fill(on ? Color.inkC : Color.cream))
-                            }
-                        }
-                    }
+                    stepper(count: Int(store.todayLog.sexCount ?? 0), unit: "",
+                            minus: { store.updateTodayLog { $0.sexCount = max(0, ($0.sexCount ?? 0) - 1) } },
+                            plus: { store.updateTodayLog { $0.sexCount = ($0.sexCount ?? 0) + 1 } })
                 }
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("MENSTRUATION").font(.system(size: 9.5, weight: .bold)).kerning(1).foregroundStyle(Color.inkMute)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(Array(zip([0.0, 1, 2, 3], ["Non", "Léger", "Moyen", "Abondant"])), id: \.0) { v, label in
-                                let on = menstru == v
-                                Button { menstru = on ? nil : v } label: {
-                                    Text(label).font(.system(size: 12.5, weight: .bold)).fixedSize()
-                                        .foregroundStyle(on ? .white : Color.inkSoft)
-                                        .padding(.horizontal, 13).padding(.vertical, 9)
-                                        .background(Capsule().fill(on ? Color.rose : Color.cream))
+                if store.menstruLoggedToday {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.brand)
+                        Text("Menstruation déjà notée aujourd'hui").font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Color.inkSoft)
+                        Spacer()
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("MENSTRUATION").font(.system(size: 9.5, weight: .bold)).kerning(1).foregroundStyle(Color.inkMute)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(Array(zip([0.0, 1, 2, 3], ["Non", "Léger", "Moyen", "Abondant"])), id: \.0) { v, label in
+                                    let on = menstru == v
+                                    Button { menstru = on ? nil : v } label: {
+                                        Text(label).font(.system(size: 12.5, weight: .bold)).fixedSize()
+                                            .foregroundStyle(on ? .white : Color.inkSoft)
+                                            .padding(.horizontal, 13).padding(.vertical, 9)
+                                            .background(Capsule().fill(on ? Color.rose : Color.cream))
+                                    }
                                 }
                             }
                         }
@@ -1214,7 +1479,7 @@ struct MoodEntryView: View {
                 wakeTime: useBedWake ? Dates.hhmm(wake) : nil,
                 napMinutes: nap,
                 workouts: workouts.isEmpty ? nil : workouts,
-                sexualActivity: sexual,
+                sexualActivity: (store.todayLog.sexCount ?? 0) > 0 ? true : sexual,
                 menstruation: menstru,
                 spending: Double(spending.replacingOccurrences(of: ",", with: ".")))
             store.addEntry(e)
@@ -1429,7 +1694,16 @@ struct ReportView: View {
                 row("bed.double.fill", "Siestes", "\(Int(sel.compactMap(\.napMinutes).reduce(0, +))) min")
                 row("eurosign.circle", "Dépenses", String(format: "%.0f €", sel.compactMap(\.spending).reduce(0, +)))
                 row("drop.fill", "Jours menstruation", "\(sel.filter { ($0.menstruation ?? 0) > 0 }.count)")
-                row("heart.fill", "Activité sexuelle", "\(sel.filter { $0.sexualActivity == true }.count) jour(s)")
+                row("heart.fill", "Rapports", "\(Int(store.dayLogs.filter { $0.key >= cutoff }.compactMap { $0.value.sexCount }.reduce(0, +)))")
+                let logs = store.dayLogs.filter { $0.key >= cutoff }.map(\.value)
+                if !logs.isEmpty {
+                    row("shower.fill", "Douches", "\(logs.filter { $0.showerAM == true || $0.showerPM == true }.count)/\(logs.count) j")
+                    row("mouth.fill", "Dents (matin+soir)", "\(logs.filter { $0.teethAM == true && $0.teethPM == true }.count)/\(logs.count) j")
+                    row("drop.fill", "Eau moyenne", String(format: "%.1f verres/j", logs.compactMap(\.waterGlasses).reduce(0, +) / Double(max(1, logs.count))))
+                }
+                ForEach(store.addictions) { a in
+                    row("takeoutbag.and.cup.and.straw.fill", a.name, "\(store.consumption(a.id, days: period)) \(a.unit ?? "")")
+                }
                 if let a = store.settings.antecedents, !a.isEmpty {
                     Divider()
                     Text("Antécédents : \(a)").font(.system(size: 12.5)).foregroundStyle(Color.inkSoft)
